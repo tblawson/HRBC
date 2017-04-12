@@ -59,7 +59,7 @@ class AqnThread(Thread):
         self.xlfilename = self.SetupPage.XLFile.GetValue()
 
         # open existing workbook
-        self.wb_io = load_workbook(self.xlfilename) # was (.., data_only=True)
+        self.wb_io = load_workbook(self.xlfilename,data_only=True) # 'data_only=True' ensures we read cell value, NOT formula
         self.ws = self.wb_io.get_sheet_by_name('Data')
 
         # read start/stop row numbers from Excel file
@@ -236,6 +236,7 @@ class AqnThread(Thread):
             # Update run displays on Run page via a DataEvent:
             t1 = str(dt.datetime.fromtimestamp(np.mean(self.V1Times)).strftime("%d/%m/%Y %H:%M:%S"))
             V1m = str(np.mean(self.V1Data))
+            print 'AqnThread.run(): V1m =',V1m
             V1sd = str(np.std(self.V1Data,ddof=1))
             P = 100.0*pbar/(1 + self.stop_row - self.start_row) # % progress
             update_ev = evts.DataEvent(t=t1, Vm=V1m, Vsd=V1sd, P=P, r=row, flag='1')
@@ -250,7 +251,7 @@ class AqnThread(Thread):
             if self._want_abort:
                 self.AbortRun()
                 return
-            time.sleep(0.1)
+            time.sleep(0.5) # was 0.1
             visastuff.ROLES_INSTR['DVM12'].SendCmd('LFREQ LINE') # dvmV1V2:'LFREQ LINE'
             
             stat_ev = evts.StatusEvent(msg='AqnThread.run():', field=0)
@@ -281,6 +282,7 @@ class AqnThread(Thread):
             # Update displays on Run page via a DataEvent:
             t2 = str(dt.datetime.fromtimestamp(np.mean(self.V2Times)).strftime("%d/%m/%Y %H:%M:%S"))
             V2m = str(np.mean(self.V2Data))
+            print 'AqnThread.run(): V2m =',V2m
             V2sd = str(np.std(self.V2Data,ddof=1))
             P = 100.0*pbar/(1 + self.stop_row - self.start_row) # % progress
             update_ev = evts.DataEvent(t=t2, Vm=V2m, Vsd=V2sd, P=P, r=row, flag='2')
@@ -307,6 +309,7 @@ class AqnThread(Thread):
             # Update displays on Run page via a DataEvent:
             td = str(dt.datetime.fromtimestamp(np.mean(self.VdTimes)).strftime("%d/%m/%Y %H:%M:%S"))
             Vdm = str(np.mean(self.VdData))
+            print 'AqnThread.run(): Vdm =',Vdm
             Vdsd = str(np.std(self.VdData,ddof=1))
             P = 100.0*pbar/(1 + self.stop_row - self.start_row) # % progress
             update_ev = evts.DataEvent(t=td, Vm=Vdm, Vsd=Vdsd, P=P, r=row, flag='d')
@@ -330,7 +333,7 @@ class AqnThread(Thread):
             plot_ev = evts.PlotEvent(td=VdDates, t1=V1Dates, t2=V2Dates,
                                      Vd=self.VdData, V1=self.V1Data, V2=self.V2Data, clear=clear_plot)
             wx.PostEvent(self.PlotPage, plot_ev)
-            print'acquisition.run(): V1Data:',self.V1Data
+#            print'acquisition.run(): V1Data:',self.V1Data
             pbar += 1
             row += 1
 
