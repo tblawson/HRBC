@@ -55,8 +55,10 @@ ZERO = GTC.ureal(0,0)
 # I:\MSL\Private\Electricity\Commercial\Working\IV Converters for Light\\2016 Reports
 # I:\MSL\Private\Electricity\Staff\TBL\Python\High_Res_Bridge\Development\\test version\Validation
 os.environ['XLPATH'] = 'I:\MSL\Private\Electricity\Commercial\Working\IV Converters for Light\\2016 Reports'
-xldir = os.environ['XLPATH']
-xlfile = 'HRBC_HRBA_for_IV-conv Laurie.xlsx' #  # new_High-Res_validation.xlsx
+# xldir = os.environ['XLPATH']
+xldir = raw_input('Path to data directory:')
+# xlfile = 'HRBC_HRBA_for_IV-conv Laurie.xlsx' #  # new_High-Res_validation.xlsx
+xlfile = raw_input('Excel filename:')
 xlfilename = os.path.join(xldir, xlfile)
 
 # open existing workbook
@@ -81,7 +83,9 @@ for row in range(Data_start_row, Data_start_row+9): # 9 roles in total
 #______________Extract resistor and instrument parameters_____________#
 
 print 'Reading parameters...'
-headings = (u'Resistor Info:',u'Instrument Info:',u'description',u'Instrument Info:',u'parameter',u'value',u'uncert',u'dof',u'label')
+headings = (u'Resistor Info:', u'Instrument Info:',
+            u'description', u'parameter', u'value',
+            u'uncert', u'dof', u'label', u'Comment / Reference')
         
  # Determine colummn indices from column letters:
 col_A = cell.column_index_from_string('A') - 1
@@ -90,12 +94,14 @@ col_C = cell.column_index_from_string('C') - 1
 col_D = cell.column_index_from_string('D') - 1
 col_E = cell.column_index_from_string('E') - 1
 col_F = cell.column_index_from_string('F') - 1
+col_G = cell.column_index_from_string('G') - 1
 col_H = cell.column_index_from_string('H') - 1
 col_I = cell.column_index_from_string('I') - 1
 col_J = cell.column_index_from_string('J') - 1
 col_K = cell.column_index_from_string('K') - 1
 col_L = cell.column_index_from_string('L') - 1
 col_M = cell.column_index_from_string('M') - 1
+col_N = cell.column_index_from_string('N') - 1
         
 R_params = []
 R_row_items = []
@@ -112,15 +118,15 @@ for r in ws_Params.rows: # a tuple of row objects
     R_end = 0
 
     # description, parameter, value, uncert, dof, label:
-    R_row_items = [r[col_A].value, r[col_B].value, r[col_C].value, r[col_D].value, r[col_E].value, r[col_F].value]
-    I_row_items = [r[col_H].value, r[col_I].value, r[col_J].value, r[col_K].value, r[col_L].value, r[col_M].value]
+    R_row_items = [r[col_A].value, r[col_B].value, r[col_C].value, r[col_D].value, r[col_E].value, r[col_F].value, r[col_G].value]
+    I_row_items = [r[col_I].value, r[col_J].value, r[col_K].value, r[col_L].value, r[col_M].value, r[col_N].value]
     
     if R_row_items[0] == None: # end of R_list
         R_end = 1
 
     # check this row for heading text
     if any(i in I_row_items for i in headings): 
-        continue # Skip this row
+        continue # Skip headings
         
     else: # not header - main data
         # Get instrument parameters first...
@@ -129,7 +135,7 @@ for r in ws_Params.rows: # a tuple of row objects
         I_values.append(R_info.Uncertainize(I_row_items))
         if I_row_items[1] == u'demo': # last parameter for this description
             I_DESCR.append(I_row_items[0]) # build description list
-            I_sublist.append(dict(zip(I_params,I_values))) # adds parameter dictionary to sublist
+            I_sublist.append(dict(zip(I_params,I_values))) # add parameter dictionary to sublist
             del I_params[:]
             del I_values[:]
                     
@@ -140,7 +146,7 @@ for r in ws_Params.rows: # a tuple of row objects
             R_values.append(R_info.Uncertainize(R_row_items))
             if R_row_items[1] == u'T_sensor': # last parameter for this description
                 R_DESCR.append(R_row_items[0]) # build description list
-                R_sublist.append(dict(zip(R_params,R_values))) # adds parameter dictionary to sublist
+                R_sublist.append(dict(zip(R_params,R_values))) # add parameter dictionary to sublist
                 del R_params[:]
                 del R_values[:] 
                    
