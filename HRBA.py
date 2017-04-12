@@ -200,7 +200,7 @@ results_HV = [] # High voltage measurements
 results_LV = [] # Low voltage measurements
 
 # Get run comment and extract R names & R values
-Data_comment = ws_Data['X'+str(Data_row)].value
+Data_comment = ws_Data['Z'+str(Data_row)].value
 R1_name,R2_name = R_info.ExtractNames(Data_comment)
 R1val = R_info.GetRval(R1_name)
 R2val = R_info.GetRval(R2_name)
@@ -255,12 +255,6 @@ while Data_row <= Data_stop_row:
     R2Tsensor  = R_INFO[R2_name]['T_sensor']
     influencies.extend([R2_0,R2alpha,R2beta,R2gamma]) # R2 dependancies
     
-    # R1 parameters: - not needed
-#    R1TRef = R_INFO[R1_name]['TRef_HV']
-#    R1VRef = R_INFO[R1_name]['VRef_HV']
-#    R1alpha = R_INFO[R1_name]['alpha']
-#    R1beta = R_INFO[R1_name]['beta']
-#    R1gamma = R_INFO[R1_name]['gamma']
     if not R_INFO.has_key(R1_name):
         R1Tsensor = 'Pt 100r' # assume a Pt sensor in unknown resistor
     else:
@@ -280,7 +274,7 @@ while Data_row <= Data_stop_row:
     del times[:] # list for 3*4 mean measurement time-strings
     del RHs[:] # list for 4 RH values
     
-# Process times, RH and temperature data in this 4-row block:
+    # Process times, RH and temperature data in this 4-row block:
     for r in range(Data_row,Data_row+4): # build list of 4 gmh / T-probe dvm readings
         cor_gmh1.append(ws_Data['U'+str(r)].value*(1+GMH1_cor))
         cor_gmh2.append(ws_Data['V'+str(r)].value*(1+GMH2_cor))
@@ -289,8 +283,8 @@ while Data_row <= Data_stop_row:
         times.append(ws_Data['M'+str(r)].value)
         times.append(ws_Data['P'+str(r)].value)
         
-        if ws_Data['W'+str(r)].value is not None:
-            RHs.append(ws_Data['W'+str(r)].value)
+        if ws_Data['Y'+str(r)].value is not None:
+            RHs.append(ws_Data['Y'+str(r)].value)
         else:
             RHs.append(0)
        
@@ -305,15 +299,14 @@ while Data_row <= Data_stop_row:
             T1DVM_cor = I_INFO[role_descr['DVMT1']]['correction_10k']
         else:
             T1DVM_cor = I_INFO[role_descr['DVMT1']]['correction_100k']
-        #T1DVM_cor = descr_cor[role_descr['DVMT1']][range1]
         R_dvm1.append(raw_dvm1*(1+T1DVM_cor))
+        
         if raw_dvm2 < 120:
             T2DVM_cor =  I_INFO[role_descr['DVMT2']]['correction_100r']
         elif raw_dvm2 < 12e3:
             T2DVM_cor =  I_INFO[role_descr['DVMT2']]['correction_10k']
         else:
             T2DVM_cor =  I_INFO[role_descr['DVMT2']]['correction_100k']
-        #T2DVM_cor = descr_cor[role_descr['DVMT2']][range2]
         R_dvm2.append(raw_dvm2*(1+T2DVM_cor))
     
     # Mean temperature from GMH 
