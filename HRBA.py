@@ -102,6 +102,7 @@ col_K = cell.column_index_from_string('K') - 1
 col_L = cell.column_index_from_string('L') - 1
 col_M = cell.column_index_from_string('M') - 1
 col_N = cell.column_index_from_string('N') - 1
+col_O = cell.column_index_from_string('O') - 1
         
 R_params = []
 R_row_items = []
@@ -118,8 +119,10 @@ for r in ws_Params.rows: # a tuple of row objects
     R_end = 0
 
     # description, parameter, value, uncert, dof, label:
-    R_row_items = [r[col_A].value, r[col_B].value, r[col_C].value, r[col_D].value, r[col_E].value, r[col_F].value, r[col_G].value]
-    I_row_items = [r[col_I].value, r[col_J].value, r[col_K].value, r[col_L].value, r[col_M].value, r[col_N].value]
+    R_row_items = [r[col_A].value, r[col_B].value, r[col_C].value, r[col_D].value,
+                   r[col_E].value, r[col_F].value, r[col_G].value]
+    I_row_items = [r[col_I].value, r[col_J].value, r[col_K].value, r[col_L].value,
+                   r[col_M].value, r[col_N].value, r[col_O].value]
     
     if R_row_items[0] == None: # end of R_list
         R_end = 1
