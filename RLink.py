@@ -31,7 +31,7 @@ from openpyxl.cell import get_column_letter #column_index_from_string
 from openpyxl.styles import Font, colors
 
 import HighRes_events as evts
-import visastuff
+import devices #visastuff
 
 class RLThread(Thread):
     """RLink Thread Class."""
@@ -49,11 +49,11 @@ class RLThread(Thread):
         print'\nRole -> Instrument:'
         print'------------------------------'
         # Print all instrument objects
-        for r in visastuff.ROLES_WIDGETS.keys():
-            d = visastuff.ROLES_WIDGETS[r]['icb'].GetValue()
-            print'%s -> %s'%(visastuff.INSTR_DATA[d]['role'],d)
-            if r != visastuff.INSTR_DATA[d]['role']:
-                visastuff.INSTR_DATA[d]['role'] = r
+        for r in devices.ROLES_WIDGETS.keys(): # visastuff replaced
+            d = devices.ROLES_WIDGETS[r]['icb'].GetValue() # visastuff replaced
+            print'%s -> %s'%(devices.INSTR_DATA[d]['role'],d) # visastuff replaced
+            if r != devices.INSTR_DATA[d]['role']: # visastuff replaced
+                devices.INSTR_DATA[d]['role'] = r # visastuff replaced
                 print'Role data corrected to:',r,'->',d
 
         # Get filename of Excel file
@@ -130,13 +130,13 @@ class RLThread(Thread):
         revs = 1
 
         # Configuration and initialisation
-        visastuff.ROLES_INSTR['switchbox'].SendCmd(visastuff.SWITCH_CONFIGS['V2']) # Is 'V2' right/needed ?
+        devices.ROLES_INSTR['switchbox'].SendCmd(devices.SWITCH_CONFIGS['V2']) # Is 'V2' right/needed ? # visastuff replaced
         self.SetupPage.Switchbox.SetValue('V2') # update switchbox configuration icb
-        visastuff.ROLES_INSTR['DVMd'].SendCmd('FUNC DCV,AUTO')
-        dvmOP = visastuff.ROLES_INSTR['DVMd'].Read() # Pre-read voltage to set appropriate range
-        visastuff.ROLES_INSTR['DVMd'].SendCmd('DCV,'+str(dvmOP)) # 'DCV,'+str(self.AbsV1)
-        visastuff.ROLES_INSTR['DVMd'].SendCmd('LFREQ LINE')
-        visastuff.ROLES_INSTR['SRC1'].SendCmd('R0=') # srcV1  'R0='
+        devices.ROLES_INSTR['DVMd'].SendCmd('FUNC DCV,AUTO') # visastuff replaced
+        dvmOP = devices.ROLES_INSTR['DVMd'].Read() # Pre-read voltage to set appropriate range # visastuff replaced
+        devices.ROLES_INSTR['DVMd'].SendCmd('DCV,'+str(dvmOP)) # 'DCV,'+str(self.AbsV1) # visastuff replaced
+        devices.ROLES_INSTR['DVMd'].SendCmd('LFREQ LINE') # visastuff replaced
+        devices.ROLES_INSTR['SRC1'].SendCmd('R0=') # srcV1  'R0=' # visastuff replaced
         time.sleep(1) # 3
 
         self.V1set = self.AbsV1
@@ -158,18 +158,18 @@ class RLThread(Thread):
 
             # Only store 10 readings per line, and then clear
             col_letter = get_column_letter(revs)
-            d = visastuff.ROLES_WIDGETS['DVMd']['icb'].GetValue()
+            d = devices.ROLES_WIDGETS['DVMd']['icb'].GetValue() # visastuff replaced
             while row <= self.N_readings: # row index
-                if visastuff.INSTR_DATA[d]['demo'] == True:
+                if devices.INSTR_DATA[d]['demo'] == True: # visastuff replaced
                     dvmOP = np.random.normal(self.Vdiff*1.0e-6,abs(self.Vdiff*1.0e-8))
                     self.RLink_data.append(dvmOP)
                 else:
-                    print 'RLink.py, run(): %s in demo mode:%i'%(d,visastuff.INSTR_DATA[d]['demo'])
-                    visastuff.ROLES_INSTR['DVMd'].SendCmd('LFREQ LINE')
+                    print 'RLink.py, run(): %s in demo mode:%i'%(d,devices.INSTR_DATA[d]['demo']) # visastuff replaced
+                    devices.ROLES_INSTR['DVMd'].SendCmd('LFREQ LINE') # visastuff replaced
                     time.sleep(1)
-                    visastuff.ROLES_INSTR['DVMd'].SendCmd('AZERO ONCE')
+                    devices.ROLES_INSTR['DVMd'].SendCmd('AZERO ONCE') # visastuff replaced
                     time.sleep(10)
-                    dvmOP = visastuff.ROLES_INSTR['DVMd'].Read()
+                    dvmOP = devices.ROLES_INSTR['DVMd'].Read() # visastuff replaced
                     self.RLink_data.append(float(filter(self.filt,dvmOP)))
                 P = 100*((revs-1)*self.N_readings+row)/(self.N_reversals*self.N_readings) # % progress
                 update_ev = evts.DataEvent(t=0, Vm=self.RLink_data[row-1], Vsd=0, P=P,
