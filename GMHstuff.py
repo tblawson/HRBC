@@ -4,7 +4,7 @@ Created on Wed Jul 29 13:21:22 2015
 
 @author: t.lawson
 """
-# GMHstuff.py - required  to access dll functions for the GMH probes
+# GMHstuff.py - provides access to dll functions for the GMH sensors
 
 import os
 import ctypes as ct
