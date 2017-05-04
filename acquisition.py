@@ -122,10 +122,13 @@ class AqnThread(Thread):
         self.ws['T'+str(Head_row)] = 'dvm_T2'
         self.ws['U'+str(Head_row)] = 'GMH_T1'
         self.ws['V'+str(Head_row)] = 'GMH_T2'
-        self.ws['W'+str(Head_row)] = 'RH(%)'
-        self.ws['X'+str(Head_row)] = 'Comment'
-        self.ws['AA'+str(Head_row)] = 'Role'
-        self.ws['AB'+str(Head_row)] = 'Instrument descr.'
+        self.ws['W'+str(Head_row)] = 'Ambient Conditions'
+        self.ws['W'+str(sub_row)] = 'T'
+        self.ws['X'+str(sub_row)] = 'P(mbar)'
+        self.ws['Y'+str(sub_row)] = '%RH'
+        self.ws['Z'+str(Head_row)] = 'Comment'
+        self.ws['AC'+str(Head_row)] = 'Role'
+        self.ws['AD'+str(Head_row)] = 'Instrument descr.'
 
 
         stat_ev = evts.StatusEvent(msg='AqnThread.run():',field = 0)
@@ -161,17 +164,17 @@ class AqnThread(Thread):
         bord_br = Border(bottom = Side(style='thin'), right = Side(style='thin'))
         for r in visastuff.ROLES_WIDGETS.keys():
             if role_row == self.start_row: # 1st row
-                self.ws['AA'+str(role_row)].border = bord_tl
-                self.ws['AB'+str(role_row)].border = bord_tr
+                self.ws['AC'+str(role_row)].border = bord_tl
+                self.ws['AD'+str(role_row)].border = bord_tr
             elif role_row == self.start_row + 8: # last row
-                self.ws['AA'+str(role_row)].border = bord_bl
-                self.ws['AB'+str(role_row)].border = bord_br
+                self.ws['AC'+str(role_row)].border = bord_bl
+                self.ws['AD'+str(role_row)].border = bord_br
             else: # in-between rows
-                self.ws['AA'+str(role_row)].border = bord_l
-                self.ws['AB'+str(role_row)].border = bord_r
-            self.ws['AA'+str(role_row)] = r
+                self.ws['AC'+str(role_row)].border = bord_l
+                self.ws['AD'+str(role_row)].border = bord_r
+            self.ws['AC'+str(role_row)] = r
             d = visastuff.ROLES_WIDGETS[r]['icb'].GetValue() # descr
-            self.ws['AB'+str(role_row)] = d
+            self.ws['AD'+str(role_row)] = d
             role_row += 1
 
         row = self.start_row
@@ -474,7 +477,12 @@ class AqnThread(Thread):
         self.ws['U'+str(row)] = self.T1
         self.ws['V'+str(row)] = self.T2
         # measure RH - write to col 23(W)
-        self.ws['X'+str(row)] = self.Comment
+        self.ws['Z'+str(row)] = self.Comment
+        
+        """
+        Need to add ambient parameters (T, P, %RH)
+        to columns W, X, Y respectively.
+        """
 
         self.wb_io.save(self.xlfilename)
 
