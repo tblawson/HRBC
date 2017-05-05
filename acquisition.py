@@ -28,7 +28,7 @@ from openpyxl import load_workbook
 from openpyxl.styles import Font,Border,Side
 
 import HighRes_events as evts
-import visastuff
+import devices # visastuff
 import GMHstuff as GMH
 
 class AqnThread(Thread):
@@ -46,13 +46,13 @@ class AqnThread(Thread):
         print'Role -> Instrument:'
         print'------------------------------'
         # Print all GPIB instrument objects
-        for r in visastuff.ROLES_WIDGETS.keys():
-            d = visastuff.ROLES_WIDGETS[r]['icb'].GetValue()
+        for r in devices.ROLES_WIDGETS.keys(): # replaced visastuff
+            d = devices.ROLES_WIDGETS[r]['icb'].GetValue() # replaced visastuff
             # For 'switchbox' role, d is actually the setting (V1, Vd1,...) not the instrument description.
             
-            print'%s -> %s'%(visastuff.INSTR_DATA[d]['role'],d)
-            if r != visastuff.INSTR_DATA[d]['role']:
-                visastuff.INSTR_DATA[d]['role'] = r
+            print'%s -> %s'%(devices.INSTR_DATA[d]['role'],d) # replaced visastuff
+            if r != devices.INSTR_DATA[d]['role']: # replaced visastuff
+                devices.INSTR_DATA[d]['role'] = r # replaced visastuff
                 print'Role data corrected to:',r,'->',d
 
         # Get filename of Excel file
@@ -73,12 +73,12 @@ class AqnThread(Thread):
         self.settle_time = self.RunPage.SettleDel.GetValue()
 
         # Local record of GMH ports and addresses
-        self.GMH1Demo_status = visastuff.INSTR_DATA[self.SetupPage.GMH1Probes.GetValue()]['demo']
-        self.GMH2Demo_status = visastuff.INSTR_DATA[self.SetupPage.GMH2Probes.GetValue()]['demo']
+        self.GMH1Demo_status = devices.INSTR_DATA[self.SetupPage.GMH1Probes.GetValue()]['demo'] # replaced visastuff
+        self.GMH2Demo_status = devices.INSTR_DATA[self.SetupPage.GMH2Probes.GetValue()]['demo'] # replaced visastuff
         self.GMH1Port = self.SetupPage.GMH1Ports.GetValue().replace('COM','')
         self.GMH2Port = self.SetupPage.GMH2Ports.GetValue().replace('COM','')
-        self.GMH1Addr = visastuff.INSTR_DATA[self.SetupPage.GMH1Probes.GetValue()]['hw_addr']
-        self.GMH2Addr = visastuff.INSTR_DATA[self.SetupPage.GMH2Probes.GetValue()]['hw_addr']
+        self.GMH1Addr = devices.INSTR_DATA[self.SetupPage.GMH1Probes.GetValue()]['hw_addr'] # replaced visastuff
+        self.GMH2Addr = devices.INSTR_DATA[self.SetupPage.GMH2Probes.GetValue()]['hw_addr'] # replaced visastuff
         
         print 'GMH1 on port %s, hw_addr %d' % (self.GMH1Port, self.GMH1Addr)
         print 'GMH2 on port %s, hw_addr %d' % (self.GMH2Port, self.GMH2Addr)
@@ -162,7 +162,7 @@ class AqnThread(Thread):
         bord_r = Border(right = Side(style='thin'))
         bord_bl = Border(bottom = Side(style='thin'), left = Side(style='thin'))
         bord_br = Border(bottom = Side(style='thin'), right = Side(style='thin'))
-        for r in visastuff.ROLES_WIDGETS.keys():
+        for r in devices.ROLES_WIDGETS.keys(): # replaced visastuff
             if role_row == self.start_row: # 1st row
                 self.ws['AC'+str(role_row)].border = bord_tl
                 self.ws['AD'+str(role_row)].border = bord_tr
@@ -173,7 +173,7 @@ class AqnThread(Thread):
                 self.ws['AC'+str(role_row)].border = bord_l
                 self.ws['AD'+str(role_row)].border = bord_r
             self.ws['AC'+str(role_row)] = r
-            d = visastuff.ROLES_WIDGETS[r]['icb'].GetValue() # descr
+            d = devices.ROLES_WIDGETS[r]['icb'].GetValue() # descr # replaced visastuff
             self.ws['AD'+str(role_row)] = d
             role_row += 1
 
@@ -203,9 +203,9 @@ class AqnThread(Thread):
             wx.PostEvent(self.RunPage, row_ev)
 
             #  V1...
-            visastuff.ROLES_INSTR['DVM12'].SendCmd('LFREQ LINE') # dvmV1V2:'LFREQ LINE'
+            devices.ROLES_INSTR['DVM12'].SendCmd('LFREQ LINE') # dvmV1V2:'LFREQ LINE' # replaced visastuff
             time.sleep(0.5)
-            visastuff.ROLES_INSTR['DVM12'].SendCmd('DCV,'+str(int(self.V1_set))) # dvmV1V2:'DCV'+str(self.V1_set)
+            devices.ROLES_INSTR['DVM12'].SendCmd('DCV,'+str(int(self.V1_set))) # dvmV1V2:'DCV'+str(self.V1_set) # replaced visastuff
             if self._want_abort:
                 self.AbortRun()
                 return
@@ -217,9 +217,9 @@ class AqnThread(Thread):
             time.sleep(3) # 3
 
             # Set RS232 to V1
-            visastuff.ROLES_INSTR['switchbox'].SendCmd(visastuff.SWITCH_CONFIGS['V1'])
+            devices.ROLES_INSTR['switchbox'].SendCmd(devices.SWITCH_CONFIGS['V1']) # replaced visastuff
             self.SetupPage.Switchbox.SetValue('V1') # update switchbox configuration icb
-            visastuff.ROLES_INSTR['DVM12'].SendCmd('AZERO ON') # dvmV1V2: 'AZERO ON'
+            devices.ROLES_INSTR['DVM12'].SendCmd('AZERO ON') # dvmV1V2: 'AZERO ON' # replaced visastuff
             if  self._want_abort:
                 self.AbortRun()
                 return
@@ -230,8 +230,8 @@ class AqnThread(Thread):
 
             stat_ev = evts.StatusEvent(msg='Measuring V1', field=1)
             wx.PostEvent(self.TopLevel, stat_ev)
-            visastuff.ROLES_INSTR['DVM12'].Read()# junk = ...dvmV1V2
-            visastuff.ROLES_INSTR['DVM12'].Read()# junk = ...dvmV1V2
+            devices.ROLES_INSTR['DVM12'].Read()# junk = ...dvmV1V2 # replaced visastuff
+            devices.ROLES_INSTR['DVM12'].Read()# junk = ...dvmV1V2 # replaced visastuff
             for i in range(self.n_readings):
                 self.MeasureV1()
             self.T1 = self.ReadGMH(int(self.GMH1Port),int(self.GMH1Addr),self.GMH1Demo_status)
@@ -247,15 +247,15 @@ class AqnThread(Thread):
 
             #  V2...
             # Set RS232 to V2 BEFORE changing DVM range
-            visastuff.ROLES_INSTR['switchbox'].SendCmd(visastuff.SWITCH_CONFIGS['V2'])
+            devices.ROLES_INSTR['switchbox'].SendCmd(devices.SWITCH_CONFIGS['V2']) # replaced visastuff
             self.SetupPage.Switchbox.SetValue('V2') # update switchbox configuration icb
             
-            visastuff.ROLES_INSTR['DVM12'].SendCmd('DCV,'+str(self.V2_set)) # Reset DVM range
+            devices.ROLES_INSTR['DVM12'].SendCmd('DCV,'+str(self.V2_set)) # Reset DVM range # replaced visastuff
             if self._want_abort:
                 self.AbortRun()
                 return
             time.sleep(0.5) # was 0.1
-            visastuff.ROLES_INSTR['DVM12'].SendCmd('LFREQ LINE') # dvmV1V2:'LFREQ LINE'
+            devices.ROLES_INSTR['DVM12'].SendCmd('LFREQ LINE') # dvmV1V2:'LFREQ LINE' # replaced visastuff
             
             stat_ev = evts.StatusEvent(msg='AqnThread.run():', field=0)
             wx.PostEvent(self.TopLevel, stat_ev)
@@ -276,8 +276,8 @@ class AqnThread(Thread):
             stat_ev = evts.StatusEvent(msg='Measuring V2', field=1)
             wx.PostEvent(self.TopLevel, stat_ev)
 
-            visastuff.ROLES_INSTR['DVM12'].Read() # dvmV1V2 (why these 2 unused reads?)
-            visastuff.ROLES_INSTR['DVM12'].Read()# dvmV1V2
+            devices.ROLES_INSTR['DVM12'].Read() # dvmV1V2 (why these 2 unused reads?) # replaced visastuff
+            devices.ROLES_INSTR['DVM12'].Read()# dvmV1V2 # replaced visastuff
             for i in range(self.n_readings):
                 self.MeasureV2()
             self.T2 = self.ReadGMH(int(self.GMH2Port),int(self.GMH2Addr),self.GMH2Demo_status)
@@ -293,9 +293,9 @@ class AqnThread(Thread):
 
             #  Vd...
             # Set RS232 to Vd1
-            visastuff.ROLES_INSTR['switchbox'].SendCmd(visastuff.SWITCH_CONFIGS['Vd1'])
+            devices.ROLES_INSTR['switchbox'].SendCmd(devices.SWITCH_CONFIGS['Vd1']) # replaced visastuff
             self.SetupPage.Switchbox.SetValue('Vd1') # update switchbox configuration icb
-            visastuff.ROLES_INSTR['DVMd'].SendCmd('RANGE AUTO') # dvmVd:'RANGE AUTO'
+            devices.ROLES_INSTR['DVMd'].SendCmd('RANGE AUTO') # dvmVd:'RANGE AUTO' # replaced visastuff
             if self._want_abort:
                 self.AbortRun()
                 return
@@ -305,8 +305,8 @@ class AqnThread(Thread):
 
             stat_ev = evts.StatusEvent(msg='Measuring Vd', field=1)
             wx.PostEvent(self.TopLevel, stat_ev)
-            visastuff.ROLES_INSTR['DVMd'].SendCmd('LFREQ LINE') # dvmVd   'LFREQ LINE'
-            visastuff.ROLES_INSTR['DVMd'].Read() # dummy read
+            devices.ROLES_INSTR['DVMd'].SendCmd('LFREQ LINE') # dvmVd   'LFREQ LINE' # replaced visastuff
+            devices.ROLES_INSTR['DVMd'].Read() # dummy read # replaced visastuff
             for i in range(self.n_readings):
                 self.MeasureVd()
             # Update displays on Run page via a DataEvent:
@@ -351,20 +351,20 @@ class AqnThread(Thread):
         stat_ev = evts.StatusEvent(msg='Initialising instruments...', field=0)
         wx.PostEvent(self.TopLevel, stat_ev)
 
-        for r in visastuff.ROLES_INSTR.keys():
-            d = visastuff.ROLES_WIDGETS[r]['icb'].GetValue()
+        for r in devices.ROLES_INSTR.keys(): # replaced visastuff
+            d = devices.ROLES_WIDGETS[r]['icb'].GetValue() # replaced visastuff
             stat_ev = evts.StatusEvent(msg=d, field=1)
             wx.PostEvent(self.TopLevel, stat_ev)
-            visastuff.ROLES_INSTR[r].Init()
+            devices.ROLES_INSTR[r].Init() # replaced visastuff
             time.sleep(1)
         stat_ev = evts.StatusEvent(msg='Done', field=0)
         wx.PostEvent(self.TopLevel, stat_ev)
 
 
     def SetUpMeasThisRow(self,row):
-        d = visastuff.ROLES_INSTR['SRC2'].Descr
+        d = devices.ROLES_INSTR['SRC2'].Descr # replaced visastuff
         if d.endswith('F5520A'):
-            err = visastuff.ROLES_INSTR['SRC2'].CheckErr() # srcV2  'ERR?', '*CLS'
+            err = devices.ROLES_INSTR['SRC2'].CheckErr() # srcV2  'ERR?', '*CLS' # replaced visastuff
             print 'Cleared F5520A error:',err
         time.sleep(3) # Wait 3 s after checking error
         # Get V1,V2 setting, n, delays from spreadsheet
@@ -400,33 +400,33 @@ class AqnThread(Thread):
 
     def MeasureV1(self):
         self.V1Times.append(time.time())
-        if visastuff.ROLES_INSTR['DVM12'].Demo == True:
+        if devices.ROLES_INSTR['DVM12'].Demo == True: # replaced visastuff
             dvmOP = np.random.normal(self.V1_set,1.0e-5*abs(self.V1_set))
             self.V1Data.append(dvmOP)
         else:
             # lfreq line, azero once,range auto, wait for settle
-            dvmOP = visastuff.ROLES_INSTR['DVM12'].Read()# dvmV1V2
+            dvmOP = devices.ROLES_INSTR['DVM12'].Read()# dvmV1V2 # replaced visastuff
             self.V1Data.append(float(filter(self.filt,dvmOP)))
 
     def MeasureV2(self):
         self.V2Times.append(time.time())
-        if visastuff.ROLES_INSTR['DVM12'].Demo == True:
+        if devices.ROLES_INSTR['DVM12'].Demo == True: # replaced visastuff
             dvmOP = np.random.normal(self.V2_set,1.0e-5*abs(self.V2_set))
             self.V2Data.append(dvmOP)
         else:
-            dvmOP = visastuff.ROLES_INSTR['DVM12'].Read() # dvmV1V2
+            dvmOP = devices.ROLES_INSTR['DVM12'].Read() # dvmV1V2 # replaced visastuff
             self.V2Data.append(float(filter(self.filt,dvmOP)))
 
     def MeasureVd(self):
         self.VdTimes.append(time.time())
         if self.AZ1_del > 0:
-            visastuff.ROLES_INSTR['DVMd'].SendCmd('AZERO ONCE') # dvmVd: AZERO ONCE
+            devices.ROLES_INSTR['DVMd'].SendCmd('AZERO ONCE') # dvmVd: AZERO ONCE # replaced visastuff
             time.sleep(self.AZ1_del)
-        if visastuff.ROLES_INSTR['DVMd'].Demo == True:
+        if devices.ROLES_INSTR['DVMd'].Demo == True: # replaced visastuff:
             dvmOP = np.random.normal(0.0,1.0e-6)
             self.VdData.append(dvmOP)
         else:
-            dvmOP = visastuff.ROLES_INSTR['DVMd'].Read() # dvmVd
+            dvmOP = devices.ROLES_INSTR['DVMd'].Read() # dvmVd # replaced visastuff
             self.VdData.append(float(filter(self.filt,dvmOP)))
 
     def ReadGMH(self,port,addr,demo_stat):
@@ -460,18 +460,18 @@ class AqnThread(Thread):
         self.ws['N'+str(row)] = np.mean(self.VdData)
         self.ws['O'+str(row)] = np.std(self.VdData,ddof=1)
 
-        if visastuff.ROLES_INSTR['DVMT1'].Demo == True:
+        if devices.ROLES_INSTR['DVMT1'].Demo == True: # replaced visastuff
             T1dvmOP = np.random.normal(108.0,1.0e-2)
             self.ws['S'+str(row)] = T1dvmOP
         else:
-            T1dvmOP = visastuff.ROLES_INSTR['DVMT1'].SendCmd('READ?')
+            T1dvmOP = devices.ROLES_INSTR['DVMT1'].SendCmd('READ?') # replaced visastuff
             self.ws['S'+str(row)] = float(filter(self.filt,T1dvmOP))
 
-        if visastuff.ROLES_INSTR['DVMT2'].Demo == True:
+        if devices.ROLES_INSTR['DVMT2'].Demo == True: # replaced visastuff
             T2dvmOP = np.random.normal(108.0,1.0e-2)
             self.ws['T'+str(row)] = T2dvmOP
         else:
-            T2dvmOP = visastuff.ROLES_INSTR['DVMT2'].SendCmd('READ?')
+            T2dvmOP = devices.ROLES_INSTR['DVMT2'].SendCmd('READ?') # replaced visastuff
             self.ws['T'+str(row)] = float(filter(self.filt,T2dvmOP))
 
         self.ws['U'+str(row)] = self.T1
@@ -518,7 +518,7 @@ class AqnThread(Thread):
 
     def Standby(self):
         # Set sources to 0V and disable outputs
-        visastuff.ROLES_INSTR['SRC1'].SendCmd('R0=') # srcV1  'R0='
+        devices.ROLES_INSTR['SRC1'].SendCmd('R0=') # srcV1  'R0=' # replaced visastuff
         self.RunPage.V1Setting.SetValue(str(0))
         self.RunPage.V2Setting.SetValue(str(0))
         
