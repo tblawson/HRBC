@@ -169,9 +169,9 @@ class SetupPage(wx.Panel):
         self.DT2Test = wx.Button(self,id = wx.ID_ANY, label='Test')
         self.DT2Test.Bind(wx.EVT_BUTTON, self.OnTest)
         self.GMH1Test = wx.Button(self,id = wx.ID_ANY, label='Test')
-        self.GMH1Test.Bind(wx.EVT_BUTTON, self.OnGMH1Test)
+        self.GMH1Test.Bind(wx.EVT_BUTTON, self.OnTest)
         self.GMH2Test = wx.Button(self,id = wx.ID_ANY, label='Test')
-        self.GMH2Test.Bind(wx.EVT_BUTTON, self.OnGMH2Test)
+        self.GMH2Test.Bind(wx.EVT_BUTTON, self.OnTest)
         self.SwitchboxTest = wx.Button(self,id = wx.ID_ANY, label='Test')
         self.SwitchboxTest.Bind(wx.EVT_BUTTON, self.OnSwitchTest)
         ResponseLbl = wx.StaticText(self, label='Instrument Test Response:', id = wx.ID_ANY)
@@ -351,15 +351,15 @@ class SetupPage(wx.Panel):
         demo_mode = True
         devices.INSTR_DATA[d]['demo'] = demo_mode
         if 'GMH' in d:
-            devices.ROLES_INSTR.update({r:devices.GMH_Sensor(d,demo=demo_mode)}) # create an instrument instance here
+            devices.ROLES_INSTR.update({r:devices.GMH_Sensor(d,demo=demo_mode)}) # create an open GMH instrument instance here
         else:
-            devices.ROLES_INSTR.update({r:devices.instrument(d,demo=demo_mode)}) # create an instrument instance here
-        try:
-            devices.ROLES_INSTR[r].Open() # GPIB or GMH device object
-        except devices.visa.VisaIOError:
-            self.status.SetStatusText('No GPIB instrument with address %s!'%devices.INSTR_DATA[d]['str_addr'],1)
-            devices.INSTR_DATA[d]['demo'] = True
-            devices.ROLES_INSTR[r].Demo = True
+            devices.ROLES_INSTR.update({r:devices.instrument(d,demo=demo_mode)}) # create a visa instrument instance here
+            try:
+                devices.ROLES_INSTR[r].Open() # GPIB device object needs manual Open() after creation
+            except devices.visa.VisaIOError:
+                self.status.SetStatusText('No GPIB instrument with address %s!'%devices.INSTR_DATA[d]['str_addr'],1)
+        devices.INSTR_DATA[d]['demo'] = True
+        devices.ROLES_INSTR[r].Demo = True
 
 
     def UpdateAddr(self, e):
@@ -409,106 +409,113 @@ class SetupPage(wx.Panel):
     def OnTest(self, e):
         # Called when a 'test' button is clicked
         d = 'none'
-        for r in devices.ROLES_WIDGETS.keys():
+        for r in devices.ROLES_WIDGETS.keys(): # check every role
             if devices.ROLES_WIDGETS[r]['tbtn'] == e.GetEventObject():
                 d = devices.ROLES_WIDGETS[r]['icb'].GetValue()
                 break # stop looking when we've found the right instrument description
         print'OnTest():d =',d
-        self.TestVisa(d,r)
-
-    def TestVisa(self,d,r):
-        if devices.INSTR_DATA[d].has_key('test'):
-            test = devices.INSTR_DATA[d]['test'] # test string
-            self.Response.SetValue(str(devices.ROLES_INSTR[r].SendCmd(test)))
-        else:
-            test = 'none'
+        assert devices.INSTR_DATA[d].has_key('test'), 'No test exists for this device.'
+        test = devices.INSTR_DATA[d]['test'] # test string
+        self.Response.SetValue(str(devices.ROLES_INSTR[r].Test(test)))
         self.status.SetStatusText('Testing %s with cmd %s' % (d,test),0)
+#        if 'GMH' in d:
+#            pass
+#        else:
+#            self.TestVisa(d,r)
 
-    def OnGMH1Test(self, e):
-        self.TR1.SetValue('-----')
-        self.status.SetStatusText('',0)
-        self.status.SetStatusText('',1)
-        d = self.GMH1Probes.GetValue()
-        self.GMH1Addr = devices.INSTR_DATA[d]['hw_addr']
-        COM = GMH.ct.c_short(int(self.GMH1Ports.GetValue().replace('COM',''))) # just a number
-        open_code = GMH.GMHLIB.GMH_OpenCom(COM)
-        if open_code > 11:
-            self.status.SetStatusText('Failed to open COM%d port - return code: %d'
-                                        % (COM.value, open_code),1)
-            GMH.GMHLIB.GMH_CloseCom()
-            return
-        Prio = GMH.ct.c_short()
-        flData = GMH.ct.c_double() # Don't change this type!! It's the exactly right one!
-        intData = GMH.ct.c_long()
-        ValFunc = GMH.ct.c_short(0) # GetValue()
-        if self.GMH1Addr == 0: # Haven't determined GMH address yet - valid values are 1,11,21...91.
-            for Address in range(1,100,10): # 1,11,21,...
-                Addr = GMH.ct.c_short(Address)
-                trans_code = GMH.GMHLIB.GMH_Transmit(Addr,
-                                                     ValFunc,
-                                                     GMH.ct.byref(Prio),
-                                                     GMH.ct.byref(flData),
-                                                     GMH.ct.byref(intData))
-                if trans_code == 0: # success
-                    self.GMH1Addr = Address
-                    break
-        else: # Already know GMH address
-            Addr = GMH.ct.c_short(self.GMH1Addr)
-            trans_code = GMH.GMHLIB.GMH_Transmit(Addr,
-                                                 ValFunc,
-                                                 GMH.ct.byref(Prio),
-                                                 GMH.ct.byref(flData),
-                                                 GMH.ct.byref(intData))
-        if trans_code < 0: # failure
-            self.status.SetStatusText('Failed to read from COM%d' % COM.value,1)
-            return
-        self.TR1.SetValue(str(flData.value))
-        self.status.SetStatusText('Read COM%d, address %d'%(COM.value,self.GMH1Addr),0)
-        GMH.GMHLIB.GMH_CloseCom()
-        return
+#    def TestVisa(self,d,r):
+#        if devices.INSTR_DATA[d].has_key('test'):
+#            test = devices.INSTR_DATA[d]['test'] # test string
+#            self.Response.SetValue(str(devices.ROLES_INSTR[r].SendCmd(test)))
+#        else:
+#            test = 'none'
+#        self.status.SetStatusText('Testing %s with cmd %s' % (d,test),0)
 
-    def OnGMH2Test(self, e):
-        self.TR2.SetValue('-----')
-        self.status.SetStatusText('',0)
-        self.status.SetStatusText('',1)
-        d = self.GMH2Probes.GetValue()
-        self.GMH1Addr = devices.INSTR_DATA[d]['hw_addr']
-        COM = GMH.ct.c_short(int(self.GMH2Ports.GetValue().replace('COM',''))) # just a number
-        open_code = GMH.GMHLIB.GMH_OpenCom(COM)
-        if open_code > 11:
-            self.status.SetStatusText('Failed to open COM%d port - return code: %d'
-                                        % (COM.value, open_code),1)
-            GMH.GMHLIB.GMH_CloseCom()
-            return
-        Prio = GMH.ct.c_short()
-        flData = GMH.ct.c_double() # Don't change this type!! It's the exactly right one!
-        intData = GMH.ct.c_long()
-        ValFunc = GMH.ct.c_short(0) # GetValue()
-        if self.GMH2Addr == 0: # Haven't determined GMH address yet
-            for Address in range(1,100,10):
-                Addr = GMH.ct.c_short(Address)
-                trans_code = GMH.GMHLIB.GMH_Transmit(Addr,
-                                                     ValFunc,
-                                                     GMH.ct.byref(Prio),
-                                                     GMH.ct.byref(flData),
-                                                     GMH.ct.byref(intData))
-                if trans_code == 0: # success
-                    self.GMH2Addr = Address
-                    break
-        else:  # Already know GMH address
-            Addr = GMH.ct.c_short(self.GMH2Addr)
-            trans_code = GMH.GMHLIB.GMH_Transmit(Addr,
-                                                 ValFunc,
-                                                 GMH.ct.byref(Prio),
-                                                 GMH.ct.byref(flData),
-                                                 GMH.ct.byref(intData))
-        if trans_code < 0: # failure
-            self.status.SetStatusText('Failed to read from COM%d' % COM.value,1)
-            return
-        self.TR2.SetValue(str(flData.value))
-        self.status.SetStatusText('Read COM%d, address %d'%(COM.value,self.GMH2Addr),0)
-        GMH.GMHLIB.GMH_CloseCom()
-        return
+#    def OnGMH1Test(self, e):
+#        self.TR1.SetValue('-----')
+#        self.status.SetStatusText('',0)
+#        self.status.SetStatusText('',1)
+#        d = self.GMH1Probes.GetValue()
+#        self.GMH1Addr = devices.INSTR_DATA[d]['hw_addr']
+#        COM = GMH.ct.c_short(int(self.GMH1Ports.GetValue().replace('COM',''))) # just a number
+#        open_code = GMH.GMHLIB.GMH_OpenCom(COM)
+#        if open_code > 11:
+#            self.status.SetStatusText('Failed to open COM%d port - return code: %d'
+#                                        % (COM.value, open_code),1)
+#            GMH.GMHLIB.GMH_CloseCom()
+#            return
+#        Prio = GMH.ct.c_short()
+#        flData = GMH.ct.c_double() # Don't change this type!! It's the exactly right one!
+#        intData = GMH.ct.c_long()
+#        ValFunc = GMH.ct.c_short(0) # GetValue()
+#        if self.GMH1Addr == 0: # Haven't determined GMH address yet - valid values are 1,11,21...91.
+#            for Address in range(1,100,10): # 1,11,21,...
+#                Addr = GMH.ct.c_short(Address)
+#                trans_code = GMH.GMHLIB.GMH_Transmit(Addr,
+#                                                     ValFunc,
+#                                                     GMH.ct.byref(Prio),
+#                                                     GMH.ct.byref(flData),
+#                                                     GMH.ct.byref(intData))
+#                if trans_code == 0: # success
+#                    self.GMH1Addr = Address
+#                    break
+#        else: # Already know GMH address
+#            Addr = GMH.ct.c_short(self.GMH1Addr)
+#            trans_code = GMH.GMHLIB.GMH_Transmit(Addr,
+#                                                 ValFunc,
+#                                                 GMH.ct.byref(Prio),
+#                                                 GMH.ct.byref(flData),
+#                                                 GMH.ct.byref(intData))
+#        if trans_code < 0: # failure
+#            self.status.SetStatusText('Failed to read from COM%d' % COM.value,1)
+#            return
+#        self.TR1.SetValue(str(flData.value))
+#        self.status.SetStatusText('Read COM%d, address %d'%(COM.value,self.GMH1Addr),0)
+#        GMH.GMHLIB.GMH_CloseCom()
+#        return
+#
+#    def OnGMH2Test(self, e):
+#        self.TR2.SetValue('-----')
+#        self.status.SetStatusText('',0)
+#        self.status.SetStatusText('',1)
+#        d = self.GMH2Probes.GetValue()
+#        self.GMH1Addr = devices.INSTR_DATA[d]['hw_addr']
+#        COM = GMH.ct.c_short(int(self.GMH2Ports.GetValue().replace('COM',''))) # just a number
+#        open_code = GMH.GMHLIB.GMH_OpenCom(COM)
+#        if open_code > 11:
+#            self.status.SetStatusText('Failed to open COM%d port - return code: %d'
+#                                        % (COM.value, open_code),1)
+#            GMH.GMHLIB.GMH_CloseCom()
+#            return
+#        Prio = GMH.ct.c_short()
+#        flData = GMH.ct.c_double() # Don't change this type!! It's the exactly right one!
+#        intData = GMH.ct.c_long()
+#        ValFunc = GMH.ct.c_short(0) # GetValue()
+#        if self.GMH2Addr == 0: # Haven't determined GMH address yet
+#            for Address in range(1,100,10):
+#                Addr = GMH.ct.c_short(Address)
+#                trans_code = GMH.GMHLIB.GMH_Transmit(Addr,
+#                                                     ValFunc,
+#                                                     GMH.ct.byref(Prio),
+#                                                     GMH.ct.byref(flData),
+#                                                     GMH.ct.byref(intData))
+#                if trans_code == 0: # success
+#                    self.GMH2Addr = Address
+#                    break
+#        else:  # Already know GMH address
+#            Addr = GMH.ct.c_short(self.GMH2Addr)
+#            trans_code = GMH.GMHLIB.GMH_Transmit(Addr,
+#                                                 ValFunc,
+#                                                 GMH.ct.byref(Prio),
+#                                                 GMH.ct.byref(flData),
+#                                                 GMH.ct.byref(intData))
+#        if trans_code < 0: # failure
+#            self.status.SetStatusText('Failed to read from COM%d' % COM.value,1)
+#            return
+#        self.TR2.SetValue(str(flData.value))
+#        self.status.SetStatusText('Read COM%d, address %d'%(COM.value,self.GMH2Addr),0)
+#        GMH.GMHLIB.GMH_CloseCom()
+#        return
 
     def OnSwitchTest(self, e):
         resource = self.SwitchboxAddr.GetValue()

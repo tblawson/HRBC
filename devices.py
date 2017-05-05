@@ -85,7 +85,7 @@ class GMH_Sensor(device):
         self.role = INSTR_DATA[self.Descr]['role']        
         
         self.Prio = ct.c_short()
-        self.flData = ct.c_double()
+        self.flData = ct.c_double() # Don't change this type!! It's the exactly right one!
         self.intData = ct.c_long()
         self.meas_str = ct.create_string_buffer(30)
         self.unit_str = ct.create_string_buffer(10)
@@ -187,10 +187,15 @@ class GMH_Sensor(device):
         (see keys of self.meas_alias for options).
         Returns a tuple: (<Temperature/Pressure/RH as int>, <unit as string>)
         """
+        assert self.meas_alias.has_key(meas),'This function is not available.'
         Address = self.info[self.meas_alias[meas]][0]
         Addr = ct.c_short(Address)
         self.Transmit(Addr,self.ValFn)
         return (self.flData.value, self.info[self.meas_alias[meas]][1])
+        
+    def Test(self, meas):
+        """ Used to test that the device is functioning. """
+        return self.Measure(meas)
 
 '''------------------------------------------------------------------------------'''        
         
@@ -405,4 +410,8 @@ class instrument(device):
         else:
             print 'visastuff.instrument.Read(): Invalid function for',self.Descr
             return reply
+        
+    def Test(self,s):
+        """ Used to test that the instrument is functioning. """
+        return self.SendCmd(s)
 #__________________________________________
