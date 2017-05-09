@@ -203,21 +203,21 @@ def write_R1_T_fit(results,sheet,row):
     return (R1,alpha,T_av,V_av,time_av)
 
 
-def update_R_Info(name,params,data,sheet,row):
+def update_R_Info(name,params,data,sheet,row,Id):
     R_dict = dict(zip(params,data))
     
-    for item in params:
-        label = name.replace(' ','') + '_'+ item
+    for param in params:
+        label = name.replace(' ','') + '_'+ param + Id
         row += 1
         sheet['A'+str(row)] = name
-        sheet['B'+str(row)] = item
-        if item not in ('date','T_sensor'):
-            sheet['C'+str(row)] = R_dict[item].x
-            sheet['D'+str(row)] = R_dict[item].u
-            sheet['E'+str(row)] = R_dict[item].df
+        sheet['B'+str(row)] = param
+        if param not in ('date','T_sensor'): # Non-numeric params
+            sheet['C'+str(row)] = R_dict[param].x
+            sheet['D'+str(row)] = R_dict[param].u
+            sheet['E'+str(row)] = R_dict[param].df
             sheet['F'+str(row)] = label
         else:
-            sheet['C'+str(row)] = R_dict[item]
+            sheet['C'+str(row)] = R_dict[param]
     
     # Mark end of data with a bottom border on cells of last row:
     b = Border(bottom = Side(style='thin'))
