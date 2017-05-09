@@ -17,6 +17,7 @@ Created on Fri Mar 17 13:52:15 2017
 @author: t.lawson
 """
 
+import numpy as np
 import os
 import ctypes as ct
 import visa
@@ -191,7 +192,10 @@ class GMH_Sensor(device):
         Address = self.info[self.meas_alias[meas]][0]
         Addr = ct.c_short(Address)
         self.Transmit(Addr,self.ValFn)
-        return (self.flData.value, self.info[self.meas_alias[meas]][1])
+        if self.demo == False:
+            return (self.flData.value, self.info[self.meas_alias[meas]][1])
+        else:
+            return np.random.normal(20.5,0.1)
         
     def Test(self, meas):
         """ Used to test that the device is functioning. """
