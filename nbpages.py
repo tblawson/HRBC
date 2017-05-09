@@ -278,20 +278,21 @@ class SetupPage(wx.Panel):
         headings = (None, u'description',u'Instrument Info:',u'parameter',u'value',u'uncert',u'dof',u'label')
         
         # Determine colummn indices from column letters:
-        col_H = cell.column_index_from_string('H') - 1
+        #col_H = cell.column_index_from_string('H') - 1
         col_I = cell.column_index_from_string('I') - 1
         col_J = cell.column_index_from_string('J') - 1
         col_K = cell.column_index_from_string('K') - 1
         col_L = cell.column_index_from_string('L') - 1
         col_M = cell.column_index_from_string('M') - 1
-        
+        col_N = cell.column_index_from_string('N') - 1
+
         params = []
         values = []
         
         for r in ws_params.rows: # a tuple of row objects
-            descr = r[col_H].value # cell.value
-            param = r[col_I].value # cell.value
-            v_u_d_l = [r[col_J].value, r[col_K].value, r[col_L].value, r[col_M].value] # value,uncert,dof,label
+            descr = r[col_I].value # cell.value
+            param = r[col_J].value # cell.value
+            v_u_d_l = [r[col_K].value, r[col_L].value, r[col_M].value, r[col_N].value] # value,uncert,dof,label
         
             if descr in headings and param in headings:
                 continue # Skip this row
