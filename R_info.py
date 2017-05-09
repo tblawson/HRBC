@@ -218,6 +218,7 @@ def update_R_Info(name,params,data,sheet,row,Id):
             sheet['F'+str(row)] = label
         else:
             sheet['C'+str(row)] = R_dict[param]
+        sheet['G'+str(row)] = 'HRBA'+ str(dt.datetime.now())
     
     # Mark end of data with a bottom border on cells of last row:
     b = Border(bottom = Side(style='thin'))
