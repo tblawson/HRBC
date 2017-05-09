@@ -29,7 +29,7 @@ from openpyxl.styles import Font,Border,Side
 
 import HighRes_events as evts
 import devices # visastuff
-import GMHstuff as GMH
+#import devices as GMH
 
 class AqnThread(Thread):
     """Acquisition Thread Class."""
@@ -149,8 +149,8 @@ class AqnThread(Thread):
         time.sleep(3) # 3
 
         # Get some initial temperatures...
-        self.TR1 = self.ReadGMH(int(self.GMH1Port),int(self.GMH1Addr),self.GMH1Demo_status)
-        self.TR2 = self.ReadGMH(int(self.GMH2Port),int(self.GMH2Addr),self.GMH2Demo_status)
+        self.TR1 = devices.ROLES_INSTR['GMH1'].Measure('T')
+        self.TR2 = devices.ROLES_INSTR['GMH2'].Measure('T')
         self.ws['U'+str(self.start_row-1)] = self.TR1
         self.ws['V'+str(self.start_row-1)] = self.TR2
 
@@ -234,7 +234,7 @@ class AqnThread(Thread):
             devices.ROLES_INSTR['DVM12'].Read()# junk = ...dvmV1V2 # replaced visastuff
             for i in range(self.n_readings):
                 self.MeasureV1()
-            self.T1 = self.ReadGMH(int(self.GMH1Port),int(self.GMH1Addr),self.GMH1Demo_status)
+            self.T1 = devices.ROLES_INSTR['GMH1'].Measure('T')
 
             # Update run displays on Run page via a DataEvent:
             t1 = str(dt.datetime.fromtimestamp(np.mean(self.V1Times)).strftime("%d/%m/%Y %H:%M:%S"))
@@ -280,7 +280,7 @@ class AqnThread(Thread):
             devices.ROLES_INSTR['DVM12'].Read()# dvmV1V2 # replaced visastuff
             for i in range(self.n_readings):
                 self.MeasureV2()
-            self.T2 = self.ReadGMH(int(self.GMH2Port),int(self.GMH2Addr),self.GMH2Demo_status)
+            self.T2 = devices.ROLES_INSTR['GMH2'].Measure('T')
 
             # Update displays on Run page via a DataEvent:
             t2 = str(dt.datetime.fromtimestamp(np.mean(self.V2Times)).strftime("%d/%m/%Y %H:%M:%S"))
