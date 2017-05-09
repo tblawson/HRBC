@@ -201,7 +201,9 @@ class GMH_Sensor(device):
         """ Used to test that the device is functioning. """
         return self.Measure(meas)
 
-'''------------------------------------------------------------------------------'''        
+'''
+###############################################################################
+'''        
         
 class instrument(device):
     '''
@@ -253,29 +255,29 @@ class instrument(device):
             self.instr.timeout = 2000 # default 2 s timeout
             INSTR_DATA[self.Descr]['demo'] = False # A real working instrument
             self.Demo = False # A real working instrument ONLY on Open() success
-            print 'visastuff.instrument.Open():',self.Descr,'session handle=',self.instr.session
+            print 'devices.instrument.Open():',self.Descr,'session handle=',self.instr.session
                 
         except visa.VisaIOError:
             self.instr = None
             self.Demo = True # default to demo mode if can't open
             INSTR_DATA[self.Descr]['demo'] = True
-            print 'visastuff.instrument.Open() failed:',self.Descr,'opened in demo mode'
+            print 'devices.instrument.Open() failed:',self.Descr,'opened in demo mode'
         return self.instr
 
     def Close(self):
         # Close comms with instrument
         if self.Demo == True:
-            print 'visastuff.instrument.Close():',self.Descr,'in demo mode - nothing to close'
+            print 'devices.instrument.Close():',self.Descr,'in demo mode - nothing to close'
         if self.instr is not None:
-            print 'visastuff.instrument.Close():',self.Descr,'session handle=',self.instr.session
+            print 'devices.instrument.Close():',self.Descr,'session handle=',self.instr.session
             self.instr.close()
         else:
-            print 'visastuff.instrument.Close():',self.Descr,'is "None" or already closed'
+            print 'devices.instrument.Close():',self.Descr,'is "None" or already closed'
 
     def Init(self):
         # Send initiation string
         if self.Demo == True:
-            print 'visastuff.instrument.Init():',self.Descr,'in demo mode - no initiation necessary'
+            print 'devices.instrument.Init():',self.Descr,'in demo mode - no initiation necessary'
             return 1
         else:
             reply = 1
@@ -287,7 +289,7 @@ class instrument(device):
                         print'Failed to write "%s" to %s'%(s,self.Descr)
                         reply = -1
                         return reply
-            print 'visastuff.instrument.Init():',self.Descr,'initiated with cmd:',s
+            print 'devices.instrument.Init():',self.Descr,'initiated with cmd:',s
         return reply
 
     def SetV(self,V):
@@ -297,7 +299,7 @@ class instrument(device):
         elif 'SRC:' in self.Descr:
             # Set voltage-source to V
             s = str(V).join(self.VStr)
-            print'visastuff.instrument.SetV():',self.Descr,'s=',s
+            print'devices.instrument.SetV():',self.Descr,'s=',s
             try:
                 self.instr.write(s)
             except visa.VisaIOError:
@@ -321,10 +323,10 @@ class instrument(device):
             s = self.SetFnStr
             if s != '':
                 self.instr.write(s)
-            print'visastuff.instrument.SetFn():',self.Descr,'- OK.'
+            print'devices.instrument.SetFn():',self.Descr,'- OK.'
             return 1
         else:
-            print'visastuff.instrument.SetFn(): Invalid function for',self.Descr
+            print'devices.instrument.SetFn(): Invalid function for',self.Descr
             return -1
 
     def Oper(self):
@@ -340,10 +342,10 @@ class instrument(device):
                 except visa.VisaIOError:
                     print'Failed to write "%s" to %s'%(s,self.Descr)
                     return -1
-            print'visastuff.instrument.Oper():',self.Descr,'output ENABLED.'
+            print'devices.instrument.Oper():',self.Descr,'output ENABLED.'
             return 1
         else:
-            print'visastuff.instrument.Oper(): Invalid function for',self.Descr
+            print'devices.instrument.Oper(): Invalid function for',self.Descr
             return -1
 
     def Stby(self):
@@ -355,10 +357,10 @@ class instrument(device):
             s = self.StbyStr
             if s != '':
                 self.instr.write(s) # was: query(s)
-            print'visastuff.instrument.Stby():',self.Descr,'output DISABLED.'
+            print'devices.instrument.Stby():',self.Descr,'output DISABLED.'
             return 1
         else:
-            print'visastuff.instrument.Stby(): Invalid function for',self.Descr
+            print'devices.instrument.Stby(): Invalid function for',self.Descr
             return -1
 
     def CheckErr(self):
@@ -373,7 +375,7 @@ class instrument(device):
                 self.instr.write(s[1]) # clear registers
             return reply
         else:
-            print'visastuff.instrument.CheckErr(): Invalid function for',self.Descr
+            print'devices.instrument.CheckErr(): Invalid function for',self.Descr
             return -1
 
     def SendCmd(self,s):
@@ -382,20 +384,20 @@ class instrument(device):
         if self.role == 'switchbox': # update icb
             pass # may need an event here...
         if self.Demo == True:
-            print 'visastuff.instrument.SendCmd(): returning',demo_reply
+            print 'devices.instrument.SendCmd(): returning',demo_reply
             return demo_reply
         # Check if s contains '?' or 'X' or is an empty string
         # ... in which case a response is expected
         if any(x in s for x in'?X'):
-            print'visastuff.instrument.SendCmd(): Query(%s) to %s'%(s,self.Descr)
+            print'devices.instrument.SendCmd(): Query(%s) to %s'%(s,self.Descr)
             reply = self.instr.query(s)
             return reply
         elif s == '':
             reply = self.instr.read()
-            print'visastuff.instrument.SendCmd(): Read()',reply,'from',self.Descr
+            print'devices.instrument.SendCmd(): Read()',reply,'from',self.Descr
             return reply
         else:
-            print'visastuff.instrument.SendCmd(): Write(%s) to %s'%(s,self.Descr)
+            print'devices.instrument.SendCmd(): Write(%s) to %s'%(s,self.Descr)
             self.instr.write(s)
             return reply
 
@@ -404,7 +406,7 @@ class instrument(device):
         if self.Demo == True:
             return reply
         if 'DVM' in self.Descr:
-            print'visastuff.instrument.Read(): from',self.Descr
+            print'devices.instrument.Read(): from',self.Descr
             if '3458A' in self.Descr:
                 reply = self.instr.read()
                 return reply
@@ -412,7 +414,7 @@ class instrument(device):
                 reply = self.instr.query('READ?')
                 return reply
         else:
-            print 'visastuff.instrument.Read(): Invalid function for',self.Descr
+            print 'devices.instrument.Read(): Invalid function for',self.Descr
             return reply
         
     def Test(self,s):
