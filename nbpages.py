@@ -337,7 +337,7 @@ class SetupPage(wx.Panel):
         ... and enables/disables testbuttons as necessary.
         """
         print 'SetRole:',r,'will now be',d
-        assert devices.INSTR_DATA.has_key(d),'Unknown instrument: %s - check Excel file is open.'%d
+        assert devices.INSTR_DATA.has_key(d),'Unknown instrument: %s - check Excel file is loaded.'%d
         assert devices.INSTR_DATA[d].has_key('role'),'Unknown instrument parameter - check Excel Parameters sheet is populated.'
         devices.INSTR_DATA[d]['role'] = r # INSTR_DATA updated
         # Set the address cb to correct value (according to devices.INSTR_DATA)
