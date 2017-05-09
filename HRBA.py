@@ -314,8 +314,8 @@ while Data_row <= Data_stop_row:
     
     # Mean temperature from GMH 
     # Data are plain numbers, so use ta.estimate() to return a ureal
-    T1_av_gmh = GTC.ar.result(GTC.ta.estimate(cor_gmh1),label='T1_av_gmh')
-    T2_av_gmh = GTC.ar.result(GTC.ta.estimate(cor_gmh2),label='T2_av_gmh')
+    T1_av_gmh = GTC.ar.result(GTC.ta.estimate(cor_gmh1),label='T1_av_gmh'+ Run_Id)
+    T2_av_gmh = GTC.ar.result(GTC.ta.estimate(cor_gmh2),label='T2_av_gmh'+ Run_Id)
     
     times_av_str = R_info.av_t_strin(times,'str') # mean time(as a time string)
     times_av_fl = R_info.av_t_strin(times,'fl') # mean time(as a float)
@@ -344,7 +344,7 @@ while Data_row <= Data_stop_row:
     # Mean temperature from T-probe dvm  
     # Data are plain numbers, so use ta.estimate() to return a ureal                                 
     T1_av_dvm = GTC.ar.result(GTC.ta.estimate(T_dvm1))
-    T2_av_dvm = GTC.ar.result(GTC.ta.estimate(T_dvm2),label='T2_av_dvm')
+    T2_av_dvm = GTC.ar.result(GTC.ta.estimate(T_dvm2),label='T2_av_dvm'+ Run_Id)
     
     # Mean temperatures and temperature definitions
     if role_descr['DVMT1']=='none':  # No aux. T sensor or DVM not associated with R1 (just GMH)
@@ -352,7 +352,7 @@ while Data_row <= Data_stop_row:
         T1_av_dvm = GTC.ureal(0,0) # ignore any dvm data
         Diff_T1 = GTC.ureal(0,0) # No temperature disparity (GMH only)
     else:
-        T1_av = GTC.ar.result(GTC.fn.mean((T1_av_dvm,T1_av_gmh)),label='T1_av')
+        T1_av = GTC.ar.result(GTC.fn.mean((T1_av_dvm,T1_av_gmh)),label='T1_av'+ Run_Id)
         Diff_T1 = GTC.magnitude(T1_av_dvm-T1_av_gmh)
     
     if role_descr['DVMT2']=='none':  # No aux. T sensor or DVM not associated with R2 (just GMH)
@@ -361,16 +361,16 @@ while Data_row <= Data_stop_row:
         Diff_T2 = GTC.ureal(0,0) # No temperature disparity (GMH only)
         influencies.append(T2_av_gmh) # R2 dependancy
     else:
-        T2_av = GTC.ar.result( GTC.fn.mean((T2_av_dvm,T2_av_gmh)),label='T2_av' )
+        T2_av = GTC.ar.result( GTC.fn.mean((T2_av_dvm,T2_av_gmh)),label='T2_av' + Run_Id)
         Diff_T2 = GTC.ar.result(GTC.magnitude(T2_av_dvm-T2_av_gmh))
         influencies.append(T2_av) # R2 dependancy
     
     # Default T definition arises from imperfect positioning of sensors wrt resistor:
-    T_def = GTC.ureal(0,GTC.type_b.distribution['gaussian'](0.01),3,label='T_def') 
+    T_def = GTC.ureal(0,GTC.type_b.distribution['gaussian'](0.01),3,label='T_def'+ Run_Id) 
         
     # T-definition arises from imperfect positioning of both probes AND their disagreement:
-    T_def1 = GTC.ar.result(GTC.ureal(0,Diff_T1.u/2,7) + T_def,label='T_def1' )    
-    T_def2 = GTC.ar.result(GTC.ureal(0,Diff_T2.u/2,7) + T_def,label = 'T_def2')
+    T_def1 = GTC.ar.result(GTC.ureal(0,Diff_T1.u/2,7) + T_def,label='T_def1' + Run_Id)    
+    T_def2 = GTC.ar.result(GTC.ureal(0,Diff_T2.u/2,7) + T_def,label = 'T_def2' + Run_Id)
     influencies.append(T_def2) # R2 dependancy
     
     # Raw voltage measurements: V: [Vp,Vm,Vpp,Vppp]
@@ -380,22 +380,22 @@ while Data_row <= Data_stop_row:
     for line in range(4):
         V1.append(GTC.ureal(ws_Data['Q'+str(Data_row+line)].value,
                         ws_Data['R'+str(Data_row+line)].value,
-                        ws_Data['C'+str(Data_row+line)].value-1,label='V1_'+str(line)))
+                        ws_Data['C'+str(Data_row+line)].value-1,label='V1_'+str(line) + Run_Id))
         V2.append(GTC.ureal(ws_Data['H'+str(Data_row+line)].value,
                         ws_Data['I'+str(Data_row+line)].value,
-                        ws_Data['C'+str(Data_row+line)].value-1,label='V2_'+str(line)))
+                        ws_Data['C'+str(Data_row+line)].value-1,label='V2_'+str(line) + Run_Id))
         Vd.append(GTC.ureal(ws_Data['N'+str(Data_row+line)].value,
                         ws_Data['O'+str(Data_row+line)].value,
-                        ws_Data['C'+str(Data_row+line)].value-1,label='Vd_'+str(line)))
+                        ws_Data['C'+str(Data_row+line)].value-1,label='Vd_'+str(line) + Run_Id))
     influencies.extend(V1+V2+Vd) # R2 dependancies - raw measurements
 
     # Define drift
     Vdrift1=GTC.ureal(0,
     GTC.tb.distribution['gaussian'](abs(Vd[2]-(Vd[0]+((Vd[3]-Vd[2])/(V2[3]-V2[2]))*(V2[2]-V2[0])))/4),
-                                8,label='Vdrift_gain')
+                                8,label='Vdrift_gain'+ Run_Id)
     Vdrift2=GTC.ureal(0,
     GTC.tb.distribution['gaussian'](abs(Vd[2]-(Vd[0]+((Vd[3]-Vd[2])/(V2[3]-V2[2]))*(V2[2]-V2[0])))/4),
-                                8,label='Vdrift_Vd')
+                                8,label='Vdrift_Vd'+ Run_Id)
     Vdrift = {'gain':Vdrift1,'Vd':Vdrift2}
     influencies.extend([Vdrift['gain'],Vdrift['Vd']]) # R2 dependancies
     
@@ -430,7 +430,7 @@ while Data_row <= Data_stop_row:
      
     # Calculate I
     I=(abs_V1+abs_V2)/(nom_R1+nom_R2)
-    I.label = 'Rd_I'
+    I.label = 'Rd_I' + Run_Id
     
     # Average all +Vs and -Vs
     Vp = []
@@ -445,14 +445,14 @@ while Data_row <= Data_stop_row:
             col +=1
             
     av_dV_p = GTC.ta.estimate(Vp)
-    av_dV_p.label='av_dV_p'
+    av_dV_p.label='av_dV_p' + Run_Id
     av_dV_n = GTC.ta.estimate(Vn)
-    av_dV_n.label='av_dV_n'
+    av_dV_n.label='av_dV_n' + Run_Id
     av_dV = 0.5*(av_dV_p - av_dV_n)
-    av_dV.label = 'Rd_dV'
+    av_dV.label = 'Rd_dV' + Run_Id
     
     # Finally, calculate Rd
-    Rd = GTC.ar.result(av_dV/I,label = 'Rlink')
+    Rd = GTC.ar.result(av_dV/I,label = 'Rlink' + Run_Id)
     influencies.append(Rd) # R2 dependancy
     
     # Calculate R2 (corrected for T and V)
@@ -510,7 +510,7 @@ while Data_row <= Data_stop_row:
 # ...so make a note of it, for use as the next run's starting row:
 ws_Summary['B1'] = summary_row
 
-# Go back to the top of summary sheet, ready for writing run results
+# Go back to the top of summary block, ready for writing run results
 summary_row = summary_start_row + 1
 
 ########################################################################
@@ -559,7 +559,7 @@ R_data = [R1_LV,T_LV,V_LV,R1_HV,T_HV,V_HV,alpha,beta,gamma, date, 'any']
 
 if not R_INFO.has_key(R1_name):
     print 'Adding',R1_name,'to resistor info...'
-    last_R_row = R_info.update_R_Info(R1_name,params,R_data,ws_Params,last_R_row)
+    last_R_row = R_info.update_R_Info(R1_name,params,R_data,ws_Params,last_R_row,Run_Id)
 else:
     print 'Already know about',R1_name
     
