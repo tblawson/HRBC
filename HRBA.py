@@ -27,7 +27,7 @@ measurements of R2 (at mean t, mean T, mean V for LV or HV conditions).
 The fitting procedure also generates temperature and voltage coefficients
 of resistance for the unknown resistor and an estimate of its drift rate.
 NOTE: No correlations between these quantities are assumed.
-All results are written to the 'Summary' worksheet.
+All results are written to the 'Results' worksheet.
 
 Created on Fri Sep 18 14:01:18 2015
 
