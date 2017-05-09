@@ -149,10 +149,8 @@ class AqnThread(Thread):
         time.sleep(3) # 3
 
         # Get some initial temperatures...
-        self.TR1 = devices.ROLES_INSTR['GMH1'].Measure('T')
-        self.TR2 = devices.ROLES_INSTR['GMH2'].Measure('T')
-        self.ws['U'+str(self.start_row-1)] = self.TR1
-        self.ws['V'+str(self.start_row-1)] = self.TR2
+        self.ws['U'+str(self.start_row-1)] = devices.ROLES_INSTR['GMH1'].Measure('T') # self.TR1
+        self.ws['V'+str(self.start_row-1)] = devices.ROLES_INSTR['GMH2'].Measure('T') # self.TR2
 
         # Record ALL POSSIBLE roles and corresponding instrument descriptions in XL sheet
         role_row = self.start_row
@@ -233,7 +231,7 @@ class AqnThread(Thread):
             devices.ROLES_INSTR['DVM12'].Read()# junk = ...dvmV1V2 # replaced visastuff
             devices.ROLES_INSTR['DVM12'].Read()# junk = ...dvmV1V2 # replaced visastuff
             for i in range(self.n_readings):
-                self.MeasureV1()
+                self.MeasureV('V1')
             self.T1 = devices.ROLES_INSTR['GMH1'].Measure('T')
 
             # Update run displays on Run page via a DataEvent:
@@ -279,7 +277,7 @@ class AqnThread(Thread):
             devices.ROLES_INSTR['DVM12'].Read() # dvmV1V2 (why these 2 unused reads?) # replaced visastuff
             devices.ROLES_INSTR['DVM12'].Read()# dvmV1V2 # replaced visastuff
             for i in range(self.n_readings):
-                self.MeasureV2()
+                self.MeasureV('V2')
             self.T2 = devices.ROLES_INSTR['GMH2'].Measure('T')
 
             # Update displays on Run page via a DataEvent:
@@ -308,7 +306,7 @@ class AqnThread(Thread):
             devices.ROLES_INSTR['DVMd'].SendCmd('LFREQ LINE') # dvmVd   'LFREQ LINE' # replaced visastuff
             devices.ROLES_INSTR['DVMd'].Read() # dummy read # replaced visastuff
             for i in range(self.n_readings):
-                self.MeasureVd()
+                self.MeasureV('Vd')
             # Update displays on Run page via a DataEvent:
             td = str(dt.datetime.fromtimestamp(np.mean(self.VdTimes)).strftime("%d/%m/%Y %H:%M:%S"))
             Vdm = str(np.mean(self.VdData))
@@ -398,36 +396,68 @@ class AqnThread(Thread):
         del self.VdTimes[:]
 
 
-    def MeasureV1(self):
-        self.V1Times.append(time.time())
-        if devices.ROLES_INSTR['DVM12'].Demo == True: # replaced visastuff
-            dvmOP = np.random.normal(self.V1_set,1.0e-5*abs(self.V1_set))
-            self.V1Data.append(dvmOP)
-        else:
-            # lfreq line, azero once,range auto, wait for settle
-            dvmOP = devices.ROLES_INSTR['DVM12'].Read()# dvmV1V2 # replaced visastuff
-            self.V1Data.append(float(filter(self.filt,dvmOP)))
+    def MeasureV(self,node):
+        assert node in ('V1','V2','Vd'),'Unknown argument to MeasureV().'
+        if node == 'V1':
+            self.V1Times.append(time.time())
+            if devices.ROLES_INSTR['DVM12'].Demo == True: # replaced visastuff
+                dvmOP = np.random.normal(self.V1_set,1.0e-5*abs(self.V1_set))
+                self.V1Data.append(dvmOP)
+            else:
+                # lfreq line, azero once,range auto, wait for settle
+                dvmOP = devices.ROLES_INSTR['DVM12'].Read()# dvmV1V2 # replaced visastuff
+                self.V1Data.append(float(filter(self.filt,dvmOP)))
+        elif node == 'V2':
+            self.V2Times.append(time.time())
+            if devices.ROLES_INSTR['DVM12'].Demo == True: # replaced visastuff
+                dvmOP = np.random.normal(self.V2_set,1.0e-5*abs(self.V2_set))
+                self.V2Data.append(dvmOP)
+            else:
+                dvmOP = devices.ROLES_INSTR['DVM12'].Read() # dvmV1V2 # replaced visastuff
+                self.V2Data.append(float(filter(self.filt,dvmOP)))
+        elif node == 'Vd':
+            self.VdTimes.append(time.time())
+            if self.AZ1_del > 0:
+                devices.ROLES_INSTR['DVMd'].SendCmd('AZERO ONCE') # dvmVd: AZERO ONCE # replaced visastuff
+                time.sleep(self.AZ1_del)
+            if devices.ROLES_INSTR['DVMd'].Demo == True: # replaced visastuff:
+                dvmOP = np.random.normal(0.0,1.0e-6)
+                self.VdData.append(dvmOP)
+            else:
+                dvmOP = devices.ROLES_INSTR['DVMd'].Read() # dvmVd # replaced visastuff
+                self.VdData.append(float(filter(self.filt,dvmOP)))
+            return 1
+            
+#    def MeasureV1(self):
+#        self.V1Times.append(time.time())
+#        if devices.ROLES_INSTR['DVM12'].Demo == True: # replaced visastuff
+#            dvmOP = np.random.normal(self.V1_set,1.0e-5*abs(self.V1_set))
+#            self.V1Data.append(dvmOP)
+#        else:
+#            # lfreq line, azero once,range auto, wait for settle
+#            dvmOP = devices.ROLES_INSTR['DVM12'].Read()# dvmV1V2 # replaced visastuff
+#            self.V1Data.append(float(filter(self.filt,dvmOP)))
+#
+#    def MeasureV2(self):
+#        self.V2Times.append(time.time())
+#        if devices.ROLES_INSTR['DVM12'].Demo == True: # replaced visastuff
+#            dvmOP = np.random.normal(self.V2_set,1.0e-5*abs(self.V2_set))
+#            self.V2Data.append(dvmOP)
+#        else:
+#            dvmOP = devices.ROLES_INSTR['DVM12'].Read() # dvmV1V2 # replaced visastuff
+#            self.V2Data.append(float(filter(self.filt,dvmOP)))
 
-    def MeasureV2(self):
-        self.V2Times.append(time.time())
-        if devices.ROLES_INSTR['DVM12'].Demo == True: # replaced visastuff
-            dvmOP = np.random.normal(self.V2_set,1.0e-5*abs(self.V2_set))
-            self.V2Data.append(dvmOP)
-        else:
-            dvmOP = devices.ROLES_INSTR['DVM12'].Read() # dvmV1V2 # replaced visastuff
-            self.V2Data.append(float(filter(self.filt,dvmOP)))
-
-    def MeasureVd(self):
-        self.VdTimes.append(time.time())
-        if self.AZ1_del > 0:
-            devices.ROLES_INSTR['DVMd'].SendCmd('AZERO ONCE') # dvmVd: AZERO ONCE # replaced visastuff
-            time.sleep(self.AZ1_del)
-        if devices.ROLES_INSTR['DVMd'].Demo == True: # replaced visastuff:
-            dvmOP = np.random.normal(0.0,1.0e-6)
-            self.VdData.append(dvmOP)
-        else:
-            dvmOP = devices.ROLES_INSTR['DVMd'].Read() # dvmVd # replaced visastuff
-            self.VdData.append(float(filter(self.filt,dvmOP)))
+#    def MeasureVd(self):
+#        self.VdTimes.append(time.time())
+#        if self.AZ1_del > 0:
+#            devices.ROLES_INSTR['DVMd'].SendCmd('AZERO ONCE') # dvmVd: AZERO ONCE # replaced visastuff
+#            time.sleep(self.AZ1_del)
+#        if devices.ROLES_INSTR['DVMd'].Demo == True: # replaced visastuff:
+#            dvmOP = np.random.normal(0.0,1.0e-6)
+#            self.VdData.append(dvmOP)
+#        else:
+#            dvmOP = devices.ROLES_INSTR['DVMd'].Read() # dvmVd # replaced visastuff
+#            self.VdData.append(float(filter(self.filt,dvmOP)))
 
 #    def ReadGMH(self,port,addr,demo_stat):
 #        com = GMH.ct.c_short(port)
@@ -534,14 +564,6 @@ class AqnThread(Thread):
         # ...and retain any number (as a string)
         accept_str = u'-0.12345678eE9'
         return char in accept_str # Returns 'True' or 'False'
-
-    # Only store 10 readings per line, and then clear
-    V1Data=[]
-    V2Data=[]
-    VdData=[]
-    V1Times=[]
-    V2Times=[]
-    VdTimes=[]
-    TR1 = TR2 = 0
+    
 
 """--------------End of Thread class definition-------------------"""
