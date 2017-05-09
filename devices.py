@@ -104,6 +104,7 @@ class GMH_Sensor(device):
                           'H_abs':'Absolute Humidity'}
         self.Open()
         self.info = self.GetSensorInfo()
+        print 'devices.GMH_Sensor:\n',self.info
 
 
     def Open(self):
@@ -178,7 +179,7 @@ class GMH_Sensor(device):
             unit_code = ct.c_int16(self.intData.value + self.lang_offset.value)
             GMHLIB.GMH_GetUnit(unit_code, ct.byref(self.unit_str)) # Writes result to self.unit_str
             units.append(self.unit_str.value)
-
+        
         return dict(zip(measurements,zip(addresses,units)))
 
 
@@ -189,6 +190,7 @@ class GMH_Sensor(device):
         Returns a tuple: (<Temperature/Pressure/RH as int>, <unit as string>)
         """
         assert self.meas_alias.has_key(meas),'This function is not available.'
+        assert len(self.info.keys) > 0,'No measurements available from this GMH device.'
         Address = self.info[self.meas_alias[meas]][0]
         Addr = ct.c_short(Address)
         self.Transmit(Addr,self.ValFn)
@@ -200,6 +202,7 @@ class GMH_Sensor(device):
     def Test(self, meas):
         """ Used to test that the device is functioning. """
         return self.Measure(meas)
+
 
 '''
 ###############################################################################
