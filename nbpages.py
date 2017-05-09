@@ -337,7 +337,7 @@ class SetupPage(wx.Panel):
         ... and enables/disables testbuttons as necessary.
         """
         print 'SetRole:',r,'will now be',d
-        assert devices.INSTR_DATA.has_key(d),'Unknown instrument - check Excel file is open.'
+        assert devices.INSTR_DATA.has_key(d),'Unknown instrument: %s - check Excel file is open.'%d
         assert devices.INSTR_DATA[d].has_key('role'),'Unknown instrument parameter - check Excel Parameters sheet is populated.'
         devices.INSTR_DATA[d]['role'] = r # INSTR_DATA updated
         # Set the address cb to correct value (according to devices.INSTR_DATA)
@@ -400,8 +400,8 @@ class SetupPage(wx.Panel):
                                   'DVMd':'DVM: HP3458A, s/n230',
                                   'DVMT1':'none',#'DVM: HP34401A, s/n976'
                                   'DVMT2':'none',#'DVM: HP34420A, s/n130'
-                                  'GMH1':'GMH, s/n627',
-                                  'GMH2':'GMH, s/n628',
+                                  'GMH1':'GMH: s/n627',
+                                  'GMH2':'GMH: s/n628',
                                   'switchbox':'V1'}
         for r in self.instrument_choice.keys():
             d = self.instrument_choice[r]
