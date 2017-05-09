@@ -429,19 +429,19 @@ class AqnThread(Thread):
             dvmOP = devices.ROLES_INSTR['DVMd'].Read() # dvmVd # replaced visastuff
             self.VdData.append(float(filter(self.filt,dvmOP)))
 
-    def ReadGMH(self,port,addr,demo_stat):
-        com = GMH.ct.c_short(port)
-        GMH.GMHLIB.GMH_OpenCom(com)
-        Prio = GMH.ct.c_short()
-        flData = GMH.ct.c_double() # Don't change this type!! It's the exactly right one!
-        intData = GMH.ct.c_long()
-        ValFunc = GMH.ct.c_short(0) # GetValue()
-        GMH.GMHLIB.GMH_Transmit(addr,ValFunc,GMH.ct.byref(Prio),GMH.ct.byref(flData),GMH.ct.byref(intData))
-        GMH.GMHLIB.GMH_CloseCom()
-        if demo_stat == True:
-            return np.random.normal(20.5,0.1)
-        else:
-            return flData.value
+#    def ReadGMH(self,port,addr,demo_stat):
+#        com = GMH.ct.c_short(port)
+#        GMH.GMHLIB.GMH_OpenCom(com)
+#        Prio = GMH.ct.c_short()
+#        flData = GMH.ct.c_double() # Don't change this type!! It's the exactly right one!
+#        intData = GMH.ct.c_long()
+#        ValFunc = GMH.ct.c_short(0) # GetValue()
+#        GMH.GMHLIB.GMH_Transmit(addr,ValFunc,GMH.ct.byref(Prio),GMH.ct.byref(flData),GMH.ct.byref(intData))
+#        GMH.GMHLIB.GMH_CloseCom()
+#        if demo_stat == True:
+#            return np.random.normal(20.5,0.1)
+#        else:
+#            return flData.value
 
 
     def WriteDataThisRow(self,row):
