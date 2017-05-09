@@ -46,7 +46,7 @@ T_Sensors = ('none','Pt','SR104t','thermistor')
 GMH-specific stuff:
 GMH probe communications are handled by low-level routines in GMHdll.dll.
 """
-os.environ['GMHPATH'] = 'C:\Software\High Resistance\HRBC\GMHdll'
+os.environ['GMHPATH'] = 'I:\MSL\Private\Electricity\Staff\TBL\Python\High_Res_Bridge\GMHdll'  # 'C:\Software\High Resistance\HRBC\GMHdll'
 gmhpath = os.environ['GMHPATH']
 GMHLIB = ct.windll.LoadLibrary(os.path.join(gmhpath,'GMH3x32E'))
 GMH_DESCR = ('GMH, s/n627',
