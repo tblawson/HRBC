@@ -23,7 +23,7 @@ import ctypes as ct
 import visa
 
 
-INSTR_DATA = {}
+INSTR_DATA = {} # Dictionary of instrument parameter dictionaries, keyed by description
 DESCR = []
 sublist = []
 ROLES_WIDGETS = {} # Dictionary of GUI widgets keyed by role
