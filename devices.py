@@ -111,7 +111,7 @@ class GMH_Sensor(device):
         Returns return-code of GMH_OpenCom() function
         """
         
-        err_code = GMHLIB.GMH_OpenCom(self.addr).value
+        err_code = GMHLIB.GMH_OpenCom(self.addr)
         print 'open() port', self.addr,'. Return code:',err_code
         if err_code in range(0,4):
             self.demo = False
@@ -194,7 +194,7 @@ class GMH_Sensor(device):
         Returns a tuple: (<Temperature/Pressure/RH as int>, <unit as string>)
         """
         if self.demo == True:
-            return np.random.normal(20.5,0.1)
+            return (np.random.normal(20.5,0.1),(0,'NO UNIT'))
         else:
             assert self.demo == False,'GMH sensor in demo mode.'
             assert len(self.info.keys()) > 0,'No measurement functions available from this GMH sensor.'
@@ -202,6 +202,8 @@ class GMH_Sensor(device):
             Address = self.info[self.meas_alias[meas]][0]
             Addr = ct.c_short(Address)
             self.Transmit(Addr,self.ValFn)
+            print'devices.Measure(): return[0] = ',self.flData.value
+            print'devices.Measure(): return[1] = ',self.info[self.meas_alias[meas]][1]
             return (self.flData.value, self.info[self.meas_alias[meas]][1])
 
 
