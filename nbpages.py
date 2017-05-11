@@ -339,7 +339,7 @@ class SetupPage(wx.Panel):
 
     def SetInstr(self,d,r):
         """
-        Called by both CreateInstr() and UpdateInstr() # OnAutoPop() and UpdateInstr().
+        Called by both CreateInstr() and UpdateInstr().
         Updates internal info and Enables/disables testbuttons as necessary.
         """
         print 'SetInstr:',r,'will now be',d
@@ -357,7 +357,7 @@ class SetupPage(wx.Panel):
 
 
     def CreateInstr(self,d,r):
-        # Called by both OnAutoPop() ??? and UpdateRole() ???
+        # Called by both OnAutoPop() and UpdateInstr()
         # Create each instrument in software & open visa session (for GPIB instruments)
         # For GMH instruments, use GMH dll not visa
 
