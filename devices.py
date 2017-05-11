@@ -111,12 +111,12 @@ class GMH_Sensor(device):
         Returns return-code of GMH_OpenCom() function
         """
         
-        err_code = GMHLIB.GMH_OpenCom(self.addr)
+        err_code = GMHLIB.GMH_OpenCom(self.addr).value
         print 'open() port', self.addr,'. Return code:',err_code
-        if err_code < 0:
-            self.demo = True
-        else:
+        if err_code in range(0,4):
             self.demo = False
+        else:
+            self.demo = True
         return err_code
 
 
