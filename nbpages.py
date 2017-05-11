@@ -38,6 +38,7 @@ os.environ['XLPATH'] = 'C:\Documents and Settings\\t.lawson\My Documents\Python 
 # Setup Page definition:
 ------------------------
 '''
+
 class SetupPage(wx.Panel):
     def __init__(self, parent):
         wx.Panel.__init__(self, parent)
@@ -49,13 +50,14 @@ class SetupPage(wx.Panel):
 
         self.SRC_COMBO_CHOICE = ['none']
         self.DVM_COMBO_CHOICE = ['none']
-        self.GMH_COMBO_CHOICE = devices.GMH_DESCR # ('GMH s/n628', 'GMH s/n627')
+        self.GMH_COMBO_CHOICE = ['none'] # devices.GMH_DESCR # ('GMH s/n628', 'GMH s/n627')
         self.SB_COMBO_CHOICE =  devices.SWITCH_CONFIGS.keys()
         self.T_SENSOR_CHOICE = devices.T_Sensors
         self.cbox_addr_COM = []
         self.cbox_addr_GPIB = []
         self.cbox_instr_SRC = []
         self.cbox_instr_DVM = []
+        self.cbox_instr_GMH = []
 
         self.BuildComboChoices()
 
@@ -72,39 +74,39 @@ class SetupPage(wx.Panel):
         # Instruments
         Src1Lbl = wx.StaticText(self, label='V1 source (SRC 1):', id = wx.ID_ANY)
         self.V1Sources = wx.ComboBox(self,wx.ID_ANY, choices = self.SRC_COMBO_CHOICE, size = (150,10), style = wx.CB_DROPDOWN)
-        self.V1Sources.Bind(wx.EVT_COMBOBOX, self.UpdateRole)
+        self.V1Sources.Bind(wx.EVT_COMBOBOX, self.UpdateInstr)
         self.cbox_instr_SRC.append(self.V1Sources)
         Src2Lbl = wx.StaticText(self, label='V2 source (SRC 2):', id = wx.ID_ANY)
         self.V2Sources = wx.ComboBox(self,wx.ID_ANY, choices = self.SRC_COMBO_CHOICE, style=wx.CB_DROPDOWN)
-        self.V2Sources.Bind(wx.EVT_COMBOBOX, self.UpdateRole)
+        self.V2Sources.Bind(wx.EVT_COMBOBOX, self.UpdateInstr)
         self.cbox_instr_SRC.append(self.V2Sources)
         DVM_V1V2Lbl = wx.StaticText(self, label='V1,V2 DVM (DVM12):', id = wx.ID_ANY)
         self.V1V2Dvms = wx.ComboBox(self,wx.ID_ANY, choices = self.DVM_COMBO_CHOICE, style=wx.CB_DROPDOWN)
-        self.V1V2Dvms.Bind(wx.EVT_COMBOBOX, self.UpdateRole)
+        self.V1V2Dvms.Bind(wx.EVT_COMBOBOX, self.UpdateInstr)
         self.cbox_instr_DVM.append(self.V1V2Dvms)
         DVM_VdLbl = wx.StaticText(self, label='Vd DVM (DVMd):', id = wx.ID_ANY)
         self.VdDvms = wx.ComboBox(self,wx.ID_ANY, choices = self.DVM_COMBO_CHOICE, style=wx.CB_DROPDOWN)
-        self.VdDvms.Bind(wx.EVT_COMBOBOX, self.UpdateRole)
+        self.VdDvms.Bind(wx.EVT_COMBOBOX, self.UpdateInstr)
         self.cbox_instr_DVM.append(self.VdDvms)
         T1DvmLbl = wx.StaticText(self, label='R1 T-probe DVM (DVMT1):', id = wx.ID_ANY)
         self.T1Dvms = wx.ComboBox(self,wx.ID_ANY, choices = self.DVM_COMBO_CHOICE, style=wx.CB_DROPDOWN)
-        self.T1Dvms.Bind(wx.EVT_COMBOBOX, self.UpdateRole)
+        self.T1Dvms.Bind(wx.EVT_COMBOBOX, self.UpdateInstr)
         self.cbox_instr_DVM.append(self.T1Dvms)
         T2DvmLbl = wx.StaticText(self, label='R2 T-probe DVM (DVMT2):', id = wx.ID_ANY)
         self.T2Dvms = wx.ComboBox(self,wx.ID_ANY, choices = self.DVM_COMBO_CHOICE, style=wx.CB_DROPDOWN)
-        self.T2Dvms.Bind(wx.EVT_COMBOBOX, self.UpdateRole)
+        self.T2Dvms.Bind(wx.EVT_COMBOBOX, self.UpdateInstr)
         self.cbox_instr_DVM.append(self.T2Dvms)
         GMH1Lbl = wx.StaticText(self, label='R1 GMH probe (GMH1):', id = wx.ID_ANY)
         self.GMH1Probes = wx.ComboBox(self,wx.ID_ANY, choices = self.GMH_COMBO_CHOICE, style=wx.CB_DROPDOWN)
         self.GMH1Probes.Bind(wx.EVT_COMBOBOX, self.BuildCommStr)
-
+        self.cbox_instr_GMH.append(self.GMH1Probes)
         GMH2Lbl = wx.StaticText(self, label='R2 GMH probe (GMH2):', id = wx.ID_ANY)
         self.GMH2Probes = wx.ComboBox(self,wx.ID_ANY, choices = self.GMH_COMBO_CHOICE, style=wx.CB_DROPDOWN)
         self.GMH2Probes.Bind(wx.EVT_COMBOBOX, self.BuildCommStr)
-
+        self.cbox_instr_GMH.append(self.GMH2Probes)
         SwitchboxLbl = wx.StaticText(self, label='Switchbox configuration:', id = wx.ID_ANY)
         self.Switchbox = wx.ComboBox(self,wx.ID_ANY, choices = self.SB_COMBO_CHOICE, style=wx.CB_DROPDOWN)
-        self.Switchbox.Bind(wx.EVT_COMBOBOX, self.UpdateRole)
+        self.Switchbox.Bind(wx.EVT_COMBOBOX, self.UpdateInstr)
 
         # Addresses
         self.V1SrcAddr = wx.ComboBox(self,wx.ID_ANY, choices = self.GPIBAddressList, size = (150,10), style=wx.CB_DROPDOWN)
@@ -251,11 +253,13 @@ class SetupPage(wx.Panel):
 
 
     def BuildComboChoices(self):
-        for d in devices.DESCR:
+        for d in devices.INSTR_DATA.keys():
             if 'SRC:' in d:
                 self.SRC_COMBO_CHOICE.append(d)
             elif 'DVM:' in d:
                 self.DVM_COMBO_CHOICE.append(d)
+            elif 'GMH:' in d:
+                self.GMH_COMBO_CHOICE.append(d)
 
         # Re-build combobox choices from list of SRC's
         for cbox in self.cbox_instr_SRC:
@@ -266,6 +270,11 @@ class SetupPage(wx.Panel):
         for cbox in self.cbox_instr_DVM:
            cbox.Clear()
            cbox.AppendItems(self.DVM_COMBO_CHOICE)
+        
+        # Re-build combobox choices from list of GMH's
+        for cbox in self.cbox_instr_GMH:
+           cbox.Clear()
+           cbox.AppendItems(self.GMH_COMBO_CHOICE)
 
 
     def UpdateFilepath(self, e):
@@ -319,27 +328,25 @@ class SetupPage(wx.Panel):
         self.BuildComboChoices()
 
 
-    def UpdateRole(self, e):
-        # An instrument was manually selected for a role
-        # Open a visa session, change INSTR_DATA, then update displays...
+    def UpdateInstr(self, e):
+        # An instrument was manually selected for a role.
         d = e.GetString()
         for r in devices.ROLES_WIDGETS.keys(): # Cycle through roles
             if devices.ROLES_WIDGETS[r]['icb'] == e.GetEventObject():
-                self.SetRole(d,r)
-                self.CreateInstr(d,r)
                 break # stop looking when we've found the right instrument, role
+        self.CreateInstr(d,r)
 
 
-    def SetRole(self,d,r):
+    def SetInstr(self,d,r):
         """
-        Called by both OnAutoPop() and UpdateRole().
-        Updates INSTR_DATA and then updates address display.
-        ... and enables/disables testbuttons as necessary.
+        Called by both CreateInstr() and UpdateInstr() # OnAutoPop() and UpdateInstr().
+        Updates internal info and Enables/disables testbuttons as necessary.
         """
-        print 'SetRole:',r,'will now be',d
+        print 'SetInstr:',r,'will now be',d
         assert devices.INSTR_DATA.has_key(d),'Unknown instrument: %s - check Excel file is loaded.'%d
         assert devices.INSTR_DATA[d].has_key('role'),'Unknown instrument parameter - check Excel Parameters sheet is populated.'
-        devices.INSTR_DATA[d]['role'] = r # INSTR_DATA updated
+        devices.INSTR_DATA[d]['role'] = r # update default role
+        
         # Set the address cb to correct value (according to devices.INSTR_DATA)
         a_cb = devices.ROLES_WIDGETS[r]['acb']
         a_cb.SetValue((devices.INSTR_DATA[d]['str_addr']))
@@ -350,44 +357,50 @@ class SetupPage(wx.Panel):
 
 
     def CreateInstr(self,d,r):
-        # Called by both OnAutoPop() and UpdateRole()
+        # Called by both OnAutoPop() ??? and UpdateRole() ???
         # Create each instrument in software & open visa session (for GPIB instruments)
         # For GMH instruments, use GMH dll not visa
-        demo_mode = True
-        devices.INSTR_DATA[d]['demo'] = demo_mode
+
         if 'GMH' in d:
-            devices.ROLES_INSTR.update({r:devices.GMH_Sensor(d,demo=demo_mode)}) # create an open GMH instrument instance here
+            # create an open GMH instrument instance & set demo mode appropriately
+            devices.ROLES_INSTR.update({r:devices.GMH_Sensor(d)})
         else:
-            devices.ROLES_INSTR.update({r:devices.instrument(d,demo=demo_mode)}) # create a visa instrument instance here
+            # create a visa instrument instance
+            devices.ROLES_INSTR.update({r:devices.instrument(d)})
             try:
-                devices.ROLES_INSTR[r].Open() # GPIB device object needs manual Open() after creation
+                # GPIB device object needs manual Open() and demo-mode setting after creation
+                devices.ROLES_INSTR[r].Open()
+                devices.ROLES_INSTR[r].demo = False
             except devices.visa.VisaIOError:
                 self.status.SetStatusText('No GPIB instrument with address %s!'%devices.INSTR_DATA[d]['str_addr'],1)
-        devices.INSTR_DATA[d]['demo'] = True
-        devices.ROLES_INSTR[r].Demo = True
+        self.SetInstr(d,r)
+
 
 
     def UpdateAddr(self, e):
         # An address was manually selected
-        # Change DATA first...
+        # Change INSTR_DATA first...
         # 1st, we'll need instrument description d...
         d = 'none'
         acb = e.GetEventObject() # 'a'ddress 'c'ombo 'b'ox
         for r in devices.ROLES_WIDGETS.keys():
             if devices.ROLES_WIDGETS[r]['acb'] == acb:
                 d = devices.ROLES_WIDGETS[r]['icb'].GetValue()
-                if 'GMH' in r:
-                    G1 =self.GMH1Ports.GetValue()
-                    if G1 == 1:
-                        self.GMH2Ports.SetValue('2')
-                    else:
-                        self.GMH2Ports.SetValue('1')
+#                if 'GMH' in r:
+#                    G1 = self.GMH1Ports.GetValue()
+#                    if G1 == 1:
+#                        self.GMH2Ports.SetValue('2')
+#                    else:
+#                        self.GMH2Ports.SetValue('1')
                 break # stop looking when we've found the right instrument description
         a = e.GetString() # address string, eg 'COM5' or 'GPIB0::23'
         if (a not in self.GPIBAddressList) or (a not in self.COMAddressList): # Ignore dummy values
             devices.INSTR_DATA[d]['str_addr'] = a
+            devices.ROLES_INSTR[r].str_addr = a
             addr = a.lstrip('COMGPIB0:') # leave only numeric part of address string
             devices.INSTR_DATA[d]['addr'] = int(addr)
+            devices.ROLES_INSTR[r].addr = addr
+            
         
 
     def OnAutoPop(self, e):
@@ -405,7 +418,7 @@ class SetupPage(wx.Panel):
                                   'switchbox':'V1'}
         for r in self.instrument_choice.keys():
             d = self.instrument_choice[r]
-            self.SetRole(d,r) # Link role and descr in devices.INSTR_DATA, and update a_cb
+#            self.SetRole(d,r) # Link role and descr in devices.INSTR_DATA, and update a_cb
             devices.ROLES_WIDGETS[r]['icb'].SetValue(d) # Update i_cb
             self.CreateInstr(d,r)
         self.R1Name.SetValue('CHANGE_THIS! 1G')
@@ -419,9 +432,10 @@ class SetupPage(wx.Panel):
             if devices.ROLES_WIDGETS[r]['tbtn'] == e.GetEventObject():
                 d = devices.ROLES_WIDGETS[r]['icb'].GetValue()
                 break # stop looking when we've found the right instrument description
-        print'OnTest():d =',d
+        print'OnTest(): d =',d
         assert devices.INSTR_DATA[d].has_key('test'), 'No test exists for this device.'
         test = devices.INSTR_DATA[d]['test'] # test string
+        print 'Test string:',test
         self.Response.SetValue(str(devices.ROLES_INSTR[r].Test(test)))
         self.status.SetStatusText('Testing %s with cmd %s' % (d,test),0)
 
@@ -444,8 +458,8 @@ class SetupPage(wx.Panel):
             for r in devices.ROLES_WIDGETS.keys():
                 if devices.ROLES_WIDGETS[r]['icb'].GetValue() == d:
                     break
-            # Update our knowledge of role <-> instr. descr. association   
-            self.SetRole(d,r)
+            # Update our knowledge of role <-> instr. descr. association
+            self.CreateInstr(d,r)
         RunPage = self.GetParent().GetPage(1)
         params={'R1':self.R1Name.GetValue(),'TR1':self.GMH1Probes.GetValue(),
                 'R2':self.R2Name.GetValue(),'TR2':self.GMH2Probes.GetValue()}
