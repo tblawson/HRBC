@@ -118,8 +118,11 @@ class GMH_Sensor(device):
         else:
             self.demo = False
         return err_code
-        
- 
+
+
+    def Init(self):
+        pass
+     
        
     def Close(self):
         """
