@@ -149,8 +149,8 @@ class AqnThread(Thread):
         time.sleep(3) # 3
 
         # Get some initial temperatures...
-        self.ws['U'+str(self.start_row-1)] = devices.ROLES_INSTR['GMH1'].Measure('T') # self.TR1
-        self.ws['V'+str(self.start_row-1)] = devices.ROLES_INSTR['GMH2'].Measure('T') # self.TR2
+        self.ws['U'+str(self.start_row-1)] = devices.ROLES_INSTR['GMH1'].Measure('T')[0] # self.TR1
+        self.ws['V'+str(self.start_row-1)] = devices.ROLES_INSTR['GMH2'].Measure('T')[0] # self.TR2
 
         # Record ALL POSSIBLE roles and corresponding instrument descriptions in XL sheet
         role_row = self.start_row
@@ -232,7 +232,7 @@ class AqnThread(Thread):
             devices.ROLES_INSTR['DVM12'].Read()# junk = ...dvmV1V2 # replaced visastuff
             for i in range(self.n_readings):
                 self.MeasureV('V1')
-            self.T1 = devices.ROLES_INSTR['GMH1'].Measure('T')
+            self.T1 = devices.ROLES_INSTR['GMH1'].Measure('T')[0]
 
             # Update run displays on Run page via a DataEvent:
             t1 = str(dt.datetime.fromtimestamp(np.mean(self.V1Times)).strftime("%d/%m/%Y %H:%M:%S"))
@@ -278,7 +278,7 @@ class AqnThread(Thread):
             devices.ROLES_INSTR['DVM12'].Read()# dvmV1V2 # replaced visastuff
             for i in range(self.n_readings):
                 self.MeasureV('V2')
-            self.T2 = devices.ROLES_INSTR['GMH2'].Measure('T')
+            self.T2 = devices.ROLES_INSTR['GMH2'].Measure('T')[0]
 
             # Update displays on Run page via a DataEvent:
             t2 = str(dt.datetime.fromtimestamp(np.mean(self.V2Times)).strftime("%d/%m/%Y %H:%M:%S"))
