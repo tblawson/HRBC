@@ -27,7 +27,7 @@ INSTR_DATA = {} # Dictionary of instrument parameter dictionaries, keyed by desc
 DESCR = []
 sublist = []
 ROLES_WIDGETS = {} # Dictionary of GUI widgets keyed by role
-ROLES_INSTR = {} # Dictionary of visa instrument objects keyed by role
+ROLES_INSTR = {} # Dictionary of GMH_sensor or Instrument objects keyed by role
 
 """
 VISA-specific stuff:
@@ -79,9 +79,7 @@ class GMH_Sensor(device):
         self.Descr = descr
         self.demo = demo
         
-        INSTR_DATA[descr]['demo'] = demo # update demo state, if neccesary
-        self.port = INSTR_DATA[self.Descr]['addr'] # COM port-number assigned to USB 3100N adapter cable
-
+        self.addr = INSTR_DATA[self.Descr]['addr'] # COM port-number assigned to USB 3100N adapter cable
         self.str_addr = INSTR_DATA[self.Descr]['str_addr']
         self.role = INSTR_DATA[self.Descr]['role']        
         
@@ -112,12 +110,15 @@ class GMH_Sensor(device):
         Use COM port number to open device
         Returns return-code of GMH_OpenCom() function
         """
-        if self.demo == True:
-            return 1
-        else:  
-            err_code = GMHLIB.GMH_OpenCom(self.port)
-            print 'open() port', self.port,'Return code:',err_code
-            return err_code
+        
+        err_code = GMHLIB.GMH_OpenCom(self.addr)
+        print 'open() port', self.addr,'. Return code:',err_code
+        if err_code < 0:
+            self.demo = True
+        else:
+            self.demo = False
+        return err_code
+        
  
        
     def Close(self):
@@ -189,16 +190,18 @@ class GMH_Sensor(device):
         (see keys of self.meas_alias for options).
         Returns a tuple: (<Temperature/Pressure/RH as int>, <unit as string>)
         """
-        assert self.meas_alias.has_key(meas),'This function is not available.'
-        assert len(self.info.keys) > 0,'No measurements available from this GMH device.'
-        Address = self.info[self.meas_alias[meas]][0]
-        Addr = ct.c_short(Address)
-        self.Transmit(Addr,self.ValFn)
-        if self.demo == False:
-            return (self.flData.value, self.info[self.meas_alias[meas]][1])
-        else:
+        if self.demo == True:
             return np.random.normal(20.5,0.1)
-        
+        else:
+            assert self.demo == False,'GMH sensor in demo mode.'
+            assert len(self.info.keys()) > 0,'No measurement functions available from this GMH sensor.'
+            assert self.meas_alias.has_key(meas),'This measurement function is not available.'
+            Address = self.info[self.meas_alias[meas]][0]
+            Addr = ct.c_short(Address)
+            self.Transmit(Addr,self.ValFn)
+            return (self.flData.value, self.info[self.meas_alias[meas]][1])
+
+
     def Test(self, meas):
         """ Used to test that the device is functioning. """
         return self.Measure(meas)
@@ -215,7 +218,8 @@ class instrument(device):
     def __init__(self, descr, demo=True): # Default to demo mode
         self.Descr = descr
         
-        INSTR_DATA[descr]['demo'] = demo # update demo state, if neccesary
+        assert INSTR_DATA.has_key(self.Descr),'Unknown instrument - check instrument data is loaded from Excel Parameters sheet.'
+        
         self.addr = INSTR_DATA[self.Descr]['addr']
         self.str_addr = INSTR_DATA[self.Descr]['str_addr']
         self.role = INSTR_DATA[self.Descr]['role']
@@ -244,10 +248,7 @@ class instrument(device):
 		self.VStr = INSTR_DATA[self.Descr]['setV_str'] # a tuple of strings
         else:
             self.VStr = ''
-        if INSTR_DATA[self.Descr].has_key('hw_addr'):
-		self.hw_addr = INSTR_DATA[self.Descr]['hw_addr'] 
-        else:
-		self.hw_addr = 0
+
 
     def Open(self):
         try:
@@ -259,13 +260,13 @@ class instrument(device):
             INSTR_DATA[self.Descr]['demo'] = False # A real working instrument
             self.Demo = False # A real working instrument ONLY on Open() success
             print 'devices.instrument.Open():',self.Descr,'session handle=',self.instr.session
-                
         except visa.VisaIOError:
             self.instr = None
             self.Demo = True # default to demo mode if can't open
             INSTR_DATA[self.Descr]['demo'] = True
             print 'devices.instrument.Open() failed:',self.Descr,'opened in demo mode'
         return self.instr
+
 
     def Close(self):
         # Close comms with instrument
@@ -276,6 +277,7 @@ class instrument(device):
             self.instr.close()
         else:
             print 'devices.instrument.Close():',self.Descr,'is "None" or already closed'
+
 
     def Init(self):
         # Send initiation string
@@ -294,6 +296,7 @@ class instrument(device):
                         return reply
             print 'devices.instrument.Init():',self.Descr,'initiated with cmd:',s
         return reply
+
 
     def SetV(self,V):
         # set output voltage (SRC) or input range (DVM)
@@ -318,6 +321,7 @@ class instrument(device):
             print 'Invalid function for instrument', self.Descr
             return -1
 
+
     def SetFn(self):
         # Set DVM function
         if self.Demo == True:
@@ -331,6 +335,7 @@ class instrument(device):
         else:
             print'devices.instrument.SetFn(): Invalid function for',self.Descr
             return -1
+
 
     def Oper(self):
         # Enable O/P terminals
@@ -351,6 +356,7 @@ class instrument(device):
             print'devices.instrument.Oper(): Invalid function for',self.Descr
             return -1
 
+
     def Stby(self):
         # Disable O/P terminals
         # For V-source instruments only
@@ -366,6 +372,7 @@ class instrument(device):
             print'devices.instrument.Stby(): Invalid function for',self.Descr
             return -1
 
+
     def CheckErr(self):
         # Get last error string and clear error queue
         # For V-source instruments only (F5520A)
@@ -380,6 +387,7 @@ class instrument(device):
         else:
             print'devices.instrument.CheckErr(): Invalid function for',self.Descr
             return -1
+
 
     def SendCmd(self,s):
         demo_reply = 'SendCmd(): DEMO resp. to '+s
@@ -404,6 +412,7 @@ class instrument(device):
             self.instr.write(s)
             return reply
 
+
     def Read(self):
         reply = 0
         if self.Demo == True:
@@ -419,6 +428,7 @@ class instrument(device):
         else:
             print 'devices.instrument.Read(): Invalid function for',self.Descr
             return reply
+        
         
     def Test(self,s):
         """ Used to test that the instrument is functioning. """
