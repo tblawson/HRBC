@@ -73,15 +73,19 @@ class AqnThread(Thread):
         self.settle_time = self.RunPage.SettleDel.GetValue()
 
         # Local record of GMH ports and addresses
-        self.GMH1Demo_status = devices.INSTR_DATA[self.SetupPage.GMH1Probes.GetValue()]['demo'] # replaced visastuff
-        self.GMH2Demo_status = devices.INSTR_DATA[self.SetupPage.GMH2Probes.GetValue()]['demo'] # replaced visastuff
-        self.GMH1Port = self.SetupPage.GMH1Ports.GetValue().replace('COM','')
-        self.GMH2Port = self.SetupPage.GMH2Ports.GetValue().replace('COM','')
-        self.GMH1Addr = devices.INSTR_DATA[self.SetupPage.GMH1Probes.GetValue()]['hw_addr'] # replaced visastuff
-        self.GMH2Addr = devices.INSTR_DATA[self.SetupPage.GMH2Probes.GetValue()]['hw_addr'] # replaced visastuff
+#        self.GMH1Demo_status = devices.INSTR_DATA[self.SetupPage.GMH1Probes.GetValue()]['demo'] # replaced visastuff
+        self.GMH1Demo_status = devices.ROLES_INSTR['GMH1'].demo
+#        self.GMH2Demo_status = devices.INSTR_DATA[self.SetupPage.GMH2Probes.GetValue()]['demo'] # replaced visastuff
+        self.GMH2Demo_status = devices.ROLES_INSTR['GMH2'].demo
+#        self.GMH1Port = self.SetupPage.GMH1Ports.GetValue().replace('COM','')
+        self.GMH1Port = devices.ROLES_INSTR['GMH1'].addr
+#        self.GMH2Port = self.SetupPage.GMH2Ports.GetValue().replace('COM','')
+        self.GMH2Port = devices.ROLES_INSTR['GMH2'].addr
+#        self.GMH1Addr = devices.INSTR_DATA[self.SetupPage.GMH1Probes.GetValue()]['hw_addr'] # replaced visastuff
+#        self.GMH2Addr = devices.INSTR_DATA[self.SetupPage.GMH2Probes.GetValue()]['hw_addr'] # replaced visastuff
         
-        print 'GMH1 on port %s, hw_addr %d' % (self.GMH1Port, self.GMH1Addr)
-        print 'GMH2 on port %s, hw_addr %d' % (self.GMH2Port, self.GMH2Addr)
+#        print 'GMH1 on port %s, hw_addr %d' % (self.GMH1Port, self.GMH1Addr)
+#        print 'GMH2 on port %s, hw_addr %d' % (self.GMH2Port, self.GMH2Addr)
         
         self.start() # Starts the thread running on creation
 
