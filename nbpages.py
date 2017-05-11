@@ -317,7 +317,7 @@ class SetupPage(wx.Panel):
                     values.append(v_u_d_l) # append value-list as next item 
                     print descr,' : ',param,' = ',v_u_d_l
                 
-                if param == u'demo': # last parameter for this description
+                if param == u'test': # last parameter for this description
                     devices.DESCR.append(descr) # build description list
                     devices.sublist.append(dict(zip(params,values))) # adds parameter dictionary to sublist
                     del params[:]
