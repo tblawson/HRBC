@@ -52,7 +52,7 @@ gmhpath = os.environ['GMHPATH']
 GMHLIB = ct.windll.LoadLibrary(os.path.join(gmhpath,'GMH3x32E'))
 GMH_DESCR = ('GMH, s/n627',
              'GMH, s/n628')
-             
+LANG_OFFSET = 4096            
 '''--------------------------------------------------------------'''
 
 class device():
@@ -88,7 +88,7 @@ class GMH_Sensor(device):
         self.intData = ct.c_long()
         self.meas_str = ct.create_string_buffer(30)
         self.unit_str = ct.create_string_buffer(10)
-        self.lang_offset = ct.c_int16(4096) # English language-offset
+        self.lang_offset = ct.c_int16(LANG_OFFSET) # English language-offset
         self.MeasFn = ct.c_short(180) # GetMeasCode()
         self.UnitFn = ct.c_int16(178) # GetUnitCode()
         self.ValFn = ct.c_short(0) # GetValue()
@@ -100,9 +100,9 @@ class GMH_Sensor(device):
                           'T_wb':'Wet Bulb Temperature',
                           'H_atm':'Atmospheric Humidity',
                           'H_abs':'Absolute Humidity'}
+        self.info = {}
+        self.is_open = 0
         self.Open()
-        self.info = self.GetSensorInfo()
-        print 'devices.GMH_Sensor:\n',self.info
 
 
     def Open(self):
@@ -110,17 +110,21 @@ class GMH_Sensor(device):
         Use COM port number to open device
         Returns return-code of GMH_OpenCom() function
         """
-        
         err_code = GMHLIB.GMH_OpenCom(self.addr)
         print 'open() port', self.addr,'. Return code:',err_code
         if err_code in range(0,4):
+            self.is_open = 1
             self.demo = False
+            print 'devices.GMH_Sensor.Open():',self.Descr
         else:
             self.demo = True
+            print 'devices.GMH_Sensor.Open() failed:',self.Descr,'opened in demo mode'
+        self.info = self.GetSensorInfo()
         return err_code
 
 
     def Init(self):
+        print'devices.GMH_Sensor.Init():',self.Descr,'initiated.'
         pass
      
        
@@ -130,9 +134,11 @@ class GMH_Sensor(device):
         Returns return-code of GMH_CloseCom() function
         """
         if self.demo == True:
+            self.is_open = 0
             return 1
         else:  
             err_code = GMHLIB.GMH_CloseCom()
+            self.is_open = 0
         return err_code
  
    
@@ -149,7 +155,9 @@ class GMH_Sensor(device):
             # Translate return code into error message and store in self.error_msg
             self.error_code = ct.c_int16(err_code + self.lang_offset.value)
             GMHLIB.GMH_GetErrorMessageRet(self.error_code, ct.byref(self.error_msg))
-
+            if self.error_code.value-LANG_OFFSET < 0:
+                self.demo == True
+            print 'devices.GMH_Sensor.Transmit():',self.error_code.value-LANG_OFFSET,self.error_msg.value
             return self.error_code.value
  
    
@@ -169,7 +177,7 @@ class GMH_Sensor(device):
         
         for Address in range(1,100):
             Addr = ct.c_short(Address)
-            self.error_code = self.Transmit(Addr,self.MeasFn) # Writes result to self.intData
+            self.Transmit(Addr,self.MeasFn) # Writes result to self.intData
             if self.intData.value == 0:
                 break # Bail-out if we run out of measurement functions
             addresses.append(Address)
@@ -179,11 +187,12 @@ class GMH_Sensor(device):
             measurements.append(self.meas_str.value)
     
             self.Transmit(Addr,self.UnitFn) # Writes result to self.intData
-                                     
             unit_code = ct.c_int16(self.intData.value + self.lang_offset.value)
             GMHLIB.GMH_GetUnit(unit_code, ct.byref(self.unit_str)) # Writes result to self.unit_str
             units.append(self.unit_str.value)
-        
+            print'devices.GMH_Sensor.GetSensorInfo:',Address,self.meas_str.value,self.unit_str.value
+            
+        print 'devices.GMH_Sensor.GetSensorInfo():\n',self.info  
         return dict(zip(measurements,zip(addresses,units)))
 
 
@@ -202,6 +211,7 @@ class GMH_Sensor(device):
             Address = self.info[self.meas_alias[meas]][0]
             Addr = ct.c_short(Address)
             self.Transmit(Addr,self.ValFn)
+            
             print'devices.Measure(): return[0] = ',self.flData.value
             print'devices.Measure(): return[1] = ',self.info[self.meas_alias[meas]][1]
             return (self.flData.value, self.info[self.meas_alias[meas]][1])
@@ -209,7 +219,10 @@ class GMH_Sensor(device):
 
     def Test(self, meas):
         """ Used to test that the device is functioning. """
-        return self.Measure(meas)
+        if not self.is_open:
+            self.Open()
+        result = self.Measure(meas)
+        return result
 
 
 '''
@@ -222,6 +235,7 @@ class instrument(device):
     '''
     def __init__(self, descr, demo=True): # Default to demo mode
         self.Descr = descr
+        self.is_open = 0
         
         assert INSTR_DATA.has_key(self.Descr),'Unknown instrument - check instrument data is loaded from Excel Parameters sheet.'
         
@@ -258,6 +272,7 @@ class instrument(device):
     def Open(self):
         try:
             self.instr = RM.open_resource(self.str_addr)
+            self.is_open = 1
             if '3458A' in self.Descr:
                 self.instr.read_termination = '\r\n' # carriage return,line feed
                 self.instr.write_termination = '\r\n' # carriage return,line feed
@@ -282,6 +297,7 @@ class instrument(device):
             self.instr.close()
         else:
             print 'devices.instrument.Close():',self.Descr,'is "None" or already closed'
+        self.is_open = 0
 
 
     def Init(self):

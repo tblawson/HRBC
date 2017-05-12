@@ -42,6 +42,13 @@ class AqnThread(Thread):
         self.TopLevel = self.RunPage.GetTopLevelParent()
         self.Comment = self.RunPage.Comment.GetValue()
         self._want_abort = 0
+        
+        self.V1Data = []
+        self.V2Data = []
+        self.VdData = []
+        self.V1Times = []
+        self.V2Times = []
+        self.VdTimes = []
 
         print'Role -> Instrument:'
         print'------------------------------'

@@ -129,11 +129,11 @@ class SetupPage(wx.Panel):
         self.T2DvmAddr.Bind(wx.EVT_COMBOBOX, self.UpdateAddr)
         self.GMH1Ports = wx.ComboBox(self,wx.ID_ANY, choices = self.COMAddressList, style=wx.CB_DROPDOWN)
         self.cbox_addr_COM.append(self.GMH1Ports)
-        self.GMH1Ports.Bind(wx.EVT_COMBOBOX, self.UpdateAddr) # was self.OnSelectGMH1port
+        self.GMH1Ports.Bind(wx.EVT_COMBOBOX, self.UpdateAddr)
         self.GMH2Ports = wx.ComboBox(self,wx.ID_ANY, choices = self.COMAddressList, style=wx.CB_DROPDOWN)
         self.cbox_addr_COM.append(self.GMH2Ports)
         
-        self.GMH2Ports.Bind(wx.EVT_COMBOBOX, self.UpdateAddr) # was self.OnSelectGMH2port
+        self.GMH2Ports.Bind(wx.EVT_COMBOBOX, self.UpdateAddr)
         self.SwitchboxAddr = wx.ComboBox(self,wx.ID_ANY, choices = self.COMAddressList, style=wx.CB_DROPDOWN)
         self.cbox_addr_COM.append(self.SwitchboxAddr)
 
@@ -364,13 +364,13 @@ class SetupPage(wx.Panel):
         if 'GMH' in d:
             # create an open GMH instrument instance & set demo mode appropriately
             devices.ROLES_INSTR.update({r:devices.GMH_Sensor(d)})
+            devices.ROLES_INSTR[r].Open()
         else:
             # create a visa instrument instance
             devices.ROLES_INSTR.update({r:devices.instrument(d)})
             try:
-                # GPIB device object needs manual Open() and demo-mode setting after creation
                 devices.ROLES_INSTR[r].Open()
-                devices.ROLES_INSTR[r].demo = False
+                #devices.ROLES_INSTR[r].demo = False
             except devices.visa.VisaIOError:
                 self.status.SetStatusText('No GPIB instrument with address %s!'%devices.INSTR_DATA[d]['str_addr'],1)
         self.SetInstr(d,r)
@@ -379,27 +379,26 @@ class SetupPage(wx.Panel):
 
     def UpdateAddr(self, e):
         # An address was manually selected
-        # Change INSTR_DATA first...
+        # Change INSTR_DATA ...
         # 1st, we'll need instrument description d...
         d = 'none'
         acb = e.GetEventObject() # 'a'ddress 'c'ombo 'b'ox
         for r in devices.ROLES_WIDGETS.keys():
             if devices.ROLES_WIDGETS[r]['acb'] == acb:
                 d = devices.ROLES_WIDGETS[r]['icb'].GetValue()
-#                if 'GMH' in r:
-#                    G1 = self.GMH1Ports.GetValue()
-#                    if G1 == 1:
-#                        self.GMH2Ports.SetValue('2')
-#                    else:
-#                        self.GMH2Ports.SetValue('1')
                 break # stop looking when we've found the right instrument description
         a = e.GetString() # address string, eg 'COM5' or 'GPIB0::23'
-        if (a not in self.GPIBAddressList) or (a not in self.COMAddressList): # Ignore dummy values
+        if (a not in self.GPIBAddressList) or (a not in self.COMAddressList): # Ignore dummy values, like 'NO_ADDRESS'
+            if devices.ROLES_INSTR[r].is_open:
+                devices.ROLES_INSTR[r].Close()
             devices.INSTR_DATA[d]['str_addr'] = a
             devices.ROLES_INSTR[r].str_addr = a
             addr = a.lstrip('COMGPIB0:') # leave only numeric part of address string
             devices.INSTR_DATA[d]['addr'] = int(addr)
             devices.ROLES_INSTR[r].addr = addr
+            devices.ROLES_INSTR[r].Open()
+        print'UpdateAddr(): addr for',r,'using',d,'set to',addr,'(',a,')'
+            
             
         
 
