@@ -102,7 +102,6 @@ class GMH_Sensor(device):
                           'H_abs':'Absolute Humidity'}
         self.info = {}
         self.is_open = 0
-        self.Open()
 
 
     def Open(self):
@@ -111,7 +110,8 @@ class GMH_Sensor(device):
         Returns return-code of GMH_OpenCom() function
         """
         err_code = GMHLIB.GMH_OpenCom(self.addr)
-        print 'open() port', self.addr,'. Return code:',err_code
+        self.GetErr(err_code)
+        print 'devices.GMH_Sensor.Open(): Trying port', self.addr,'...',self.error_code.value-LANG_OFFSET,self.error_msg.value
         if err_code in range(0,4):
             self.is_open = 1
             self.demo = False
@@ -147,18 +147,28 @@ class GMH_Sensor(device):
         A wrapper for the general-purpose interrogation function GMH_Transmit().
         """
         if self.demo == True:
+            print'devices.GMH_Sensor.Transmit(): No action in demo mode.'
             return 1
         else:
             # Call GMH_Transmit():
             err_code = GMHLIB.GMH_Transmit(Addr,Func,ct.byref(self.Prio),ct.byref(self.flData),ct.byref(self.intData))
             
             # Translate return code into error message and store in self.error_msg
-            self.error_code = ct.c_int16(err_code + self.lang_offset.value)
-            GMHLIB.GMH_GetErrorMessageRet(self.error_code, ct.byref(self.error_msg))
+            self.GetErr(err_code)
             if self.error_code.value-LANG_OFFSET < 0:
                 self.demo == True
+                print'devices.GMH_Sensor.Transmit(): Default to demo mode.'
             print 'devices.GMH_Sensor.Transmit():',self.error_code.value-LANG_OFFSET,self.error_msg.value
             return self.error_code.value
+ 
+
+    def GetErr(self, err_code):
+        """
+        Translate return code into error message and store in self.error_msg.
+        """
+        self.error_code = ct.c_int16(err_code + self.lang_offset.value)
+        GMHLIB.GMH_GetErrorMessageRet(self.error_code, ct.byref(self.error_msg))
+        return 1
  
    
     def GetSensorInfo(self):

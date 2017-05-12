@@ -306,7 +306,6 @@ class SetupPage(wx.Panel):
             if descr in headings and param in headings:
                 continue # Skip this row
             else: # not header
-#                print 'devices.py:parameter row:',r[col_H].row
                 params.append(param)
                 if v_u_d_l[1] is None: # single-valued (no uncert)
                     values.append(v_u_d_l[0]) # append value as next item 
@@ -322,14 +321,37 @@ class SetupPage(wx.Panel):
                     devices.sublist.append(dict(zip(params,values))) # adds parameter dictionary to sublist
                     del params[:]
                     del values[:] 
-                    
+    
+        print'----END OF PARAMETER LIST----'            
         # Compile into a dictionary that lives in devices.py...  
         devices.INSTR_DATA = dict(zip(devices.DESCR,devices.sublist))
         self.BuildComboChoices()
 
 
+    def OnAutoPop(self, e):
+        # Pre-select instrument and address comboboxes -
+        # Choose from instrument descriptions listed in devices.DESCR
+        # (Uses address assignments in devices.INSTR_DATA)
+        self.instrument_choice = {'SRC1':'SRC: D4808',
+                                  'SRC2':'SRC: F5520A',
+                                  'DVM12':'DVM: HP3458A, s/n452',
+                                  'DVMd':'DVM: HP3458A, s/n230',
+                                  'DVMT1':'none',#'DVM: HP34401A, s/n976'
+                                  'DVMT2':'none',#'DVM: HP34420A, s/n130'
+                                  'GMH1':'GMH: s/n627',
+                                  'GMH2':'GMH: s/n628',
+                                  'switchbox':'V1'}
+        for r in self.instrument_choice.keys():
+            d = self.instrument_choice[r]
+            devices.ROLES_WIDGETS[r]['icb'].SetValue(d) # Update i_cb
+            self.CreateInstr(d,r)
+        self.R1Name.SetValue('CHANGE_THIS! 1G')
+        self.R2Name.SetValue('CHANGE_THIS! 1M')
+
+
     def UpdateInstr(self, e):
         # An instrument was manually selected for a role.
+        # Find description d and role r, then pass to CreatInstr()
         d = e.GetString()
         for r in devices.ROLES_WIDGETS.keys(): # Cycle through roles
             if devices.ROLES_WIDGETS[r]['icb'] == e.GetEventObject():
@@ -337,12 +359,34 @@ class SetupPage(wx.Panel):
         self.CreateInstr(d,r)
 
 
+    def CreateInstr(self,d,r):
+        # Called by both OnAutoPop() and UpdateInstr()
+        # Create each instrument in software & open visa session (for GPIB instruments)
+        # For GMH instruments, use GMH dll not visa
+
+        if 'GMH' in d:
+            # create and open a GMH instrument instance
+            print'\nnbpages.SetupPage.CreateInstr(): Creating GMH device...'
+            devices.ROLES_INSTR.update({r:devices.GMH_Sensor(d)})
+            devices.ROLES_INSTR[r].Open()
+        else:
+            # create and open a visa instrument instance
+            print'\nnbpages.SetupPage.CreateInstr(): Creating VISA device...'
+            devices.ROLES_INSTR.update({r:devices.instrument(d)})
+            try:
+                devices.ROLES_INSTR[r].Open()
+            except devices.visa.VisaIOError:
+                addr = devices.INSTR_DATA[d]['str_addr']
+                self.status.SetStatusText('No GPIB instrument at address %s!'%addr,1)
+        self.SetInstr(d,r)
+
+
     def SetInstr(self,d,r):
         """
-        Called by both CreateInstr() and UpdateInstr().
+        Called by CreateInstr().
         Updates internal info and Enables/disables testbuttons as necessary.
         """
-        print 'SetInstr:',r,'will now be',d
+        print 'nbpages.SetupPage.SetInstr():',r,'will now be',d
         assert devices.INSTR_DATA.has_key(d),'Unknown instrument: %s - check Excel file is loaded.'%d
         assert devices.INSTR_DATA[d].has_key('role'),'Unknown instrument parameter - check Excel Parameters sheet is populated.'
         devices.INSTR_DATA[d]['role'] = r # update default role
@@ -354,27 +398,6 @@ class SetupPage(wx.Panel):
             devices.ROLES_WIDGETS[r]['tbtn'].Enable(False)
         else:
             devices.ROLES_WIDGETS[r]['tbtn'].Enable(True)
-
-
-    def CreateInstr(self,d,r):
-        # Called by both OnAutoPop() and UpdateInstr()
-        # Create each instrument in software & open visa session (for GPIB instruments)
-        # For GMH instruments, use GMH dll not visa
-
-        if 'GMH' in d:
-            # create an open GMH instrument instance & set demo mode appropriately
-            devices.ROLES_INSTR.update({r:devices.GMH_Sensor(d)})
-            devices.ROLES_INSTR[r].Open()
-        else:
-            # create a visa instrument instance
-            devices.ROLES_INSTR.update({r:devices.instrument(d)})
-            try:
-                devices.ROLES_INSTR[r].Open()
-                #devices.ROLES_INSTR[r].demo = False
-            except devices.visa.VisaIOError:
-                self.status.SetStatusText('No GPIB instrument with address %s!'%devices.INSTR_DATA[d]['str_addr'],1)
-        self.SetInstr(d,r)
-
 
 
     def UpdateAddr(self, e):
@@ -397,32 +420,8 @@ class SetupPage(wx.Panel):
             devices.INSTR_DATA[d]['addr'] = int(addr)
             devices.ROLES_INSTR[r].addr = addr
             devices.ROLES_INSTR[r].Open()
-        print'UpdateAddr(): addr for',r,'using',d,'set to',addr,'(',a,')'
+        print'UpdateAddr():',r,'using',d,'set to addr',addr,'(',a,')'
             
-            
-        
-
-    def OnAutoPop(self, e):
-        # Pre-select instrument and address comboboxes -
-        # Choose from instrument descriptions listed in devices.DESCR
-        # (Uses address assignments in devices.INSTR_DATA)
-        self.instrument_choice = {'SRC1':'SRC: D4808',
-                                  'SRC2':'SRC: F5520A',
-                                  'DVM12':'DVM: HP3458A, s/n452',
-                                  'DVMd':'DVM: HP3458A, s/n230',
-                                  'DVMT1':'none',#'DVM: HP34401A, s/n976'
-                                  'DVMT2':'none',#'DVM: HP34420A, s/n130'
-                                  'GMH1':'GMH: s/n627',
-                                  'GMH2':'GMH: s/n628',
-                                  'switchbox':'V1'}
-        for r in self.instrument_choice.keys():
-            d = self.instrument_choice[r]
-#            self.SetRole(d,r) # Link role and descr in devices.INSTR_DATA, and update a_cb
-            devices.ROLES_WIDGETS[r]['icb'].SetValue(d) # Update i_cb
-            self.CreateInstr(d,r)
-        self.R1Name.SetValue('CHANGE_THIS! 1G')
-        self.R2Name.SetValue('CHANGE_THIS! 1M')
-
 
     def OnTest(self, e):
         # Called when a 'test' button is clicked
