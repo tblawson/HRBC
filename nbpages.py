@@ -384,9 +384,9 @@ class SetupPage(wx.Panel):
     def SetInstr(self,d,r):
         """
         Called by CreateInstr().
-        Updates internal info and Enables/disables testbuttons as necessary.
+        Updates internal info (INSTR_DATA) and Enables/disables testbuttons as necessary.
         """
-        print 'nbpages.SetupPage.SetInstr():',r,'will now be',d
+        print 'nbpages.SetupPage.SetInstr():',d,'assigned to role',r,'demo mode:',devices.ROLES_INSTR[r].demo,'\n'
         assert devices.INSTR_DATA.has_key(d),'Unknown instrument: %s - check Excel file is loaded.'%d
         assert devices.INSTR_DATA[d].has_key('role'),'Unknown instrument parameter - check Excel Parameters sheet is populated.'
         devices.INSTR_DATA[d]['role'] = r # update default role
