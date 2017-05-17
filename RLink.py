@@ -49,11 +49,11 @@ class RLThread(Thread):
         print'\nRole -> Instrument:'
         print'------------------------------'
         # Print all instrument objects
-        for r in devices.ROLES_WIDGETS.keys(): # visastuff replaced
-            d = devices.ROLES_WIDGETS[r]['icb'].GetValue() # visastuff replaced
-            print'%s -> %s'%(devices.INSTR_DATA[d]['role'],d) # visastuff replaced
-            if r != devices.INSTR_DATA[d]['role']: # visastuff replaced
-                devices.INSTR_DATA[d]['role'] = r # visastuff replaced
+        for r in devices.ROLES_WIDGETS.keys():
+            d = devices.ROLES_WIDGETS[r]['icb'].GetValue()
+            print'%s -> %s'%(devices.INSTR_DATA[d]['role'],d)
+            if r != devices.INSTR_DATA[d]['role']:
+                devices.INSTR_DATA[d]['role'] = r
                 print'Role data corrected to:',r,'->',d
 
         # Get filename of Excel file
