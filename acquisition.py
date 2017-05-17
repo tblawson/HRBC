@@ -53,13 +53,13 @@ class AqnThread(Thread):
         print'Role -> Instrument:'
         print'------------------------------'
         # Print all GPIB instrument objects
-        for r in devices.ROLES_WIDGETS.keys(): # replaced visastuff
-            d = devices.ROLES_WIDGETS[r]['icb'].GetValue() # replaced visastuff
+        for r in devices.ROLES_WIDGETS.keys():
+            d = devices.ROLES_WIDGETS[r]['icb'].GetValue()
             # For 'switchbox' role, d is actually the setting (V1, Vd1,...) not the instrument description.
             
-            print'%s -> %s'%(devices.INSTR_DATA[d]['role'],d) # replaced visastuff
-            if r != devices.INSTR_DATA[d]['role']: # replaced visastuff
-                devices.INSTR_DATA[d]['role'] = r # replaced visastuff
+            print'%s -> %s'%(devices.INSTR_DATA[d]['role'],d)
+            if r != devices.INSTR_DATA[d]['role']:
+                devices.INSTR_DATA[d]['role'] = r
                 print'Role data corrected to:',r,'->',d
 
         # Get filename of Excel file
@@ -149,7 +149,7 @@ class AqnThread(Thread):
 
         time.sleep(self.settle_time)
 
-        # Initialise all instruments
+        # Initialise all instruments (doesn't open GMH sensors yet)
         self.initialise()
 
         stat_ev = evts.StatusEvent(msg='', field='b') # write to both status fields
@@ -160,8 +160,13 @@ class AqnThread(Thread):
         time.sleep(3) # 3
 
         # Get some initial temperatures...
+        devices.ROLES_INSTR['GMH1'].Open()
         self.ws['U'+str(self.start_row-1)] = devices.ROLES_INSTR['GMH1'].Measure('T') # self.TR1
+        devices.ROLES_INSTR['GMH1'].Close()
+        
+        devices.ROLES_INSTR['GMH2'].Open()
         self.ws['V'+str(self.start_row-1)] = devices.ROLES_INSTR['GMH2'].Measure('T') # self.TR2
+        devices.ROLES_INSTR['GMH2'].Close()
 
         # Record ALL POSSIBLE roles and corresponding instrument descriptions in XL sheet
         role_row = self.start_row
@@ -243,8 +248,10 @@ class AqnThread(Thread):
             devices.ROLES_INSTR['DVM12'].Read()# junk = ...dvmV1V2 # replaced visastuff
             for i in range(self.n_readings):
                 self.MeasureV('V1')
+            devices.ROLES_INSTR['GMH1'].Open()
             self.T1 = devices.ROLES_INSTR['GMH1'].Measure('T')
-
+            devices.ROLES_INSTR['GMH1'].Close()
+            
             # Update run displays on Run page via a DataEvent:
             t1 = str(dt.datetime.fromtimestamp(np.mean(self.V1Times)).strftime("%d/%m/%Y %H:%M:%S"))
             V1m = str(np.mean(self.V1Data))
@@ -289,7 +296,9 @@ class AqnThread(Thread):
             devices.ROLES_INSTR['DVM12'].Read()# dvmV1V2 # replaced visastuff
             for i in range(self.n_readings):
                 self.MeasureV('V2')
+            devices.ROLES_INSTR['GMH2'].Open()    
             self.T2 = devices.ROLES_INSTR['GMH2'].Measure('T')
+            devices.ROLES_INSTR['GMH2'].Close()
 
             # Update displays on Run page via a DataEvent:
             t2 = str(dt.datetime.fromtimestamp(np.mean(self.V2Times)).strftime("%d/%m/%Y %H:%M:%S"))
@@ -360,11 +369,17 @@ class AqnThread(Thread):
         stat_ev = evts.StatusEvent(msg='Initialising instruments...', field=0)
         wx.PostEvent(self.TopLevel, stat_ev)
 
-        for r in devices.ROLES_INSTR.keys(): # replaced visastuff
-            d = devices.ROLES_WIDGETS[r]['icb'].GetValue() # replaced visastuff
+        for r in devices.ROLES_INSTR.keys():
+            d = devices.ROLES_WIDGETS[r]['icb'].GetValue()
+            if not devices.ROLES_INSTR[r].is_open and 'GMH' not in devices.ROLES_INSTR[r].Descr:
+                print'AqnThread.initialise(): Opening',d
+                devices.ROLES_INSTR[r].Open()
+            else:
+                print'AqnThread.initialise(): %s already open'%d
+            
             stat_ev = evts.StatusEvent(msg=d, field=1)
             wx.PostEvent(self.TopLevel, stat_ev)
-            devices.ROLES_INSTR[r].Init() # replaced visastuff
+            devices.ROLES_INSTR[r].Init()
             time.sleep(1)
         stat_ev = evts.StatusEvent(msg='Done', field=0)
         wx.PostEvent(self.TopLevel, stat_ev)
@@ -501,18 +516,18 @@ class AqnThread(Thread):
         self.ws['N'+str(row)] = np.mean(self.VdData)
         self.ws['O'+str(row)] = np.std(self.VdData,ddof=1)
 
-        if devices.ROLES_INSTR['DVMT1'].Demo == True: # replaced visastuff
+        if devices.ROLES_INSTR['DVMT1'].demo == True:
             T1dvmOP = np.random.normal(108.0,1.0e-2)
             self.ws['S'+str(row)] = T1dvmOP
         else:
-            T1dvmOP = devices.ROLES_INSTR['DVMT1'].SendCmd('READ?') # replaced visastuff
+            T1dvmOP = devices.ROLES_INSTR['DVMT1'].SendCmd('READ?')
             self.ws['S'+str(row)] = float(filter(self.filt,T1dvmOP))
 
-        if devices.ROLES_INSTR['DVMT2'].Demo == True: # replaced visastuff
+        if devices.ROLES_INSTR['DVMT2'].demo == True:
             T2dvmOP = np.random.normal(108.0,1.0e-2)
             self.ws['T'+str(row)] = T2dvmOP
         else:
-            T2dvmOP = devices.ROLES_INSTR['DVMT2'].SendCmd('READ?') # replaced visastuff
+            T2dvmOP = devices.ROLES_INSTR['DVMT2'].SendCmd('READ?')
             self.ws['T'+str(row)] = float(filter(self.filt,T2dvmOP))
 
         self.ws['U'+str(row)] = self.T1
@@ -528,7 +543,7 @@ class AqnThread(Thread):
         self.wb_io.save(self.xlfilename)
 
     def AbortRun(self):
-        # prematurely end run
+        # prematurely end run, prompted by regular checks of _want_abort flag
         self.Standby() # Set sources to 0V and leave system safe
 
         stat_ev = evts.StatusEvent(msg='AbortRun(): Run stopped', field=0)
@@ -536,6 +551,14 @@ class AqnThread(Thread):
 
         stop_ev = evts.DataEvent(t='-', Vm='-', Vsd='-', P=0, r='-',flag='E') # End
         wx.PostEvent(self.RunPage, stop_ev)
+        
+        for r in devices.ROLES_INSTR.keys():
+            d = devices.ROLES_INSTR[r].Descr
+            if devices.ROLES_INSTR[r].is_open:
+                print'AqnThread.AbortRun(): Closing',d
+                devices.ROLES_INSTR[r].Close()
+            else:
+                print'AqnThread.AbortRun(): %s already closed'%d
 
         self.RunPage.StartBtn.Enable(True)
 
@@ -554,12 +577,20 @@ class AqnThread(Thread):
         wx.PostEvent(self.TopLevel, stat_ev)
         stat_ev = evts.StatusEvent(msg='', field=1)
         wx.PostEvent(self.TopLevel, stat_ev)
+        
+        for r in devices.ROLES_INSTR.keys():
+            d = devices.ROLES_INSTR[r].Descr
+            if devices.ROLES_INSTR[r].is_open:
+                print'AqnThread.FinishRun(): Closing',d
+                devices.ROLES_INSTR[r].Close()
+            else:
+                print'AqnThread.FinishRun(): %s already closed'%d
 
         self.RunPage.StartBtn.Enable(True)
 
     def Standby(self):
         # Set sources to 0V and disable outputs
-        devices.ROLES_INSTR['SRC1'].SendCmd('R0=') # srcV1  'R0=' # replaced visastuff
+        devices.ROLES_INSTR['SRC1'].SendCmd('R0=') # srcV1  'R0='
         self.RunPage.V1Setting.SetValue(str(0))
         self.RunPage.V2Setting.SetValue(str(0))
         

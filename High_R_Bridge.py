@@ -32,7 +32,7 @@ import wx
 #import wx.lib.inspection
 import nbpages as page
 import HighRes_events as evts
-import visastuff
+import devices
 
 VERSION = "0.4"
 
@@ -119,14 +119,14 @@ class MainFrame(wx.Frame):
             wx.PostEvent(self.page1,file_evt)
         dlg.Destroy()
 
-    def CloseVisaSessions(self,event=None):
-        for r in visastuff.ROLES_INSTR.keys():
-            visastuff.ROLES_INSTR[r].Close()
-        visastuff.RM.close()
-        print'Main.CloseVisaSessions(): closed resource manager'
+    def CloseInstrSessions(self,event=None):
+        for r in devices.ROLES_INSTR.keys():
+            devices.ROLES_INSTR[r].Close()
+        devices.RM.close()
+        print'Main.CloseInstrSessions(): closed VISA resource manager and GMH instruments'
 
     def OnQuit(self, event=None):
-        self.CloseVisaSessions()
+        self.CloseInstrSessions()
         self.OnSave()
         self.Close()
 

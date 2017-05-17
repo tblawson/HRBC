@@ -368,16 +368,16 @@ class SetupPage(wx.Panel):
             # create and open a GMH instrument instance
             print'\nnbpages.SetupPage.CreateInstr(): Creating GMH device...'
             devices.ROLES_INSTR.update({r:devices.GMH_Sensor(d)})
-            devices.ROLES_INSTR[r].Open()
+#            devices.ROLES_INSTR[r].Open()
         else:
             # create and open a visa instrument instance
             print'\nnbpages.SetupPage.CreateInstr(): Creating VISA device...'
             devices.ROLES_INSTR.update({r:devices.instrument(d)})
-            try:
-                devices.ROLES_INSTR[r].Open()
-            except devices.visa.VisaIOError:
-                addr = devices.INSTR_DATA[d]['str_addr']
-                self.status.SetStatusText('No GPIB instrument at address %s!'%addr,1)
+#            try:
+#                devices.ROLES_INSTR[r].Open()
+#            except devices.visa.VisaIOError:
+#                addr = devices.INSTR_DATA[d]['str_addr']
+#                self.status.SetStatusText('No GPIB instrument at address %s!'%addr,1)
         self.SetInstr(d,r)
 
 
@@ -386,7 +386,7 @@ class SetupPage(wx.Panel):
         Called by CreateInstr().
         Updates internal info (INSTR_DATA) and Enables/disables testbuttons as necessary.
         """
-        print 'nbpages.SetupPage.SetInstr():',d,'assigned to role',r,'demo mode:',devices.ROLES_INSTR[r].demo,'\n'
+        print 'nbpages.SetupPage.SetInstr():',d,'assigned to role',r,'demo mode:',devices.ROLES_INSTR[r].demo
         assert devices.INSTR_DATA.has_key(d),'Unknown instrument: %s - check Excel file is loaded.'%d
         assert devices.INSTR_DATA[d].has_key('role'),'Unknown instrument parameter - check Excel Parameters sheet is populated.'
         devices.INSTR_DATA[d]['role'] = r # update default role
@@ -412,14 +412,14 @@ class SetupPage(wx.Panel):
                 break # stop looking when we've found the right instrument description
         a = e.GetString() # address string, eg 'COM5' or 'GPIB0::23'
         if (a not in self.GPIBAddressList) or (a not in self.COMAddressList): # Ignore dummy values, like 'NO_ADDRESS'
-            if devices.ROLES_INSTR[r].is_open:
-                devices.ROLES_INSTR[r].Close()
+#            if devices.ROLES_INSTR[r].is_open:
+#                devices.ROLES_INSTR[r].Close()
             devices.INSTR_DATA[d]['str_addr'] = a
             devices.ROLES_INSTR[r].str_addr = a
             addr = a.lstrip('COMGPIB0:') # leave only numeric part of address string
             devices.INSTR_DATA[d]['addr'] = int(addr)
-            devices.ROLES_INSTR[r].addr = addr
-            devices.ROLES_INSTR[r].Open()
+            devices.ROLES_INSTR[r].addr = int(addr)
+#            devices.ROLES_INSTR[r].Open()
         print'UpdateAddr():',r,'using',d,'set to addr',addr,'(',a,')'
             
 
@@ -430,7 +430,7 @@ class SetupPage(wx.Panel):
             if devices.ROLES_WIDGETS[r]['tbtn'] == e.GetEventObject():
                 d = devices.ROLES_WIDGETS[r]['icb'].GetValue()
                 break # stop looking when we've found the right instrument description
-        print'OnTest(): d =',d
+        print'\nOnTest():',d
         assert devices.INSTR_DATA[d].has_key('test'), 'No test exists for this device.'
         test = devices.INSTR_DATA[d]['test'] # test string
         print 'Test string:',test
