@@ -337,10 +337,15 @@ class AqnThread(Thread):
             wx.PostEvent(self.RunPage, update_ev)
 
             # Record room conditions
+            devices.ROLES_INSTR['GMHroom'].Open()
             self.Troom = devices.ROLES_INSTR['GMHroom'].Measure('T')
+            print'Troom:',self.Troom
             self.Proom = devices.ROLES_INSTR['GMHroom'].Measure('P')
+            print'Proom:',self.Proom
             self.RHroom = devices.ROLES_INSTR['GMHroom'].Measure('RH')
-
+            print'RHroom:',self.RHroom
+            devices.ROLES_INSTR['GMHroom'].Close()
+            
             self.WriteDataThisRow(row)
 
             # Plot data
