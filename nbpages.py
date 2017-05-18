@@ -239,8 +239,8 @@ class SetupPage(wx.Panel):
         gbSizer.Add(self.R2Name, pos=(7,5), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
         gbSizer.Add(RNamesLbl, pos=(5,5), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
         # Filename
-        gbSizer.Add(FileLbl, pos=(10,0), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5) # move to row 11?
-        gbSizer.Add(self.XLFile, pos=(10,1), span=(1,5), flag=wx.ALL|wx.EXPAND, border=5) # move to row 11?
+        gbSizer.Add(FileLbl, pos=(11,0), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
+        gbSizer.Add(self.XLFile, pos=(11,1), span=(1,5), flag=wx.ALL|wx.EXPAND, border=5)
         # Test buttons
         gbSizer.Add(self.S1Test, pos=(0,3), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
         gbSizer.Add(self.S2Test, pos=(1,3), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
@@ -251,7 +251,7 @@ class SetupPage(wx.Panel):
         gbSizer.Add(self.GMH1Test, pos=(6,3), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
         gbSizer.Add(self.GMH2Test, pos=(7,3), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
         gbSizer.Add(self.GMHroomTest, pos=(8,3), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
-        gbSizer.Add(self.SwitchboxTest, pos=(8,3), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
+        gbSizer.Add(self.SwitchboxTest, pos=(9,3), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
         
         gbSizer.Add(ResponseLbl, pos=(1,4), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
         gbSizer.Add(self.Response, pos=(2,4), span=(1,3), flag=wx.ALL|wx.EXPAND, border=5)
@@ -313,7 +313,6 @@ class SetupPage(wx.Panel):
         headings = (None, u'description',u'Instrument Info:',u'parameter',u'value',u'uncert',u'dof',u'label')
         
         # Determine colummn indices from column letters:
-        #col_H = cell.column_index_from_string('H') - 1
         col_I = cell.column_index_from_string('I') - 1
         col_J = cell.column_index_from_string('J') - 1
         col_K = cell.column_index_from_string('K') - 1
@@ -395,16 +394,10 @@ class SetupPage(wx.Panel):
             # create and open a GMH instrument instance
             print'\nnbpages.SetupPage.CreateInstr(): Creating GMH device...'
             devices.ROLES_INSTR.update({r:devices.GMH_Sensor(d)})
-#            devices.ROLES_INSTR[r].Open()
         else:
-            # create and open a visa instrument instance
-            print'\nnbpages.SetupPage.CreateInstr(): Creating VISA device...'
+            # create a visa instrument instance
+            print'\nnbpages.SetupPage.CreateInstr(): Creating VISA device (%s -> %s)...'%(d,r)
             devices.ROLES_INSTR.update({r:devices.instrument(d)})
-#            try:
-#                devices.ROLES_INSTR[r].Open()
-#            except devices.visa.VisaIOError:
-#                addr = devices.INSTR_DATA[d]['str_addr']
-#                self.status.SetStatusText('No GPIB instrument at address %s!'%addr,1)
         self.SetInstr(d,r)
 
 
@@ -439,14 +432,11 @@ class SetupPage(wx.Panel):
                 break # stop looking when we've found the right instrument description
         a = e.GetString() # address string, eg 'COM5' or 'GPIB0::23'
         if (a not in self.GPIBAddressList) or (a not in self.COMAddressList): # Ignore dummy values, like 'NO_ADDRESS'
-#            if devices.ROLES_INSTR[r].is_open:
-#                devices.ROLES_INSTR[r].Close()
             devices.INSTR_DATA[d]['str_addr'] = a
             devices.ROLES_INSTR[r].str_addr = a
             addr = a.lstrip('COMGPIB0:') # leave only numeric part of address string
             devices.INSTR_DATA[d]['addr'] = int(addr)
             devices.ROLES_INSTR[r].addr = int(addr)
-#            devices.ROLES_INSTR[r].Open()
         print'UpdateAddr():',r,'using',d,'set to addr',addr,'(',a,')'
             
 
