@@ -392,11 +392,11 @@ class SetupPage(wx.Panel):
 
         if 'GMH' in d:
             # create and open a GMH instrument instance
-            print'\nnbpages.SetupPage.CreateInstr(): Creating GMH device...'
+            print'\nnbpages.SetupPage.CreateInstr(): Creating GMH device (%s -> %s).'%(d,r)
             devices.ROLES_INSTR.update({r:devices.GMH_Sensor(d)})
         else:
             # create a visa instrument instance
-            print'\nnbpages.SetupPage.CreateInstr(): Creating VISA device (%s -> %s)...'%(d,r)
+            print'\nnbpages.SetupPage.CreateInstr(): Creating VISA device (%s -> %s).'%(d,r)
             devices.ROLES_INSTR.update({r:devices.instrument(d)})
         self.SetInstr(d,r)
 
