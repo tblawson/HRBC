@@ -219,19 +219,29 @@ class GMH_Sensor(device):
 
     def Measure(self, meas):
         """
-        Measure either temperature, pressure or %RH, based on parameter meas
-        Returns a tuple: (<Temperature/Pressure/RH as int>, <unit as string>)
-        meas is one of: 'T', 'P', 'RH', 'T_dew', 't_wb', 'H_atm' or 'H_abs'.
+        Measure either temperature, pressure or humidity, based on parameter meas
+        Returns a float.
+        meas is one of: 'T', 'P', 'RH', 'T_dew', 't_wb', 'H_atm' or 'H_abs'.\
+        
+        NOTE that because GMH_CloseCom() acts on ALL open GMH devices it makes
+        sense to only have a device open when communicating with it and to
+        immediately close it afterwards. This way the default state is closed
+        and the open state is treated as a special case. Hence an Open()-Close()
+        'bracket' surrounds the Measure() function.
         """
         if self.demo == True:
-            return np.random.normal(20.5,0.1)
+            demo_rtn = {'T':(20.5,0.2),'P':(1013,5),'RH':(50,10)}
+            return np.random.normal(*demo_rtn[meas])
         else:
-            assert self.demo == False,'GMH sensor in demo mode.'
+            assert self.demo == False,'GMH sensor in demo mode!'
             assert len(self.info) > 0,'No measurement functions available from this GMH sensor.'
             assert self.meas_alias.has_key(meas),'This measurement function is not available.'
+            
+            self.Open()
             Address = self.info[self.meas_alias[meas]][0]
             Addr = ct.c_short(Address)
             self.Transmit(Addr,self.ValFn)
+            self.Close()
             
             print'devices.Measure(): return[0] = ',self.flData.value
             print'devices.Measure(): return[1] = ',self.info[self.meas_alias[meas]][1]

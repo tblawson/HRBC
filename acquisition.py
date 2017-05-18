@@ -157,14 +157,9 @@ class AqnThread(Thread):
         wx.PostEvent(self.TopLevel, stat_ev)
         time.sleep(3) # 3
 
-        # Get some initial temperatures...
-        devices.ROLES_INSTR['GMH1'].Open()
+        # Get some initial temperatures...      
         self.ws['U'+str(self.start_row-1)] = devices.ROLES_INSTR['GMH1'].Measure('T') # self.TR1
-        devices.ROLES_INSTR['GMH1'].Close()
-        
-        devices.ROLES_INSTR['GMH2'].Open()
         self.ws['V'+str(self.start_row-1)] = devices.ROLES_INSTR['GMH2'].Measure('T') # self.TR2
-        devices.ROLES_INSTR['GMH2'].Close()
 
         # Record ALL POSSIBLE roles and corresponding instrument descriptions in XL sheet
         role_row = self.start_row
@@ -246,9 +241,7 @@ class AqnThread(Thread):
             devices.ROLES_INSTR['DVM12'].Read()# junk = ...dvmV1V2 # replaced visastuff
             for i in range(self.n_readings):
                 self.MeasureV('V1')
-            devices.ROLES_INSTR['GMH1'].Open()
             self.T1 = devices.ROLES_INSTR['GMH1'].Measure('T')
-            devices.ROLES_INSTR['GMH1'].Close()
             
             # Update run displays on Run page via a DataEvent:
             t1 = str(dt.datetime.fromtimestamp(np.mean(self.V1Times)).strftime("%d/%m/%Y %H:%M:%S"))
@@ -294,9 +287,7 @@ class AqnThread(Thread):
             devices.ROLES_INSTR['DVM12'].Read()# dvmV1V2 # replaced visastuff
             for i in range(self.n_readings):
                 self.MeasureV('V2')
-            devices.ROLES_INSTR['GMH2'].Open()    
             self.T2 = devices.ROLES_INSTR['GMH2'].Measure('T')
-            devices.ROLES_INSTR['GMH2'].Close()
 
             # Update displays on Run page via a DataEvent:
             t2 = str(dt.datetime.fromtimestamp(np.mean(self.V2Times)).strftime("%d/%m/%Y %H:%M:%S"))
@@ -335,14 +326,9 @@ class AqnThread(Thread):
             wx.PostEvent(self.RunPage, update_ev)
 
             # Record room conditions
-            devices.ROLES_INSTR['GMHroom'].Open()
             self.Troom = devices.ROLES_INSTR['GMHroom'].Measure('T')
-            print'Troom:',self.Troom
             self.Proom = devices.ROLES_INSTR['GMHroom'].Measure('P')
-            print'Proom:',self.Proom
             self.RHroom = devices.ROLES_INSTR['GMHroom'].Measure('RH')
-            print'RHroom:',self.RHroom
-            devices.ROLES_INSTR['GMHroom'].Close()
             
             self.WriteDataThisRow(row)
 
