@@ -91,8 +91,6 @@ class AqnThread(Thread):
 #        self.GMH1Addr = devices.INSTR_DATA[self.SetupPage.GMH1Probes.GetValue()]['hw_addr'] # replaced visastuff
 #        self.GMH2Addr = devices.INSTR_DATA[self.SetupPage.GMH2Probes.GetValue()]['hw_addr'] # replaced visastuff
         
-#        print 'GMH1 on port %s, hw_addr %d' % (self.GMH1Port, self.GMH1Addr)
-#        print 'GMH2 on port %s, hw_addr %d' % (self.GMH2Port, self.GMH2Addr)
         
         self.start() # Starts the thread running on creation
 
@@ -176,11 +174,11 @@ class AqnThread(Thread):
         bord_r = Border(right = Side(style='thin'))
         bord_bl = Border(bottom = Side(style='thin'), left = Side(style='thin'))
         bord_br = Border(bottom = Side(style='thin'), right = Side(style='thin'))
-        for r in devices.ROLES_WIDGETS.keys(): # replaced visastuff
+        for r in devices.ROLES_WIDGETS.keys():
             if role_row == self.start_row: # 1st row
                 self.ws['AC'+str(role_row)].border = bord_tl
                 self.ws['AD'+str(role_row)].border = bord_tr
-            elif role_row == self.start_row + 8: # last row
+            elif role_row == self.start_row + 9: # last row
                 self.ws['AC'+str(role_row)].border = bord_bl
                 self.ws['AD'+str(role_row)].border = bord_br
             else: # in-between rows
@@ -463,51 +461,6 @@ class AqnThread(Thread):
                 dvmOP = devices.ROLES_INSTR['DVMd'].Read() # dvmVd
                 self.VdData.append(float(filter(self.filt,dvmOP)))
             return 1
-            
-#    def MeasureV1(self):
-#        self.V1Times.append(time.time())
-#        if devices.ROLES_INSTR['DVM12'].Demo == True: # replaced visastuff
-#            dvmOP = np.random.normal(self.V1_set,1.0e-5*abs(self.V1_set))
-#            self.V1Data.append(dvmOP)
-#        else:
-#            # lfreq line, azero once,range auto, wait for settle
-#            dvmOP = devices.ROLES_INSTR['DVM12'].Read()# dvmV1V2 # replaced visastuff
-#            self.V1Data.append(float(filter(self.filt,dvmOP)))
-#
-#    def MeasureV2(self):
-#        self.V2Times.append(time.time())
-#        if devices.ROLES_INSTR['DVM12'].Demo == True: # replaced visastuff
-#            dvmOP = np.random.normal(self.V2_set,1.0e-5*abs(self.V2_set))
-#            self.V2Data.append(dvmOP)
-#        else:
-#            dvmOP = devices.ROLES_INSTR['DVM12'].Read() # dvmV1V2 # replaced visastuff
-#            self.V2Data.append(float(filter(self.filt,dvmOP)))
-
-#    def MeasureVd(self):
-#        self.VdTimes.append(time.time())
-#        if self.AZ1_del > 0:
-#            devices.ROLES_INSTR['DVMd'].SendCmd('AZERO ONCE') # dvmVd: AZERO ONCE # replaced visastuff
-#            time.sleep(self.AZ1_del)
-#        if devices.ROLES_INSTR['DVMd'].Demo == True: # replaced visastuff:
-#            dvmOP = np.random.normal(0.0,1.0e-6)
-#            self.VdData.append(dvmOP)
-#        else:
-#            dvmOP = devices.ROLES_INSTR['DVMd'].Read() # dvmVd # replaced visastuff
-#            self.VdData.append(float(filter(self.filt,dvmOP)))
-
-#    def ReadGMH(self,port,addr,demo_stat):
-#        com = GMH.ct.c_short(port)
-#        GMH.GMHLIB.GMH_OpenCom(com)
-#        Prio = GMH.ct.c_short()
-#        flData = GMH.ct.c_double() # Don't change this type!! It's the exactly right one!
-#        intData = GMH.ct.c_long()
-#        ValFunc = GMH.ct.c_short(0) # GetValue()
-#        GMH.GMHLIB.GMH_Transmit(addr,ValFunc,GMH.ct.byref(Prio),GMH.ct.byref(flData),GMH.ct.byref(intData))
-#        GMH.GMHLIB.GMH_CloseCom()
-#        if demo_stat == True:
-#            return np.random.normal(20.5,0.1)
-#        else:
-#            return flData.value
 
 
     def WriteDataThisRow(self,row):
