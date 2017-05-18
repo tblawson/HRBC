@@ -336,6 +336,11 @@ class AqnThread(Thread):
             update_ev = evts.DataEvent(t=td, Vm=Vdm, Vsd=Vdsd, P=P, r=row, flag='d')
             wx.PostEvent(self.RunPage, update_ev)
 
+            # Record room conditions
+            self.Troom = devices.ROLES_INSTR['GMHroom'].Measure('T')
+            self.Proom = devices.ROLES_INSTR['GMHroom'].Measure('P')
+            self.RHroom = devices.ROLES_INSTR['GMHroom'].Measure('RH')
+
             self.WriteDataThisRow(row)
 
             # Plot data
@@ -532,13 +537,10 @@ class AqnThread(Thread):
 
         self.ws['U'+str(row)] = self.T1
         self.ws['V'+str(row)] = self.T2
-        # measure RH - write to col 23(W)
+        self.ws['W'+str(row)] = self.Troom
+        self.ws['X'+str(row)] = self.Proom
+        self.ws['Y'+str(row)] = self.RHroom
         self.ws['Z'+str(row)] = self.Comment
-        
-        """
-        Need to add ambient parameters (T, P, %RH)
-        to columns W, X, Y respectively.
-        """
 
         self.wb_io.save(self.xlfilename)
 
