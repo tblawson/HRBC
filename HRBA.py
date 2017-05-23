@@ -181,14 +181,17 @@ elif V1set_b < V1set_a:
 else: # 'HV' and 'LV' equal
     LV = HV = V1set_a
 
-# Set up reading of Data sheet 
+# Set up reading of Data sheet
 Data_row = Data_start_row
 
 # Get start_row on Summary sheet
 summary_start_row = ws_Summary['B1'].value
+assert summary_start_row is not None,'Missing start row on Results sheet!'
 
 # Get run identifier and copy to Results sheet
 Run_Id = ws_Data['B'+str(Data_start_row-1)].value
+assert Run_Id is not None,'Missing Run Id!'
+
 ws_Summary['C'+str(summary_start_row)] = 'Run Id:'
 ws_Summary['D'+str(summary_start_row)] = str(Run_Id)
 
@@ -210,6 +213,8 @@ results_LV = [] # Low voltage measurements
 
 # Get run comment and extract R names & R values
 Data_comment = ws_Data['Z'+str(Data_row)].value
+assert Data_comment is not None,'Missing Comment!'
+
 R1_name,R2_name = R_info.ExtractNames(Data_comment)
 R1val = R_info.GetRval(R1_name)
 R2val = R_info.GetRval(R2_name)
