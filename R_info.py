@@ -24,6 +24,8 @@ ZERO = GTC.ureal(0,0)
 
 # Extract resistor names from comment
 def ExtractNames(comment):
+    assert comment.find('R1: ') >= 0,'R1 name not found in comment!'
+    assert comment.find('R2: ') >= 0,'R2 name not found in comment!'
     R1_name = comment[comment.find('R1: ') + 4:comment.find(' monitored by GMH')]
     R2_name = comment[comment.find('R2: ') + 4:comment.rfind(' monitored by GMH')]
     return (R1_name,R2_name)
