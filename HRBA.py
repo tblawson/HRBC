@@ -75,9 +75,11 @@ assert Data_start_row <= Data_stop_row,'Stop row must follow start row!'
 
 # Get instrument assignments
 role_descr = {}
-for row in range(Data_start_row, Data_start_row+10): # 9 roles in total
+for row in range(Data_start_row, Data_start_row+10): # 10 roles in total
     # Grab {role:description}
-    temp_dict = {ws_Data['AA'+str(row)].value : ws_Data['AB'+str(row)].value} 
+    temp_dict = {ws_Data['AC'+str(row)].value : ws_Data['AD'+str(row)].value}
+    assert temp_dict.keys()[0] is not None,'Instrument assignment: Missing role!'
+    assert temp_dict.values()[0] is not None,'Instrument assignment: Missing description!'
     role_descr.update(temp_dict)
 
 #######################################################################    
