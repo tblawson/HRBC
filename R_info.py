@@ -38,7 +38,7 @@ def GetRval(name):
         mult = prefixes[name[-1]]
     else:
         mult = 0
-        print'Error parsing comment!'
+    assert mult != 0,'Error parsing comment - unkown multiplier!'
         
     # return numeric part of last word, multiplied by 1, 10^3, 10^6 or 10^9:
     return(mult*int(string.strip(string.split(name)[-1],string.letters)))
