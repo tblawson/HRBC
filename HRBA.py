@@ -71,12 +71,15 @@ ws_Params = wb_io.get_sheet_by_name('Parameters')
 # Get local parameters
 Data_start_row = ws_Data['B1'].value
 Data_stop_row = ws_Data['B2'].value
+assert Data_start_row <= Data_stop_row,'Stop row must follow start row!'
 
 # Get instrument assignments
 role_descr = {}
-for row in range(Data_start_row, Data_start_row+9): # 9 roles in total
+for row in range(Data_start_row, Data_start_row+10): # 10 roles in total
     # Grab {role:description}
-    temp_dict = {ws_Data['AA'+str(row)].value : ws_Data['AB'+str(row)].value} 
+    temp_dict = {ws_Data['AC'+str(row)].value : ws_Data['AD'+str(row)].value}
+    assert temp_dict.keys()[0] is not None,'Instrument assignment: Missing role!'
+    assert temp_dict.values()[0] is not None,'Instrument assignment: Missing description!'
     role_descr.update(temp_dict)
 
 #######################################################################    
@@ -95,7 +98,7 @@ col_D = cell.column_index_from_string('D') - 1
 col_E = cell.column_index_from_string('E') - 1
 col_F = cell.column_index_from_string('F') - 1
 col_G = cell.column_index_from_string('G') - 1
-col_H = cell.column_index_from_string('H') - 1
+#col_H = cell.column_index_from_string('H') - 1
 col_I = cell.column_index_from_string('I') - 1
 col_J = cell.column_index_from_string('J') - 1
 col_K = cell.column_index_from_string('K') - 1
@@ -121,6 +124,7 @@ for r in ws_Params.rows: # a tuple of row objects
     # description, parameter, value, uncert, dof, label:
     R_row_items = [r[col_A].value, r[col_B].value, r[col_C].value, r[col_D].value,
                    r[col_E].value, r[col_F].value, r[col_G].value]
+    
     I_row_items = [r[col_I].value, r[col_J].value, r[col_K].value, r[col_L].value,
                    r[col_M].value, r[col_N].value, r[col_O].value]
     
@@ -133,10 +137,10 @@ for r in ws_Params.rows: # a tuple of row objects
         
     else: # not header - main data
         # Get instrument parameters first...
-        last_I_row = r[col_H].row
+        last_I_row = r[col_I].row
         I_params.append(I_row_items[1])
         I_values.append(R_info.Uncertainize(I_row_items))
-        if I_row_items[1] == u'demo': # last parameter for this description
+        if I_row_items[1] == u'test': # last parameter for this description
             I_DESCR.append(I_row_items[0]) # build description list
             I_sublist.append(dict(zip(I_params,I_values))) # add parameter dictionary to sublist
             del I_params[:]
@@ -156,7 +160,7 @@ for r in ws_Params.rows: # a tuple of row objects
 # Compile into dictionaries
 I_INFO = dict(zip(I_DESCR,I_sublist))
 print len(I_INFO),'instruments (%d rows)'%last_I_row
-#if R_end == 1:
+
 R_INFO = dict(zip(R_DESCR,R_sublist))
 print len(R_INFO),'resistors.(%d rows)\n'%last_R_row
 
@@ -165,7 +169,9 @@ print len(R_INFO),'resistors.(%d rows)\n'%last_R_row
 
 # Determine the meanings of 'LV' and 'HV'
 V1set_a = abs(ws_Data['A'+str(Data_start_row)].value)
+assert V1set_a is not None,'Missing initial V1 value!'
 V1set_b = abs(ws_Data['A'+str(Data_start_row+4)].value)
+
 if V1set_a < V1set_b:
     LV = V1set_a
     HV = V1set_b 
@@ -175,14 +181,17 @@ elif V1set_b < V1set_a:
 else: # 'HV' and 'LV' equal
     LV = HV = V1set_a
 
-# Set up reading of Data sheet 
+# Set up reading of Data sheet
 Data_row = Data_start_row
 
 # Get start_row on Summary sheet
 summary_start_row = ws_Summary['B1'].value
+assert summary_start_row is not None,'Missing start row on Results sheet!'
 
 # Get run identifier and copy to Results sheet
 Run_Id = ws_Data['B'+str(Data_start_row-1)].value
+assert Run_Id is not None,'Missing Run Id!'
+
 ws_Summary['C'+str(summary_start_row)] = 'Run Id:'
 ws_Summary['D'+str(summary_start_row)] = str(Run_Id)
 
@@ -204,6 +213,8 @@ results_LV = [] # Low voltage measurements
 
 # Get run comment and extract R names & R values
 Data_comment = ws_Data['Z'+str(Data_row)].value
+assert Data_comment is not None,'Missing Comment!'
+
 R1_name,R2_name = R_info.ExtractNames(Data_comment)
 R1val = R_info.GetRval(R1_name)
 R2val = R_info.GetRval(R2_name)
