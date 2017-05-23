@@ -406,7 +406,7 @@ class SetupPage(wx.Panel):
         Called by CreateInstr().
         Updates internal info (INSTR_DATA) and Enables/disables testbuttons as necessary.
         """
-        print 'nbpages.SetupPage.SetInstr():',d,'assigned to role',r,'demo mode:',devices.ROLES_INSTR[r].demo
+#        print 'nbpages.SetupPage.SetInstr():',d,'assigned to role',r,'demo mode:',devices.ROLES_INSTR[r].demo
         assert devices.INSTR_DATA.has_key(d),'Unknown instrument: %s - check Excel file is loaded.'%d
         assert devices.INSTR_DATA[d].has_key('role'),'Unknown instrument parameter - check Excel Parameters sheet is populated.'
         devices.INSTR_DATA[d]['role'] = r # update default role
@@ -447,10 +447,10 @@ class SetupPage(wx.Panel):
             if devices.ROLES_WIDGETS[r]['tbtn'] == e.GetEventObject():
                 d = devices.ROLES_WIDGETS[r]['icb'].GetValue()
                 break # stop looking when we've found the right instrument description
-        print'\nOnTest():',d
+        print'\nnbpages.SetupPage.OnTest():',d
         assert devices.INSTR_DATA[d].has_key('test'), 'No test exists for this device.'
         test = devices.INSTR_DATA[d]['test'] # test string
-        print 'Test string:',test
+        print '\tTest string:',test
         self.Response.SetValue(str(devices.ROLES_INSTR[r].Test(test)))
         self.status.SetStatusText('Testing %s with cmd %s' % (d,test),0)
 
