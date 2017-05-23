@@ -98,7 +98,7 @@ col_D = cell.column_index_from_string('D') - 1
 col_E = cell.column_index_from_string('E') - 1
 col_F = cell.column_index_from_string('F') - 1
 col_G = cell.column_index_from_string('G') - 1
-col_H = cell.column_index_from_string('H') - 1
+#col_H = cell.column_index_from_string('H') - 1
 col_I = cell.column_index_from_string('I') - 1
 col_J = cell.column_index_from_string('J') - 1
 col_K = cell.column_index_from_string('K') - 1
@@ -124,6 +124,7 @@ for r in ws_Params.rows: # a tuple of row objects
     # description, parameter, value, uncert, dof, label:
     R_row_items = [r[col_A].value, r[col_B].value, r[col_C].value, r[col_D].value,
                    r[col_E].value, r[col_F].value, r[col_G].value]
+    
     I_row_items = [r[col_I].value, r[col_J].value, r[col_K].value, r[col_L].value,
                    r[col_M].value, r[col_N].value, r[col_O].value]
     
@@ -136,10 +137,10 @@ for r in ws_Params.rows: # a tuple of row objects
         
     else: # not header - main data
         # Get instrument parameters first...
-        last_I_row = r[col_H].row
+        last_I_row = r[col_I].row
         I_params.append(I_row_items[1])
         I_values.append(R_info.Uncertainize(I_row_items))
-        if I_row_items[1] == u'demo': # last parameter for this description
+        if I_row_items[1] == u'test': # last parameter for this description
             I_DESCR.append(I_row_items[0]) # build description list
             I_sublist.append(dict(zip(I_params,I_values))) # add parameter dictionary to sublist
             del I_params[:]
@@ -159,7 +160,7 @@ for r in ws_Params.rows: # a tuple of row objects
 # Compile into dictionaries
 I_INFO = dict(zip(I_DESCR,I_sublist))
 print len(I_INFO),'instruments (%d rows)'%last_I_row
-#if R_end == 1:
+
 R_INFO = dict(zip(R_DESCR,R_sublist))
 print len(R_INFO),'resistors.(%d rows)\n'%last_R_row
 
