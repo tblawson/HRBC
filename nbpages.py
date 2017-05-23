@@ -96,6 +96,7 @@ class SetupPage(wx.Panel):
         self.T2Dvms = wx.ComboBox(self,wx.ID_ANY, choices = self.DVM_COMBO_CHOICE, style=wx.CB_DROPDOWN)
         self.T2Dvms.Bind(wx.EVT_COMBOBOX, self.UpdateInstr)
         self.cbox_instr_DVM.append(self.T2Dvms)
+        
         GMH1Lbl = wx.StaticText(self, label='R1 GMH probe (GMH1):', id = wx.ID_ANY)
         self.GMH1Probes = wx.ComboBox(self,wx.ID_ANY, choices = self.GMH_COMBO_CHOICE, style=wx.CB_DROPDOWN)
         self.GMH1Probes.Bind(wx.EVT_COMBOBOX, self.BuildCommStr)
@@ -104,6 +105,12 @@ class SetupPage(wx.Panel):
         self.GMH2Probes = wx.ComboBox(self,wx.ID_ANY, choices = self.GMH_COMBO_CHOICE, style=wx.CB_DROPDOWN)
         self.GMH2Probes.Bind(wx.EVT_COMBOBOX, self.BuildCommStr)
         self.cbox_instr_GMH.append(self.GMH2Probes)
+        
+        GMHroomLbl = wx.StaticText(self, label='Room conds. GMH probe (GMHroom):', id = wx.ID_ANY)
+        self.GMHroomProbes = wx.ComboBox(self,wx.ID_ANY, choices = self.GMH_COMBO_CHOICE, style=wx.CB_DROPDOWN)
+        self.GMHroomProbes.Bind(wx.EVT_COMBOBOX, self.UpdateInstr)
+        self.cbox_instr_GMH.append(self.GMHroomProbes)
+        
         SwitchboxLbl = wx.StaticText(self, label='Switchbox configuration:', id = wx.ID_ANY)
         self.Switchbox = wx.ComboBox(self,wx.ID_ANY, choices = self.SB_COMBO_CHOICE, style=wx.CB_DROPDOWN)
         self.Switchbox.Bind(wx.EVT_COMBOBOX, self.UpdateInstr)
@@ -127,15 +134,21 @@ class SetupPage(wx.Panel):
         self.T2DvmAddr = wx.ComboBox(self,wx.ID_ANY, choices = self.GPIBAddressList, style=wx.CB_DROPDOWN)
         self.cbox_addr_GPIB.append(self.T2DvmAddr)
         self.T2DvmAddr.Bind(wx.EVT_COMBOBOX, self.UpdateAddr)
+        
         self.GMH1Ports = wx.ComboBox(self,wx.ID_ANY, choices = self.COMAddressList, style=wx.CB_DROPDOWN)
         self.cbox_addr_COM.append(self.GMH1Ports)
         self.GMH1Ports.Bind(wx.EVT_COMBOBOX, self.UpdateAddr)
         self.GMH2Ports = wx.ComboBox(self,wx.ID_ANY, choices = self.COMAddressList, style=wx.CB_DROPDOWN)
         self.cbox_addr_COM.append(self.GMH2Ports)
-        
         self.GMH2Ports.Bind(wx.EVT_COMBOBOX, self.UpdateAddr)
+        
+        self.GMHroomPorts = wx.ComboBox(self,wx.ID_ANY, choices = self.COMAddressList, style=wx.CB_DROPDOWN)
+        self.cbox_addr_COM.append(self.GMHroomPorts)
+        self.GMHroomPorts.Bind(wx.EVT_COMBOBOX, self.UpdateAddr)
+        
         self.SwitchboxAddr = wx.ComboBox(self,wx.ID_ANY, choices = self.COMAddressList, style=wx.CB_DROPDOWN)
         self.cbox_addr_COM.append(self.SwitchboxAddr)
+        
 
         # Filename
         FileLbl = wx.StaticText(self, label='Excel file full path:', id = wx.ID_ANY)
@@ -169,14 +182,21 @@ class SetupPage(wx.Panel):
         self.DT1Test.Bind(wx.EVT_BUTTON, self.OnTest)
         self.DT2Test = wx.Button(self,id = wx.ID_ANY, label='Test')
         self.DT2Test.Bind(wx.EVT_BUTTON, self.OnTest)
+        
         self.GMH1Test = wx.Button(self,id = wx.ID_ANY, label='Test')
         self.GMH1Test.Bind(wx.EVT_BUTTON, self.OnTest)
         self.GMH2Test = wx.Button(self,id = wx.ID_ANY, label='Test')
         self.GMH2Test.Bind(wx.EVT_BUTTON, self.OnTest)
+        
+        self.GMHroomTest = wx.Button(self,id = wx.ID_ANY, label='Test')
+        self.GMHroomTest.Bind(wx.EVT_BUTTON, self.OnTest)
+        
         self.SwitchboxTest = wx.Button(self,id = wx.ID_ANY, label='Test')
         self.SwitchboxTest.Bind(wx.EVT_BUTTON, self.OnSwitchTest)
+        
         ResponseLbl = wx.StaticText(self, label='Instrument Test Response:', id = wx.ID_ANY)
         self.Response = wx.TextCtrl(self, id = wx.ID_ANY, value= '', style = wx.TE_READONLY)
+        
         self.TR1 = wx.TextCtrl(self, id = wx.ID_ANY, value = 'T(R1)', style = wx.TE_READONLY)
         self.TR2 = wx.TextCtrl(self, id = wx.ID_ANY, value = 'T(R2)', style = wx.TE_READONLY)
 
@@ -199,8 +219,10 @@ class SetupPage(wx.Panel):
         gbSizer.Add(self.GMH1Probes, pos=(6,1), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
         gbSizer.Add(GMH2Lbl, pos=(7,0), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
         gbSizer.Add(self.GMH2Probes, pos=(7,1), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
-        gbSizer.Add(SwitchboxLbl, pos=(8,0), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
-        gbSizer.Add(self.Switchbox, pos=(8,1), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
+        gbSizer.Add(GMHroomLbl, pos=(8,0), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
+        gbSizer.Add(self.GMHroomProbes, pos=(8,1), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
+        gbSizer.Add(SwitchboxLbl, pos=(9,0), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
+        gbSizer.Add(self.Switchbox, pos=(9,1), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
         # Addresses
         gbSizer.Add(self.V1SrcAddr, pos=(0,2), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
         gbSizer.Add(self.V2SrcAddr, pos=(1,2), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
@@ -210,14 +232,15 @@ class SetupPage(wx.Panel):
         gbSizer.Add(self.T2DvmAddr, pos=(5,2), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
         gbSizer.Add(self.GMH1Ports, pos=(6,2), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
         gbSizer.Add(self.GMH2Ports, pos=(7,2), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
-        gbSizer.Add(self.SwitchboxAddr, pos=(8,2), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
+        gbSizer.Add(self.GMHroomPorts, pos=(8,2), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)    
+        gbSizer.Add(self.SwitchboxAddr, pos=(9,2), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
         # R Name
         gbSizer.Add(self.R1Name, pos=(6,5), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
         gbSizer.Add(self.R2Name, pos=(7,5), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
         gbSizer.Add(RNamesLbl, pos=(5,5), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
         # Filename
-        gbSizer.Add(FileLbl, pos=(10,0), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
-        gbSizer.Add(self.XLFile, pos=(10,1), span=(1,5), flag=wx.ALL|wx.EXPAND, border=5)
+        gbSizer.Add(FileLbl, pos=(11,0), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
+        gbSizer.Add(self.XLFile, pos=(11,1), span=(1,5), flag=wx.ALL|wx.EXPAND, border=5)
         # Test buttons
         gbSizer.Add(self.S1Test, pos=(0,3), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
         gbSizer.Add(self.S2Test, pos=(1,3), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
@@ -227,11 +250,13 @@ class SetupPage(wx.Panel):
         gbSizer.Add(self.DT2Test, pos=(5,3), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
         gbSizer.Add(self.GMH1Test, pos=(6,3), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
         gbSizer.Add(self.GMH2Test, pos=(7,3), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
+        gbSizer.Add(self.GMHroomTest, pos=(8,3), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
+        gbSizer.Add(self.SwitchboxTest, pos=(9,3), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
+        
         gbSizer.Add(ResponseLbl, pos=(1,4), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
         gbSizer.Add(self.Response, pos=(2,4), span=(1,3), flag=wx.ALL|wx.EXPAND, border=5)
         gbSizer.Add(self.TR1, pos=(6,4), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
         gbSizer.Add(self.TR2, pos=(7,4), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
-        gbSizer.Add(self.SwitchboxTest, pos=(8,3), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
         gbSizer.Add(self.VisaList, pos=(3,5), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
         gbSizer.Add(self.ResList, pos=(3,4), span=(3,1), flag=wx.ALL|wx.EXPAND, border=5)
 
@@ -249,6 +274,7 @@ class SetupPage(wx.Panel):
         devices.ROLES_WIDGETS.update({'DVMT2':{'icb':self.T2Dvms,'acb':self.T2DvmAddr,'tbtn':self.DT2Test}})
         devices.ROLES_WIDGETS.update({'GMH1':{'icb':self.GMH1Probes,'acb':self.GMH1Ports,'tbtn':self.GMH1Test}})
         devices.ROLES_WIDGETS.update({'GMH2':{'icb':self.GMH2Probes,'acb':self.GMH2Ports,'tbtn':self.GMH2Test}})
+        devices.ROLES_WIDGETS.update({'GMHroom':{'icb':self.GMHroomProbes,'acb':self.GMHroomPorts,'tbtn':self.GMHroomTest}})
         devices.ROLES_WIDGETS.update({'switchbox':{'icb':self.Switchbox,'acb':self.SwitchboxAddr,'tbtn':self.SwitchboxTest}})
 
 
@@ -287,7 +313,6 @@ class SetupPage(wx.Panel):
         headings = (None, u'description',u'Instrument Info:',u'parameter',u'value',u'uncert',u'dof',u'label')
         
         # Determine colummn indices from column letters:
-        #col_H = cell.column_index_from_string('H') - 1
         col_I = cell.column_index_from_string('I') - 1
         col_J = cell.column_index_from_string('J') - 1
         col_K = cell.column_index_from_string('K') - 1
@@ -340,6 +365,7 @@ class SetupPage(wx.Panel):
                                   'DVMT2':'none',#'DVM: HP34420A, s/n130'
                                   'GMH1':'GMH: s/n627',
                                   'GMH2':'GMH: s/n628',
+                                  'GMHroom':'GMH: s/n367',
                                   'switchbox':'V1'}
         for r in self.instrument_choice.keys():
             d = self.instrument_choice[r]
@@ -350,7 +376,7 @@ class SetupPage(wx.Panel):
 
 
     def UpdateInstr(self, e):
-        # An instrument was manually selected for a role.
+        # An instrument was selected for a role.
         # Find description d and role r, then pass to CreatInstr()
         d = e.GetString()
         for r in devices.ROLES_WIDGETS.keys(): # Cycle through roles
@@ -366,18 +392,12 @@ class SetupPage(wx.Panel):
 
         if 'GMH' in d:
             # create and open a GMH instrument instance
-            print'\nnbpages.SetupPage.CreateInstr(): Creating GMH device...'
+            print'\nnbpages.SetupPage.CreateInstr(): Creating GMH device (%s -> %s).'%(d,r)
             devices.ROLES_INSTR.update({r:devices.GMH_Sensor(d)})
-#            devices.ROLES_INSTR[r].Open()
         else:
-            # create and open a visa instrument instance
-            print'\nnbpages.SetupPage.CreateInstr(): Creating VISA device...'
+            # create a visa instrument instance
+            print'\nnbpages.SetupPage.CreateInstr(): Creating VISA device (%s -> %s).'%(d,r)
             devices.ROLES_INSTR.update({r:devices.instrument(d)})
-#            try:
-#                devices.ROLES_INSTR[r].Open()
-#            except devices.visa.VisaIOError:
-#                addr = devices.INSTR_DATA[d]['str_addr']
-#                self.status.SetStatusText('No GPIB instrument at address %s!'%addr,1)
         self.SetInstr(d,r)
 
 
@@ -386,7 +406,7 @@ class SetupPage(wx.Panel):
         Called by CreateInstr().
         Updates internal info (INSTR_DATA) and Enables/disables testbuttons as necessary.
         """
-        print 'nbpages.SetupPage.SetInstr():',d,'assigned to role',r,'demo mode:',devices.ROLES_INSTR[r].demo
+#        print 'nbpages.SetupPage.SetInstr():',d,'assigned to role',r,'demo mode:',devices.ROLES_INSTR[r].demo
         assert devices.INSTR_DATA.has_key(d),'Unknown instrument: %s - check Excel file is loaded.'%d
         assert devices.INSTR_DATA[d].has_key('role'),'Unknown instrument parameter - check Excel Parameters sheet is populated.'
         devices.INSTR_DATA[d]['role'] = r # update default role
@@ -412,14 +432,11 @@ class SetupPage(wx.Panel):
                 break # stop looking when we've found the right instrument description
         a = e.GetString() # address string, eg 'COM5' or 'GPIB0::23'
         if (a not in self.GPIBAddressList) or (a not in self.COMAddressList): # Ignore dummy values, like 'NO_ADDRESS'
-#            if devices.ROLES_INSTR[r].is_open:
-#                devices.ROLES_INSTR[r].Close()
             devices.INSTR_DATA[d]['str_addr'] = a
             devices.ROLES_INSTR[r].str_addr = a
             addr = a.lstrip('COMGPIB0:') # leave only numeric part of address string
             devices.INSTR_DATA[d]['addr'] = int(addr)
             devices.ROLES_INSTR[r].addr = int(addr)
-#            devices.ROLES_INSTR[r].Open()
         print'UpdateAddr():',r,'using',d,'set to addr',addr,'(',a,')'
             
 
@@ -430,10 +447,10 @@ class SetupPage(wx.Panel):
             if devices.ROLES_WIDGETS[r]['tbtn'] == e.GetEventObject():
                 d = devices.ROLES_WIDGETS[r]['icb'].GetValue()
                 break # stop looking when we've found the right instrument description
-        print'\nOnTest():',d
+        print'\nnbpages.SetupPage.OnTest():',d
         assert devices.INSTR_DATA[d].has_key('test'), 'No test exists for this device.'
         test = devices.INSTR_DATA[d]['test'] # test string
-        print 'Test string:',test
+        print '\tTest string:',test
         self.Response.SetValue(str(devices.ROLES_INSTR[r].Test(test)))
         self.status.SetStatusText('Testing %s with cmd %s' % (d,test),0)
 
