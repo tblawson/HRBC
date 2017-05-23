@@ -71,10 +71,11 @@ ws_Params = wb_io.get_sheet_by_name('Parameters')
 # Get local parameters
 Data_start_row = ws_Data['B1'].value
 Data_stop_row = ws_Data['B2'].value
+assert Data_start_row <= Data_stop_row,'Stop row must follow start row!'
 
 # Get instrument assignments
 role_descr = {}
-for row in range(Data_start_row, Data_start_row+9): # 9 roles in total
+for row in range(Data_start_row, Data_start_row+10): # 9 roles in total
     # Grab {role:description}
     temp_dict = {ws_Data['AA'+str(row)].value : ws_Data['AB'+str(row)].value} 
     role_descr.update(temp_dict)
