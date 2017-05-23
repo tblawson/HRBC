@@ -169,7 +169,9 @@ print len(R_INFO),'resistors.(%d rows)\n'%last_R_row
 
 # Determine the meanings of 'LV' and 'HV'
 V1set_a = abs(ws_Data['A'+str(Data_start_row)].value)
+assert V1set_a is not None,'Missing initial V1 value!'
 V1set_b = abs(ws_Data['A'+str(Data_start_row+4)].value)
+
 if V1set_a < V1set_b:
     LV = V1set_a
     HV = V1set_b 
