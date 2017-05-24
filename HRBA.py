@@ -505,7 +505,7 @@ while Data_row <= Data_stop_row:
     dV2 = abs(abs(V2av) - R2VRef) # NOTE: TWO abs() NEEDED TO ENSURE NON-NEGATIVE DIFFERENCE!
 
     R2 = R2_0*(1+R2alpha*dT2 + R2beta*dT2**2 + R2gamma*dV2) + Rd
-    assert abs(R2.x-nom_R2)/nom_R2 < 5e-5,'R2 > 50 ppm from nominal!'
+    assert abs(R2.x-nom_R2)/nom_R2 < 1e-4,'R2 > 100 ppm from nominal!'
     
     # Gain factor due to null meter input Z
     G = (Vd[3]-Vd[2] + Vlin_gain +Vdrift['gain'])/(V2[3]-V2[2])
@@ -518,6 +518,7 @@ while Data_row <= Data_stop_row:
     
     # calculate R1  
     R1 = -R2*(1+vrc)*V1av*G/(G*V2av - Vdav)
+    assert abs(R1.x-nom_R1)/nom_R1 < 2e-4,'R1 > 200 ppm from nominal!'
    
     # Combine data for this measurement: name,time,R,T,V and write to Summary sheet
     this_result = {'name':R1_name,'time_str':times_av_str,'time_fl':times_av_fl,'V':V1av,
