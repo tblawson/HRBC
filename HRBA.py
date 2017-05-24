@@ -496,7 +496,7 @@ while Data_row <= Data_stop_row:
     # Finally, calculate Rd
     Rd = GTC.ar.result(av_dV/I,label = 'Rlink' + Run_Id)
     assert Rd.x < 0.01,'High link resistance!'
-    assert Rd.x > Rd.u,'Link resistance uncertainty greater than value!'
+    assert Rd.x > Rd.u,'Link resistance uncertainty > value!'
     influencies.append(Rd) # R2 dependancy
     
     # Calculate R2 (corrected for T and V)
@@ -505,9 +505,16 @@ while Data_row <= Data_stop_row:
     dV2 = abs(abs(V2av) - R2VRef) # NOTE: TWO abs() NEEDED TO ENSURE NON-NEGATIVE DIFFERENCE!
 
     R2 = R2_0*(1+R2alpha*dT2 + R2beta*dT2**2 + R2gamma*dV2) + Rd
+    assert abs(R2.x-nom_R2)/nom_R2 < 5e-5,'R2 > 50 ppm from nominal!'
     
     # Gain factor due to null meter input Z
-    G = (Vd[3]-Vd[2] + Vlin_gain +Vdrift['gain'])/(V2[3]-V2[2])      
+    G = (Vd[3]-Vd[2] + Vlin_gain +Vdrift['gain'])/(V2[3]-V2[2])
+    if abs_V1/abs_V2 = 10:
+        nom_G = 0.5
+    else: # abs_V1/abs_V2 = 1
+        nom_G = 0.91
+    assert abs(G-nom_G)/nom_G < 0.02,'Gain > 2% from nominal!'
+       
     
     # calculate R1  
     R1 = -R2*(1+vrc)*V1av*G/(G*V2av - Vdav)
