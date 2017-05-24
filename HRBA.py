@@ -358,6 +358,7 @@ while Data_row <= Data_stop_row:
     if (R1Tsensor in ('none','any')): # no or unknown T-sensor (Tinsleys or T-sensor itelf)
         T_dvm1 = [ZERO,ZERO,ZERO,ZERO]
     else:
+        assert len(R_dvm1) > 1,'Not enough R_dvm1 values to average!'
         for R in R_dvm1: # convert resistance measurement to a temperature
             T_dvm1.append(R_info.R_to_T(R_INFO[R1Tsensor]['alpha'],
                                         R_INFO[R1Tsensor]['beta'],R,
@@ -366,6 +367,7 @@ while Data_row <= Data_stop_row:
     if R2Tsensor in ('none','any'):
         T_dvm2 = [ZERO,ZERO,ZERO,ZERO]
     else:
+        assert len(R_dvm2) > 1,'Not enough R_dvm2 values to average!'
         for R in R_dvm2: # convert resistance measurement to a temperature
             T_dvm2.append(R_info.R_to_T(R_INFO[R2Tsensor]['alpha'],
                                         R_INFO[R2Tsensor]['beta'],R,
@@ -378,26 +380,26 @@ while Data_row <= Data_stop_row:
     T2_av_dvm = GTC.ar.result(GTC.ta.estimate(T_dvm2),label='T2_av_dvm'+ Run_Id)
     
     # Mean temperatures and temperature definitions
-    if role_descr['DVMT1']=='none':  # No aux. T sensor or DVM not associated with R1 (just GMH)
-        T1_av = T1_av_gmh
-        T1_av_dvm = GTC.ureal(0,0) # ignore any dvm data
-        Diff_T1 = GTC.ureal(0,0) # No temperature disparity (GMH only)
-    else:
-        T1_av = GTC.ar.result(GTC.fn.mean((T1_av_dvm,T1_av_gmh)),label='T1_av'+ Run_Id)
-        Diff_T1 = GTC.magnitude(T1_av_dvm-T1_av_gmh)
+#    if role_descr['DVMT1']=='none':  # No aux. T sensor or DVM not associated with R1 (just GMH)
+    T1_av = T1_av_gmh
+    T1_av_dvm = GTC.ureal(0,0) # ignore any dvm data
+    Diff_T1 = GTC.ureal(0,0) # No temperature disparity (GMH only)
+#    else:
+#        T1_av = GTC.ar.result(GTC.fn.mean((T1_av_dvm,T1_av_gmh)),label='T1_av'+ Run_Id)
+#        Diff_T1 = GTC.magnitude(T1_av_dvm-T1_av_gmh)
     
-    if role_descr['DVMT2']=='none':  # No aux. T sensor or DVM not associated with R2 (just GMH)
-        T2_av = T2_av_gmh
-        T2_av_dvm = GTC.ureal(0,0) # ignore any dvm data
-        Diff_T2 = GTC.ureal(0,0) # No temperature disparity (GMH only)
-        influencies.append(T2_av_gmh) # R2 dependancy
-    else:
-        T2_av = GTC.ar.result( GTC.fn.mean((T2_av_dvm,T2_av_gmh)),label='T2_av' + Run_Id)
-        Diff_T2 = GTC.ar.result(GTC.magnitude(T2_av_dvm-T2_av_gmh))
-        influencies.append(T2_av) # R2 dependancy
+#    if role_descr['DVMT2']=='none':  # No aux. T sensor or DVM not associated with R2 (just GMH)
+    T2_av = T2_av_gmh
+    T2_av_dvm = GTC.ureal(0,0) # ignore any dvm data
+    Diff_T2 = GTC.ureal(0,0) # No temperature disparity (GMH only)
+    influencies.append(T2_av_gmh) # R2 dependancy
+#    else:
+#        T2_av = GTC.ar.result( GTC.fn.mean((T2_av_dvm,T2_av_gmh)),label='T2_av' + Run_Id)
+#        Diff_T2 = GTC.ar.result(GTC.magnitude(T2_av_dvm-T2_av_gmh),label='Diff_T2' + Run_Id)
+#        influencies.append(T2_av_dvm,T2_av_gmh) # R2 dependancy
     
     # Default T definition arises from imperfect positioning of sensors wrt resistor:
-    T_def = GTC.ureal(0,GTC.type_b.distribution['gaussian'](0.01),3,label='T_def'+ Run_Id) 
+    T_def = GTC.ureal(0,GTC.type_b.distribution['gaussian'](0.01),3,label='T_def'+ Run_Id)
         
     # T-definition arises from imperfect positioning of both probes AND their disagreement:
     T_def1 = GTC.ar.result(GTC.ureal(0,Diff_T1.u/2,7) + T_def,label='T_def1' + Run_Id)    
