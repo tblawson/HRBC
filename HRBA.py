@@ -296,23 +296,33 @@ while Data_row <= Data_stop_row:
     
     # Process times, RH and temperature data in this 4-row block:
     for r in range(Data_row,Data_row+4): # build list of 4 gmh / T-probe dvm readings
+        assert ws_Data['U'+str(r)].value is not None,'No R1 GMH temperature data!'
+        assert ws_Data['V'+str(r)].value is not None,'No R2 GMH temperature data!'
         cor_gmh1.append(ws_Data['U'+str(r)].value*(1+GMH1_cor))
         cor_gmh2.append(ws_Data['V'+str(r)].value*(1+GMH2_cor))
         
+        assert ws_Data['G'+str(r)].value is not None,'No V2 timestamp!'
+        assert ws_Data['M'+str(r)].value is not None,'No Vd1 timestamp!'
+        assert ws_Data['P'+str(r)].value is not None,'No V1 timestamp!'
         times.append(ws_Data['G'+str(r)].value)
         times.append(ws_Data['M'+str(r)].value)
         times.append(ws_Data['P'+str(r)].value)
         
-        if ws_Data['Y'+str(r)].value is not None:
-            RHs.append(ws_Data['Y'+str(r)].value)
-        else:
-            RHs.append(0)
-       
+#        if ws_Data['Y'+str(r)].value is not None:
+        assert ws_Data['Y'+str(r)].value is not None,'No %RH data!'
+        RHs.append(ws_Data['Y'+str(r)].value)
+#        else:
+#            RHs.append(0)
+        
+        assert ws_Data['S'+str(r)].value is not None,'No R1 raw DVM (temperature) data!'
         raw_dvm1 = ws_Data['S'+str(r)].value
+        
+        assert ws_Data['T'+str(r)].value is not None,'No R2 raw DVM (temperature) data!'
         raw_dvm2 = ws_Data['T'+str(r)].value
         
         # Check corrections for range-dependant values...
         # and apply appropriate corrections
+        assert raw_dvm1 > 0 and raw_dvm2 > 0 ,'Negative resistance value(s)!'
         if raw_dvm1 < 120:
             T1DVM_cor = I_INFO[role_descr['DVMT1']]['correction_100r']
         elif raw_dvm1 < 12e3:
