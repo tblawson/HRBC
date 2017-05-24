@@ -443,8 +443,10 @@ while Data_row <= Data_stop_row:
     
     # __________Get Rd value__________
     # 1st, detetermine data format
-    N_revs = ws_Rlink['B2'].value # Number of reversals = number of columns 
+    N_revs = ws_Rlink['B2'].value # Number of reversals = number of columns
+    assert N_revs is not None and N_revs > 0,'Missing or no reversals!'
     N_reads = ws_Rlink['B3'].value # Number of readings = number of rows
+    assert N_reads is not None and N_reads > 0,'Missing or no reads!'
     head_height = 6 # Rows of header before each block of data
     jump = head_height + N_reads # rows to jump between starts of each header
     
@@ -453,16 +455,16 @@ while Data_row <= Data_stop_row:
     
     # Next, define nom_R,abs_V quantities
     val1 = ws_Rlink['C'+str(RL_start_row+2)].value
-    #nom_R1 = GTC.ureal(val1,GTC.tb.distribution['gaussian'](5*val1/1e6),8,label='nom_R1')
+    assert val1 is not None,'Missing nominal R1 value!'
     nom_R1 = GTC.constant(val1,label='nom_R1') # don't know uncertainty of nominal values
     val2 = ws_Rlink['C'+str(RL_start_row+3)].value
-    #nom_R2 = GTC.ureal(val2,GTC.tb.distribution['gaussian'](5*val2/1e6),8,label='nom_R2')
+    assert val2 is not None,'Missing nominal R2 value!'
     nom_R2 = GTC.constant(val2,label='nom_R2') # don't know uncertainty of nominal values
     val1 =ws_Rlink['D'+str(RL_start_row+2)].value
-    #abs_V1 = GTC.ureal(val1,GTC.tb.distribution['gaussian'](val1/1e5),4,label='abs_V1')
+    assert val1 is not None,'Missing nominal V1 value!'
     abs_V1 = GTC.constant(val1,label='abs_V1') # don't know uncertainty of nominal values
     val2 = ws_Rlink['D'+str(RL_start_row+3)].value
-    #abs_V2 = GTC.ureal(val2,GTC.tb.distribution['gaussian'](val2/1e5),4,label='abs_V2')
+    assert val2 is not None,'Missing nominal V2 value!'
     abs_V2 = GTC.constant(val2,label='abs_V2') # don't know uncertainty of nominal values
      
     # Calculate I
