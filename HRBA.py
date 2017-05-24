@@ -568,7 +568,7 @@ summary_row = summary_start_row + 1
 # In the next section values of R1 are derived from fits to Temperature.
 # The Temperature data are offset so the mean is at ~zero, then the fits
 # are used to calculate R1 at the mean Temperature. LV and HV values are
-# obtained separetely. The mean time, Temperature and Voltage values are
+# obtained separately. The mean time, Temperature and Voltage values are
 # also reported.    
 
 # Weighted total least-squares fit (R1-T), LV
@@ -605,12 +605,12 @@ ws_Summary['T'+str(summary_row)] = GTC.summary(gamma)
 
 params = ['R0_LV','TRef_LV','VRef_LV','R0_HV','TRef_HV','VRef_HV','alpha',
           'beta','gamma','date','T_sensor']
-R_data = [R1_LV,T_LV,V_LV,R1_HV,T_HV,V_HV,alpha,beta,gamma, date, 'any']
+R_data = [R1_LV,T_LV,V_LV,R1_HV,T_HV,V_HV,alpha,beta,gamma, date, 'none']
 #R_dict = dict(zip(params,R_data))
 
 if not R_INFO.has_key(R1_name):
     print 'Adding',R1_name,'to resistor info...'
-    last_R_row = R_info.update_R_Info(R1_name,params,R_data,ws_Params,last_R_row,Run_Id)
+    last_R_row = R_info.update_R_Info(R1_name,params,R_data,ws_Params,last_R_row,Run_Id,VERSION)
 else:
     print 'Already know about',R1_name
     

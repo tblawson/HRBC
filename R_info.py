@@ -196,18 +196,19 @@ def write_R1_T_fit(results,sheet,row):
     sheet['R'+str(row)] = GTC.summary(R1)
     sheet['S'+str(row)] = R1.u*GTC.rp.k_factor(R1.df)
     sheet['T'+str(row)] = GTC.summary(T_av)
-    t = [result['time_fl'] for result in results] # x data (time,s from epoch)
     
+    t = [result['time_fl'] for result in results] # x data (time,s from epoch)
     t_av = GTC.ta.estimate(t)
     time_av = dt.datetime.fromtimestamp(t_av.x) # A Python datetime object
-    sheet['U'+str(row)] = time_av.strftime('%d/%m/%Y %H:%M:%S')# string-formatted for display 
+    sheet['U'+str(row)] = time_av.strftime('%d/%m/%Y %H:%M:%S')# string-formatted for display
+    
     V1 = [V for V in [result['V'] for result in results]]
     V_av = GTC.fn.mean(V1)
     sheet['V'+str(row)] = GTC.summary(V_av)
     return (R1,alpha,T_av,V_av,time_av)
 
 
-def update_R_Info(name,params,data,sheet,row,Id):
+def update_R_Info(name,params,data,sheet,row,Id,v):
     R_dict = dict(zip(params,data))
     
     for param in params:
@@ -222,7 +223,8 @@ def update_R_Info(name,params,data,sheet,row,Id):
             sheet['F'+str(row)] = label
         else:
             sheet['C'+str(row)] = R_dict[param]
-        sheet['G'+str(row)] = 'HRBA'+ str(dt.datetime.now())
+
+        sheet['G'+str(row)] = 'HRBA'+ v + str(dt.datetime.now())
     
     # Mark end of data with a bottom border on cells of last row:
     b = Border(bottom = Side(style='thin'))
@@ -232,5 +234,6 @@ def update_R_Info(name,params,data,sheet,row,Id):
     sheet['D'+str(row)].border = b
     sheet['E'+str(row)].border = b
     sheet['F'+str(row)].border = b
+    sheet['G'+str(row)].border = b    
     
     return row
