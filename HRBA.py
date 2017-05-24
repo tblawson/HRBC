@@ -479,8 +479,11 @@ while Data_row <= Data_stop_row:
         col = 1
         while col <= N_revs: # cycle through cols 1 to N_revs
             Vp.append(ws_Rlink[get_column_letter(col)+str(Vrow)].value)
+            assert Vp[-1] is not None,'Missing Vp value!'
             col +=1
+            
             Vn.append(ws_Rlink[get_column_letter(col)+str(Vrow)].value)
+            assert Vn[-1] is not None,'Missing Vn value!'
             col +=1
             
     av_dV_p = GTC.ta.estimate(Vp)
@@ -492,6 +495,8 @@ while Data_row <= Data_stop_row:
     
     # Finally, calculate Rd
     Rd = GTC.ar.result(av_dV/I,label = 'Rlink' + Run_Id)
+    assert Rd.x < 0.01,'High link resistance!'
+    assert Rd.x > Rd.u,'Link resistance uncertainty greater than value!'
     influencies.append(Rd) # R2 dependancy
     
     # Calculate R2 (corrected for T and V)
