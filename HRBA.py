@@ -232,7 +232,9 @@ while Data_row <= Data_stop_row:
     
     # R2 parameters:
     V2set = abs(ws_Data['B'+str(Data_start_row)].value)
+    assert V2set is not None,'Missing V2 setting!'
     V1set = abs(ws_Data['A'+str(Data_start_row)].value)
+    assert V1set is not None,'Missing V1 setting!'
     Vdif_LV = abs(abs(V2set)-R_INFO[R2_name]['VRef_LV'])
     Vdif_HV = abs(abs(V2set)-R_INFO[R2_name]['VRef_HV'])
     if Vdif_LV < Vdif_HV:
@@ -254,11 +256,14 @@ while Data_row <= Data_stop_row:
         v_ratio_code = 'VRC_10to1'
     elif int(round(V1set)) == 100 and int(round(V2set)) == 10:
         v_ratio_code = 'VRC_100to10'
+    else:
+        v_ratio_code = None
+    assert v_ratio_code is not None,'Unable to determine voltage ratio!'
 
-    # Select appropriate value of VRC  
+    # Select appropriate value of VRC, etc.
     vrc = I_INFO[role_descr['DVM12']][v_ratio_code]
-    Vlin_gain = I_INFO[role_descr['DVMd']]['linearity_gain']
-    Vlin_Vd = I_INFO[role_descr['DVMd']]['linearity_Vd']
+    Vlin_gain = I_INFO[role_descr['DVMd']]['linearity_gain'] # linearity used in G calculation
+    Vlin_Vd = I_INFO[role_descr['DVMd']]['linearity_Vd'] # linearity used in Vd calculation
     
     # Start list of influence variables
     influencies = [vrc,Vlin_gain,Vlin_Vd,R2TRef,R2VRef] # R2 dependancies
@@ -275,8 +280,9 @@ while Data_row <= Data_stop_row:
         R1Tsensor = R_INFO[R1_name]['T_sensor'] 
     
     # GMH correction factors
-    GMH1_cor = I_INFO[role_descr['GMH1']]['correction']
-    GMH2_cor = I_INFO[role_descr['GMH2']]['correction']
+    GMH1_cor = I_INFO[role_descr['GMH1']]['T_correction']
+    GMH2_cor = I_INFO[role_descr['GMH2']]['T_correction']
+    
     
     # Temperature measurement, RH and times:
     del cor_gmh1[:] # list for 4 corrected T1 gmh readings
