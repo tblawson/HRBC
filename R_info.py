@@ -90,19 +90,21 @@ def R_to_T(alpha,beta,R,R0,T0):
 
 # Return average of a list of time-strings("%d/%m/%Y %H:%M:%S") as a time string or float
 def av_t_strin(t_list,switch):
+    assert switch in ('fl','str'),'Unknown switch for function av_t_strin()!'
     throwaway = dt.datetime.strptime('20110101','%Y%m%d') # known bug fix
     n = float(len(t_list))
     t_av = 0.0
     for s in t_list:
         if type(s) is unicode:
             t_dt = dt.datetime.strptime(s,'%d/%m/%Y %H:%M:%S')
-            t_tup = dt.datetime.timetuple(t_dt)
-            t_av += time.mktime(t_tup)
         elif type(s) is float:
             print s,'is a float...'
             t_dt = xlrd.xldate.xldate_as_datetime(s,0)
-            t_tup  = dt.datetime.timetuple(t_dt)
-            t_av += time.mktime(t_tup)
+        else:
+            assert 0,'Time format is not unicode or float!'
+        t_tup  = dt.datetime.timetuple(t_dt)
+        t_av += time.mktime(t_tup)
+        
     t_av /= n # av. time as float (seconds from epoch)
     if switch == 'fl':
         return t_av 
