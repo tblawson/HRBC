@@ -339,11 +339,14 @@ while Data_row <= Data_stop_row:
             T2DVM_cor =  I_INFO[role_descr['DVMT2']]['correction_100k']
         R_dvm2.append(raw_dvm2*(1+T2DVM_cor))
     
-    # Mean temperature from GMH 
+    # Mean temperature from GMH
     # Data are plain numbers, so use ta.estimate() to return a ureal
+    assert len(cor_gmh1) > 1,'Not enough GMH1 temperatures to average!'
     T1_av_gmh = GTC.ar.result(GTC.ta.estimate(cor_gmh1),label='T1_av_gmh'+ Run_Id)
+    assert len(cor_gmh2) > 1,'Not enough GMH2 temperatures to average!'
     T2_av_gmh = GTC.ar.result(GTC.ta.estimate(cor_gmh2),label='T2_av_gmh'+ Run_Id)
     
+    assert len(times) > 1,'Not enough timestamps to average!'
     times_av_str = R_info.av_t_strin(times,'str') # mean time(as a time string)
     times_av_fl = R_info.av_t_strin(times,'fl') # mean time(as a float)
     
@@ -496,7 +499,6 @@ while Data_row <= Data_stop_row:
     R1 = -R2*(1+vrc)*V1av*G/(G*V2av - Vdav)
    
     # Combine data for this measurement: name,time,R,T,V and write to Summary sheet
-    
     this_result = {'name':R1_name,'time_str':times_av_str,'time_fl':times_av_fl,'V':V1av,
                    'R':R1,'T':T1_av,'R_expU':R1.u*GTC.rp.k_factor(R1.df, quick=False)}
                    
