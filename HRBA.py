@@ -411,6 +411,7 @@ while Data_row <= Data_stop_row:
     V2 = []
     Vd = []
     for line in range(4):
+        
         V1.append(GTC.ureal(ws_Data['Q'+str(Data_row+line)].value,
                         ws_Data['R'+str(Data_row+line)].value,
                         ws_Data['C'+str(Data_row+line)].value-1,label='V1_'+str(line) + Run_Id))
@@ -420,6 +421,9 @@ while Data_row <= Data_stop_row:
         Vd.append(GTC.ureal(ws_Data['N'+str(Data_row+line)].value,
                         ws_Data['O'+str(Data_row+line)].value,
                         ws_Data['C'+str(Data_row+line)].value-1,label='Vd_'+str(line) + Run_Id))
+        assert V1[-1] is not None,'Missing V1 data!'
+        assert V2[-1] is not None,'Missing V2 data!'
+        assert Vd[-1] is not None,'Missing Vd data!'
     influencies.extend(V1+V2+Vd) # R2 dependancies - raw measurements
 
     # Define drift
