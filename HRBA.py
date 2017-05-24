@@ -350,6 +350,7 @@ while Data_row <= Data_stop_row:
     times_av_str = R_info.av_t_strin(times,'str') # mean time(as a time string)
     times_av_fl = R_info.av_t_strin(times,'fl') # mean time(as a float)
     
+    assert len(RHs) > 1,'Not enough RH values to average!'
     RH_av = GTC.ar.result(GTC.ta.estimate(RHs),label = 'RH_av')
     
     # Build lists of 4 temperatures (calculated from T-probe dvm readings)..
