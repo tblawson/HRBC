@@ -509,7 +509,7 @@ while Data_row <= Data_stop_row:
     
     # Gain factor due to null meter input Z
     G = (Vd[3]-Vd[2] + Vlin_gain +Vdrift['gain'])/(V2[3]-V2[2])
-    if abs_V1/abs_V2 = 10:
+    if abs_V1/abs_V2 == 10:
         nom_G = 0.5
     else: # abs_V1/abs_V2 = 1
         nom_G = 0.91
@@ -533,8 +533,8 @@ while Data_row <= Data_stop_row:
             sensitivity = GTC.rp.u_component(R1,i)/i.u # GTC.rp.sensitivity() deprecated
         else:
             sensitivity = 0
-        if GTC.component(R1,i) > 0:
-            budget_table.append([i.label,i.x,i.u,i.df,sensitivity,GTC.component(R1,i)])
+#        if GTC.component(R1,i) > 0:
+        budget_table.append([i.label,i.x,i.u,i.df,sensitivity,GTC.component(R1,i)])
         
     budget_table_sorted = sorted(budget_table,key=R_info.by_u_cont,reverse=True)
     
