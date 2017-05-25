@@ -212,7 +212,8 @@ def update_R_Info(name,params,data,sheet,row,Id,v):
     R_dict = dict(zip(params,data))
     
     for param in params:
-        label = name.replace(' ','') + '_'+ param + Id
+#        label = name.replace(' ','') + '_'+ param + Id
+        label = name.split()[0] + '_'+ param + '/' + Id
         row += 1
         sheet['A'+str(row)] = name
         sheet['B'+str(row)] = param
