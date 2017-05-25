@@ -365,7 +365,9 @@ class AqnThread(Thread):
 
         for r in devices.ROLES_INSTR.keys():
             d = devices.ROLES_WIDGETS[r]['icb'].GetValue()
-            if not devices.ROLES_INSTR[r].is_open and 'GMH' not in devices.ROLES_INSTR[r].Descr:
+#            if not devices.ROLES_INSTR[r].is_open and 'GMH' not in devices.ROLES_INSTR[r].Descr:
+            # Open non-GMH devices:
+            if 'GMH' not in devices.ROLES_INSTR[r].Descr:
                 print'AqnThread.initialise(): Opening',d
                 devices.ROLES_INSTR[r].Open()
             else:

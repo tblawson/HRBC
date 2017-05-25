@@ -511,11 +511,12 @@ while Data_row <= Data_stop_row:
     G = (Vd[3]-Vd[2] + Vlin_gain +Vdrift['gain'])/(V2[3]-V2[2])
     if abs_V1/abs_V2 == 10:
         nom_G = 0.5
-    else: # abs_V1/abs_V2 = 1
+    elif abs_V1/abs_V2 == 1:
         nom_G = 0.91
+    else:
+        assert False,'Wrong V1/V2 ratio!'
     assert abs(G-nom_G)/nom_G < 0.02,'Gain > 2% from nominal!'
        
-    
     # calculate R1  
     R1 = -R2*(1+vrc)*V1av*G/(G*V2av - Vdav)
     assert abs(R1.x-nom_R1)/nom_R1 < 2e-4,'R1 > 200 ppm from nominal!'

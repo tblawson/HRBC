@@ -119,13 +119,22 @@ class GMH_Sensor(device):
                 if self.error_code.value not in range(0,4):
                     print 'devices.GMH_Sensor.Open(): Sensor info error.'
                     self.Close()
-                    return 0
+                    return False
+                else:
+                    print'devices.GMH_Sensor.Open(): Instrument ready - demo=False.'
+                    self.demo = False # If we've got this far we're probably OK
+            rtn = self.Transmit(self,1,self.ValFn)
+            if rtn:
+                self.demo = False
+                return True
             else:
-                self.demo = False # If we've got this far we're probably OK
+                self.Close()
+                self.demo = True
+                return False
+            return True # com port open and transmit success
         else:
-            self.Close()
             print 'devices.GMH_Sensor.Open() FAILED:',self.Descr
-        return 1
+        return False # Com port open failure
 
 
     def Init(self):
@@ -137,10 +146,11 @@ class GMH_Sensor(device):
         """
         Closes all / any GMH devices that are currently open.
         """
-        print'devices.GMH_Sensor.Close(): Closing all GMH sensors...'
+        print'\ndevices.GMH_Sensor.Close(): Setting demo=True and Closing all GMH sensors ...'
         self.demo = True
         self.error_code = ct.c_int16(GMHLIB.GMH_CloseCom())
         self.GetErrMsg()
+        print 'devices.GMH_Sensor.Close(): CloseCom err_msg:',self.error_msg.value
         return 1
 
   
@@ -152,10 +162,10 @@ class GMH_Sensor(device):
         self.GetErrMsg()
         if self.error_code.value < 0:
             print'\ndevices.GMH_Sensor.Transmit():FAIL'
-            return 0
+            return False
         else:
             print'\ndevices.GMH_Sensor.Transmit():PASS'
-            return 1
+            return True
  
 
     def GetErrMsg(self):
@@ -226,7 +236,9 @@ class GMH_Sensor(device):
         """
         print'\ndevices.GMH_Sensor.Measure()...'
         self.flData.value = 0
-        if self.Open(): # port and device open success
+        rtn = self.Open()
+        if rtn: # port and device open success
+            assert self.demo == False,'Illegal access to demo device!'
             Address = self.info[self.meas_alias[meas]][0]
             Addr = ct.c_short(Address)
             self.Transmit(Addr,self.ValFn)
