@@ -502,7 +502,7 @@ class AqnThread(Thread):
         
         for r in devices.ROLES_INSTR.keys():
             d = devices.ROLES_INSTR[r].Descr
-            if devices.ROLES_INSTR[r].is_open:
+            if devices.ROLES_INSTR[r].demo = False:
                 print'AqnThread.AbortRun(): Closing',d
                 devices.ROLES_INSTR[r].Close()
             else:
@@ -528,7 +528,7 @@ class AqnThread(Thread):
         
         for r in devices.ROLES_INSTR.keys():
             d = devices.ROLES_INSTR[r].Descr
-            if devices.ROLES_INSTR[r].is_open:
+            if devices.ROLES_INSTR[r].demo = False:
                 print'AqnThread.FinishRun(): Closing',d
                 devices.ROLES_INSTR[r].Close()
             else:
