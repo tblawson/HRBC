@@ -111,30 +111,34 @@ class GMH_Sensor(device):
         print'\ndevices.GMH_Sensor.Open(): Trying port',repr(self.addr)
         self.error_code = ct.c_int16(GMHLIB.GMH_OpenCom(self.addr))
         self.GetErrMsg() # Get self.error_msg
+        
         if self.error_code.value in range(0,4) or self.error_code.value == -2:
-            print 'devices.GMH_Sensor.Open(): COM',self.addr,'is open.'
-            if len(self.info) == 0:
-                print 'devices.GMH_Sensor.Open(): Getting sensor info...'
-                self.GetSensorInfo()
-                if self.error_code.value not in range(0,4):
-                    print 'devices.GMH_Sensor.Open(): Sensor info error.'
-                    self.Close()
-                    return False
-                else:
+            print 'devices.GMH_Sensor.Open(): ',self.str_addr,'is open.'
+            
+            # We're not there yet - test device responsiveness
+            self.Transmit(1,self.ValFn)
+            self.GetErrMsg()
+            if self.error_code.value in range(0,4): # Sensor responds...
+                if len(self.info) == 0: # No device info yet
+                    print 'devices.GMH_Sensor.Open(): Getting sensor info...'
+                    self.GetSensorInfo()
+                    self.demo = False # If we've got this far we're probably OK
+                    return True
+                else: # Already have device measurement info
                     print'devices.GMH_Sensor.Open(): Instrument ready - demo=False.'
                     self.demo = False # If we've got this far we're probably OK
-            rtn = self.Transmit(self,1,self.ValFn)
-            if rtn:
-                self.demo = False
-                return True
-            else:
+                    return True
+            else: # No response
+                print 'devices.GMH_Sensor.Open():',self.error_msg.value
                 self.Close()
                 self.demo = True
                 return False
-            return True # com port open and transmit success
-        else:
-            print 'devices.GMH_Sensor.Open() FAILED:',self.Descr
-        return False # Com port open failure
+   
+        else: # Com open failed
+            print'devices.GMH_Sensor.Open() FAILED:',self.Descr
+            self.Close()
+            self.demo = True
+            return False
 
 
     def Init(self):
@@ -149,7 +153,7 @@ class GMH_Sensor(device):
         print'\ndevices.GMH_Sensor.Close(): Setting demo=True and Closing all GMH sensors ...'
         self.demo = True
         self.error_code = ct.c_int16(GMHLIB.GMH_CloseCom())
-        self.GetErrMsg()
+#        self.GetErrMsg()
         print 'devices.GMH_Sensor.Close(): CloseCom err_msg:',self.error_msg.value
         return 1
 
@@ -189,15 +193,15 @@ class GMH_Sensor(device):
         The address corressponds with a unique measurement function within the device.
         It's assumed the measurement functions are at consecutive addresses starting at 1.
         """
-        print '\ndevices.GMH_Sensor.GetSensorInfo():...'
         addresses = [] # Between 1 and 99
         measurements = [] # E.g. 'Temperature', 'Absolute Pressure', 'Rel. Air Humidity',...
         units = [] # E.g. 'deg C', 'hPascal', '%RH',...
         self.info.clear()
         
-        for Address in range(1,100): # 100
+        for Address in range(1,100):
             Addr = ct.c_short(Address)
             if self.Transmit(Addr,self.MeasFn): # Writes result to self.intData
+                # Transmit() was successful
                 addresses.append(Address)
                 
                 meas_code = ct.c_int16(self.intData.value + self.lang_offset.value)
@@ -213,10 +217,13 @@ class GMH_Sensor(device):
                 print'Found',self.meas_str.value,'(',self.unit_str.value,')','at address',Address
             else:
                 print'devices.GMH_Sensor.GetSensorInfo(): Exhausted addresses at',Address
-                break
-        if Address > 1:
-            self.error_code.value = 0 # Don't let the last address tried screw it up.
-            self.demo = False
+                if Address > 1: # Don't let the last address tried screw it up.
+                    self.error_code.value = 0
+                    self.demo = False
+                else:
+                    self.demo = True
+                break # Assumes all functions are in a contiguous address range starting at 1
+
         self.info = dict(zip(measurements,zip(addresses,units)))
         print 'devices.GMH_Sensor.GetSensorInfo():\n',self.info,'demo =',self.demo
         return len(self.info)
@@ -234,10 +241,9 @@ class GMH_Sensor(device):
         and the open state is treated as a special case. Hence an Open()-Close()
         'bracket' surrounds the Measure() function.
         """
-        print'\ndevices.GMH_Sensor.Measure()...'
+        
         self.flData.value = 0
-        rtn = self.Open()
-        if rtn: # port and device open success
+        if self.Open(): # port and device open success
             assert self.demo == False,'Illegal access to demo device!'
             Address = self.info[self.meas_alias[meas]][0]
             Addr = ct.c_short(Address)
@@ -246,7 +252,8 @@ class GMH_Sensor(device):
             
             print'devices.Measure():',self.meas_alias[meas],'=',self.flData.value
             return self.flData.value
-        else:            
+        else:
+            assert self.demo == True,'Illegal denial to demo device!'
             print'devices.GMH_Sensor.Measure(): Returning demo-value.'
             demo_rtn = {'T':(20.5,0.2),'P':(1013,5),'RH':(50,10)}
             return np.random.normal(*demo_rtn[meas])
