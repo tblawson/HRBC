@@ -206,6 +206,8 @@ R_dvm1 = []
 R_dvm2 = []
 times = []
 RHs = []
+Ps = []
+Ts = []
 
 # Lists of dictionaries (with name,time,R,T,V entries)
 results_HV = [] # High voltage measurements
@@ -293,6 +295,9 @@ while Data_row <= Data_stop_row:
     del R_dvm2[:] # list for 4 corrected dvm readings
     del times[:] # list for 3*4 mean measurement time-strings
     del RHs[:] # list for 4 RH values
+    del Ps[:] # list for 4 room pressure values
+    del Ts[:] # list for 4 room Temp values
+    
     
     # Process times, RH and temperature data in this 4-row block:
     for r in range(Data_row,Data_row+4): # build list of 4 gmh / T-probe dvm readings
@@ -309,8 +314,8 @@ while Data_row <= Data_stop_row:
         times.append(ws_Data['P'+str(r)].value)
         
 #        if ws_Data['Y'+str(r)].value is not None:
-        assert ws_Data['Y'+str(r)].value is not None,'No %RH data!'
-        RHs.append(ws_Data['Y'+str(r)].value)
+#        assert ws_Data['Y'+str(r)].value is not None,'No %RH data!'
+#        RHs.append(ws_Data['Y'+str(r)].value)
 #        else:
 #            RHs.append(0)
         
@@ -342,16 +347,16 @@ while Data_row <= Data_stop_row:
     # Mean temperature from GMH
     # Data are plain numbers, so use ta.estimate() to return a ureal
     assert len(cor_gmh1) > 1,'Not enough GMH1 temperatures to average!'
-    T1_av_gmh = GTC.ar.result(GTC.ta.estimate(cor_gmh1),label='T1_av_gmh'+ Run_Id)
+    T1_av_gmh = GTC.ar.result(GTC.ta.estimate(cor_gmh1),label='T1_av_gmh '+ Run_Id)
     assert len(cor_gmh2) > 1,'Not enough GMH2 temperatures to average!'
-    T2_av_gmh = GTC.ar.result(GTC.ta.estimate(cor_gmh2),label='T2_av_gmh'+ Run_Id)
+    T2_av_gmh = GTC.ar.result(GTC.ta.estimate(cor_gmh2),label='T2_av_gmh '+ Run_Id)
     
     assert len(times) > 1,'Not enough timestamps to average!'
     times_av_str = R_info.av_t_strin(times,'str') # mean time(as a time string)
     times_av_fl = R_info.av_t_strin(times,'fl') # mean time(as a float)
     
-    assert len(RHs) > 1,'Not enough RH values to average!'
-    RH_av = GTC.ar.result(GTC.ta.estimate(RHs),label = 'RH_av')
+#    assert len(RHs) > 1,'Not enough RH values to average!'
+#    RH_av = GTC.ar.result(GTC.ta.estimate(RHs),label = 'RH_av')
     
     # Build lists of 4 temperatures (calculated from T-probe dvm readings)..
     # .. and calculate mean temperatures
@@ -399,11 +404,11 @@ while Data_row <= Data_stop_row:
 #        influencies.append(T2_av_dvm,T2_av_gmh) # R2 dependancy
     
     # Default T definition arises from imperfect positioning of sensors wrt resistor:
-    T_def = GTC.ureal(0,GTC.type_b.distribution['gaussian'](0.01),3,label='T_def'+ Run_Id)
+    T_def = GTC.ureal(0,GTC.type_b.distribution['gaussian'](0.01),3,label='T_def '+ Run_Id)
         
     # T-definition arises from imperfect positioning of both probes AND their disagreement:
-    T_def1 = GTC.ar.result(GTC.ureal(0,Diff_T1.u/2,7) + T_def,label='T_def1' + Run_Id)    
-    T_def2 = GTC.ar.result(GTC.ureal(0,Diff_T2.u/2,7) + T_def,label = 'T_def2' + Run_Id)
+    T_def1 = GTC.ar.result(GTC.ureal(0,Diff_T1.u/2,7) + T_def,label='T_def1 ' + Run_Id)    
+    T_def2 = GTC.ar.result(GTC.ureal(0,Diff_T2.u/2,7) + T_def,label = 'T_def2 ' + Run_Id)
     influencies.append(T_def2) # R2 dependancy
     
     # Raw voltage measurements: V: [Vp,Vm,Vpp,Vppp]
@@ -414,13 +419,13 @@ while Data_row <= Data_stop_row:
         
         V1.append(GTC.ureal(ws_Data['Q'+str(Data_row+line)].value,
                         ws_Data['R'+str(Data_row+line)].value,
-                        ws_Data['C'+str(Data_row+line)].value-1,label='V1_'+str(line) + Run_Id))
+                        ws_Data['C'+str(Data_row+line)].value-1,label='V1_'+str(line) + ' ' + Run_Id))
         V2.append(GTC.ureal(ws_Data['H'+str(Data_row+line)].value,
                         ws_Data['I'+str(Data_row+line)].value,
-                        ws_Data['C'+str(Data_row+line)].value-1,label='V2_'+str(line) + Run_Id))
+                        ws_Data['C'+str(Data_row+line)].value-1,label='V2_'+str(line) + ' ' + Run_Id))
         Vd.append(GTC.ureal(ws_Data['N'+str(Data_row+line)].value,
                         ws_Data['O'+str(Data_row+line)].value,
-                        ws_Data['C'+str(Data_row+line)].value-1,label='Vd_'+str(line) + Run_Id))
+                        ws_Data['C'+str(Data_row+line)].value-1,label='Vd_'+str(line) + ' ' + Run_Id))
         assert V1[-1] is not None,'Missing V1 data!'
         assert V2[-1] is not None,'Missing V2 data!'
         assert Vd[-1] is not None,'Missing Vd data!'
@@ -429,10 +434,10 @@ while Data_row <= Data_stop_row:
     # Define drift
     Vdrift1=GTC.ureal(0,
     GTC.tb.distribution['gaussian'](abs(Vd[2]-(Vd[0]+((Vd[3]-Vd[2])/(V2[3]-V2[2]))*(V2[2]-V2[0])))/4),
-                                8,label='Vdrift_gain'+ Run_Id)
+                                8,label='Vdrift_gain '+ Run_Id)
     Vdrift2=GTC.ureal(0,
     GTC.tb.distribution['gaussian'](abs(Vd[2]-(Vd[0]+((Vd[3]-Vd[2])/(V2[3]-V2[2]))*(V2[2]-V2[0])))/4),
-                                8,label='Vdrift_Vd'+ Run_Id)
+                                8,label='Vdrift_Vd '+ Run_Id)
     Vdrift = {'gain':Vdrift1,'Vd':Vdrift2}
     influencies.extend([Vdrift['gain'],Vdrift['Vd']]) # R2 dependancies
     
@@ -494,7 +499,7 @@ while Data_row <= Data_stop_row:
     av_dV.label = 'Rd_dV' + Run_Id
     
     # Finally, calculate Rd
-    Rd = GTC.ar.result(av_dV/I,label = 'Rlink' + Run_Id)
+    Rd = GTC.ar.result(av_dV/I,label = 'Rlink ' + Run_Id)
     assert Rd.x < 0.01,'High link resistance!'
     assert Rd.x > Rd.u,'Link resistance uncertainty > value!'
     influencies.append(Rd) # R2 dependancy
@@ -505,17 +510,17 @@ while Data_row <= Data_stop_row:
     dV2 = abs(abs(V2av) - R2VRef) # NOTE: TWO abs() NEEDED TO ENSURE NON-NEGATIVE DIFFERENCE!
 
     R2 = R2_0*(1+R2alpha*dT2 + R2beta*dT2**2 + R2gamma*dV2) + Rd
-    assert abs(R2.x-nom_R2)/nom_R2 < 1e-4,'R2 > 100 ppm from nominal!'
+    assert abs(R2.x-nom_R2)/nom_R2 < 1e-4,'R2 > 100 ppm from nominal! R2 = {0}'.format(R2.x)
     
     # Gain factor due to null meter input Z
     G = (Vd[3]-Vd[2] + Vlin_gain +Vdrift['gain'])/(V2[3]-V2[2])
     if abs_V1/abs_V2 == 10:
-        nom_G = 0.5
-    elif abs_V1/abs_V2 == 1:
         nom_G = 0.91
+    elif abs_V1/abs_V2 == 1:
+        nom_G = 0.5
     else:
         assert False,'Wrong V1/V2 ratio!'
-    assert abs(G-nom_G)/nom_G < 0.02,'Gain > 2% from nominal!'
+    assert abs(G.x-nom_G)/nom_G < 0.02,'Gain > 2% from nominal! G = {0}, nom_G = {1}'.format(G.x,nom_G)
        
     # calculate R1  
     R1 = -R2*(1+vrc)*V1av*G/(G*V2av - Vdav)

@@ -133,7 +133,7 @@ def WriteHeadings(sheet,row,version):
     sheet['F'+str(row)] = 'std u.'
     sheet['G'+str(row)] = 'dof'
     sheet['H'+str(row)] = 'exp. U(95%)'
-    sheet['J'+str(row)] = 'Quantity'
+    sheet['J'+str(row)] = 'Quantity (Label)'
     sheet['K'+str(row)] = 'Value'
     sheet['L'+str(row)] = 'Std u'
     sheet['M'+str(row)] = 'dof'
@@ -213,7 +213,7 @@ def update_R_Info(name,params,data,sheet,row,Id,v):
     
     for param in params:
 #        label = name.replace(' ','') + '_'+ param + Id
-        label = name.split()[0] + '_'+ param + '/' + Id
+        label = name.split()[0] + '_'+ param + ' ' + Id
         row += 1
         sheet['A'+str(row)] = name
         sheet['B'+str(row)] = param
@@ -224,8 +224,9 @@ def update_R_Info(name,params,data,sheet,row,Id,v):
             sheet['F'+str(row)] = label
         else:
             sheet['C'+str(row)] = R_dict[param]
-
-        sheet['G'+str(row)] = 'HRBA'+ v + str(dt.datetime.now())
+        
+        now_tup = dt.datetime.now()
+        sheet['G'+str(row)] = 'HRBA'+ str(v) + '_'+ now_tup.strftime('%d/%m/%Y %H:%M:%S')
     
     # Mark end of data with a bottom border on cells of last row:
     b = Border(bottom = Side(style='thin'))
