@@ -193,18 +193,27 @@ def write_R1_T_fit(results,sheet,row):
         R1,alpha = GTC.fn.line_fit_wls(T_rel,y).a_b
         print 'Fit params:\t intercept=',GTC.summary(R1),'Slope=',GTC.summary(alpha)        
         
-    sheet['R'+str(row)] = GTC.summary(R1)
-    sheet['S'+str(row)] = R1.u*GTC.rp.k_factor(R1.df)
-    sheet['T'+str(row)] = GTC.summary(T_av)
+    sheet['R'+str(row)] = GTC.value(R1)
+    sheet['S'+str(row)] = GTC.uncertainty(R1)
+    sheet['T'+str(row)] = GTC.dof(R1)
+    
+    sheet['U'+str(row)] = R1.u*GTC.rp.k_factor(R1.df)
+    
+    sheet['V'+str(row)] = GTC.value(T_av)
+    sheet['W'+str(row)] = GTC.uncertainty(T_av)
+    sheet['X'+str(row)] = GTC.dof(T_av)
     
     t = [result['time_fl'] for result in results] # x data (time,s from epoch)
     t_av = GTC.ta.estimate(t)
     time_av = dt.datetime.fromtimestamp(t_av.x) # A Python datetime object
-    sheet['U'+str(row)] = time_av.strftime('%d/%m/%Y %H:%M:%S')# string-formatted for display
+    sheet['Y'+str(row)] = time_av.strftime('%d/%m/%Y %H:%M:%S')# string-formatted for display
     
     V1 = [V for V in [result['V'] for result in results]]
     V_av = GTC.fn.mean(V1)
-    sheet['V'+str(row)] = GTC.summary(V_av)
+    sheet['Z'+str(row)] = GTC.value(V_av)
+    sheet['AA'+str(row)] = GTC.uncertainty(V_av)
+    sheet['AB'+str(row)] = GTC.dof(V_av)
+    
     return (R1,alpha,T_av,V_av,time_av)
 
 

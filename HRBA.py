@@ -604,10 +604,17 @@ else:
 summary_row += 2
 
 ws_Summary['R'+str(summary_row)] = 'alpha (/C)'
-ws_Summary['T'+str(summary_row)] = 'gamma (/V)'
+ws_Summary['V'+str(summary_row)] = 'gamma (/V)'
+
 summary_row += 1
-ws_Summary['R'+str(summary_row)] = GTC.summary(alpha)
-ws_Summary['T'+str(summary_row)] = GTC.summary(gamma)
+
+ws_Summary['R'+str(summary_row)] = GTC.value(alpha)
+ws_Summary['S'+str(summary_row)] = GTC.uncertainty(alpha)
+ws_Summary['T'+str(summary_row)] = GTC.dof(alpha)
+
+ws_Summary['V'+str(summary_row)] = GTC.value(gamma)
+ws_Summary['W'+str(summary_row)] = GTC.uncertainty(gamma)
+ws_Summary['X'+str(summary_row)] = GTC.dof(gamma)
 
 #######################################################################
 # Finally, if R1 is a resistor that is not included in the 'parameters'
