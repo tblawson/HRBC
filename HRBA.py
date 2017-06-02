@@ -45,7 +45,7 @@ import GTC
 import R_info # useful functions
 #import xlrd
 
-VERSION = 1.0
+VERSION = 1.1
 
 # DVM, GMH Correction factors, etc.
 
@@ -254,10 +254,14 @@ while Data_row <= Data_stop_row:
 
     if int(round(V1set)) == int(round(V2set)):
         v_ratio_code = 'VRC_eq'
-    elif int(round(V1set)) == 10 and int(round(V2set)) == 1:
-        v_ratio_code = 'VRC_10to1'
-    elif int(round(V1set)) == 100 and int(round(V2set)) == 10:
-        v_ratio_code = 'VRC_100to10'
+    elif int(round(V1set)) == 10 and int(round(V2set)) == -1:
+        v_ratio_code = 'VRC_10ton1'
+    elif int(round(V1set)) == -10 and int(round(V2set)) == 1:
+        v_ratio_code = 'VRC_n10to1'    
+    elif int(round(V1set)) == 100 and int(round(V2set)) == -10:
+        v_ratio_code = 'VRC_100ton10'
+    elif int(round(V1set)) == -100 and int(round(V2set)) == 10:
+        v_ratio_code = 'VRC_n100to10'
     else:
         v_ratio_code = None
     assert v_ratio_code is not None,'Unable to determine voltage ratio!'
@@ -513,7 +517,7 @@ while Data_row <= Data_stop_row:
     assert abs(R2.x-nom_R2)/nom_R2 < 1e-4,'R2 > 100 ppm from nominal! R2 = {0}'.format(R2.x)
     
     # Gain factor due to null meter input Z
-    G = (Vd[3]-Vd[2] + Vlin_gain +Vdrift['gain'])/(V2[3]-V2[2])
+    G = (Vd[3]-Vd[2] + Vlin_gain + Vdrift['gain'])/(V2[3]-V2[2])
     if abs_V1/abs_V2 == 10:
         nom_G = 0.91
     elif abs_V1/abs_V2 == 1:
@@ -524,7 +528,7 @@ while Data_row <= Data_stop_row:
        
     # calculate R1  
     R1 = -R2*(1+vrc)*V1av*G/(G*V2av - Vdav)
-    assert abs(R1.x-nom_R1)/nom_R1 < 2e-4,'R1 > 200 ppm from nominal!'
+    assert abs(R1.x-nom_R1)/nom_R1 < 1e-3,'R1 > 1000 ppm from nominal!'
    
     # Combine data for this measurement: name,time,R,T,V and write to Summary sheet
     this_result = {'name':R1_name,'time_str':times_av_str,'time_fl':times_av_fl,'V':V1av,
