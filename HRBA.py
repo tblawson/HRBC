@@ -45,7 +45,7 @@ import GTC
 import R_info # useful functions
 #import xlrd
 
-VERSION = 1.1
+VERSION = 1.2
 
 # DVM, GMH Correction factors, etc.
 
