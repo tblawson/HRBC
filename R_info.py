@@ -30,6 +30,7 @@ def ExtractNames(comment):
     R2_name = comment[comment.find('R2: ') + 4:comment.rfind(' monitored by GMH')]
     return (R1_name,R2_name)
 
+
 # Extract nominal resistor value from name
 def GetRval(name):
     prefixes = {'r':1,'R':1,'k':1000,'M':1e6,'G':1e9}
@@ -88,6 +89,7 @@ def R_to_T(alpha,beta,R,R0,T0):
         T = (-b + math.sqrt(b**2-4*a*c))/(2*a)
     return T
 
+
 # Return average of a list of time-strings("%d/%m/%Y %H:%M:%S") as a time string or float
 def av_t_strin(t_list,switch):
     assert switch in ('fl','str'),'Unknown switch for function av_t_strin()!'
@@ -112,6 +114,7 @@ def av_t_strin(t_list,switch):
         t_av_fl = dt.datetime.fromtimestamp(t_av)
         return t_av_fl.strftime('%d/%m/%Y %H:%M:%S') # av. time as string
 
+
 # Write headings on Summary sheet
 def WriteHeadings(sheet,row,version):
     now = dt.datetime.now()
@@ -120,10 +123,10 @@ def WriteHeadings(sheet,row,version):
     sheet['J'+str(row)] = 'Uncertainty Budget'
     
     sheet['R'+str(row)] = 'R1(T)'
-    sheet['S'+str(row)] = 'exp. U(95%)'
-    sheet['T'+str(row)] = 'av T'
-    sheet['U'+str(row)] = 'av date/time'
-    sheet['V'+str(row)] = 'av V'
+    sheet['U'+str(row)] = 'exp. U(95%)'
+    sheet['V'+str(row)] = 'av T'
+    sheet['Y'+str(row)] = 'av date/time'
+    sheet['Z'+str(row)] = 'av V'
     row += 1
     sheet['A'+str(row)] = 'Name'
     sheet['B'+str(row)] = 'Test V'
@@ -146,6 +149,7 @@ def WriteHeadings(sheet,row,version):
     
     return row
 
+
 # Write measurement summary   
 def WriteThisResult(sheet,row,result):
     sheet['A'+str(row)].font = Font(color=colors.YELLOW)
@@ -159,10 +163,12 @@ def WriteThisResult(sheet,row,result):
     sheet['G'+str(row)] = result['R'].df
     # Exp Uncert:
     sheet['H'+str(row)] = result['R_expU']
-    
+  
+  
 # Sorting helper function - sort by uncert. contribution
 def by_u_cont(line):
     return line[5]    
+ 
  
 def WriteBudget(sheet,row,budget):
     for line in budget:
@@ -174,7 +180,8 @@ def WriteBudget(sheet,row,budget):
         sheet['O'+str(row)] = line[5]
         row += 1
     return row
-  
+
+
 # Weighted least-squares fit (R1-T)
 def write_R1_T_fit(results,sheet,row):
     T_data = [T for T in [result['T'] for result in results]] # All T values
@@ -195,13 +202,13 @@ def write_R1_T_fit(results,sheet,row):
         
     sheet['R'+str(row)] = GTC.value(R1)
     sheet['S'+str(row)] = GTC.uncertainty(R1)
-    sheet['T'+str(row)] = GTC.dof(R1)
+    sheet['T'+str(row)] = round(GTC.dof(R1))
     
     sheet['U'+str(row)] = R1.u*GTC.rp.k_factor(R1.df)
     
     sheet['V'+str(row)] = GTC.value(T_av)
     sheet['W'+str(row)] = GTC.uncertainty(T_av)
-    sheet['X'+str(row)] = GTC.dof(T_av)
+    sheet['X'+str(row)] = round(GTC.dof(T_av))
     
     t = [result['time_fl'] for result in results] # x data (time,s from epoch)
     t_av = GTC.ta.estimate(t)
@@ -212,7 +219,7 @@ def write_R1_T_fit(results,sheet,row):
     V_av = GTC.fn.mean(V1)
     sheet['Z'+str(row)] = GTC.value(V_av)
     sheet['AA'+str(row)] = GTC.uncertainty(V_av)
-    sheet['AB'+str(row)] = GTC.dof(V_av)
+    sheet['AB'+str(row)] = round(GTC.dof(V_av))
     
     return (R1,alpha,T_av,V_av,time_av)
 

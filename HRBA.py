@@ -233,10 +233,12 @@ print '\nLooping over data rows',Data_start_row,'to',Data_stop_row,'...'
 while Data_row <= Data_stop_row:    
     
     # R2 parameters:
-    V2set = abs(ws_Data['B'+str(Data_start_row)].value)
+    V2set = ws_Data['B'+str(Data_start_row)].value
     assert V2set is not None,'Missing V2 setting!'
-    V1set = abs(ws_Data['A'+str(Data_start_row)].value)
+    V1set = ws_Data['A'+str(Data_start_row)].value
     assert V1set is not None,'Missing V1 setting!'
+    
+    # Select R2 info based on applied voltage ('LV' or 'HV')
     Vdif_LV = abs(abs(V2set)-R_INFO[R2_name]['VRef_LV'])
     Vdif_HV = abs(abs(V2set)-R_INFO[R2_name]['VRef_HV'])
     if Vdif_LV < Vdif_HV:
@@ -264,7 +266,7 @@ while Data_row <= Data_stop_row:
         v_ratio_code = 'VRC_n100to10'
     else:
         v_ratio_code = None
-    assert v_ratio_code is not None,'Unable to determine voltage ratio!'
+    assert v_ratio_code is not None,'Unable to determine voltage ratio ({0}/{1})!'.format(int(round(V1set)),int(round(V2set)))
 
     # Select appropriate value of VRC, etc.
     vrc = I_INFO[role_descr['DVM12']][v_ratio_code]
@@ -610,11 +612,11 @@ summary_row += 1
 
 ws_Summary['R'+str(summary_row)] = GTC.value(alpha)
 ws_Summary['S'+str(summary_row)] = GTC.uncertainty(alpha)
-ws_Summary['T'+str(summary_row)] = GTC.dof(alpha)
+ws_Summary['T'+str(summary_row)] = round(GTC.dof(alpha))
 
 ws_Summary['V'+str(summary_row)] = GTC.value(gamma)
 ws_Summary['W'+str(summary_row)] = GTC.uncertainty(gamma)
-ws_Summary['X'+str(summary_row)] = GTC.dof(gamma)
+ws_Summary['X'+str(summary_row)] = round(GTC.dof(gamma))
 
 #######################################################################
 # Finally, if R1 is a resistor that is not included in the 'parameters'
