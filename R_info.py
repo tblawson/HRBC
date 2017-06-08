@@ -22,6 +22,10 @@ ZERO = GTC.ureal(0,0)
 
 # ______________________________Useful funtions:_____________________________________
 
+def Make_Log_Name(v):
+    return 'HRBAv'+str(v)+'_'+str(dt.date.today())+'.log'
+
+
 # Extract resistor names from comment
 def ExtractNames(comment):
     assert comment.find('R1: ') >= 0,'R1 name not found in comment!'
@@ -44,7 +48,7 @@ def GetRval(name):
     # return numeric part of last word, multiplied by 1, 10^3, 10^6 or 10^9:
     return(mult*int(string.strip(string.split(name)[-1],string.letters)))
 
-def GetRLstartrow(sheet,Id,jump):
+def GetRLstartrow(sheet,Id,jump,log):
     search_row = 1
     while search_row < RL_SEARCH_LIMIT: # Don't search for ever.
         result = sheet['A'+str(search_row)].value # scan down column A
@@ -57,6 +61,7 @@ def GetRLstartrow(sheet,Id,jump):
                 search_row += jump
         search_row +=1
     print 'No matching Rlink data!'
+    log.write('GetRLstartrow():No matching Rlink data!\n')
     return -1
 
 
@@ -183,7 +188,7 @@ def WriteBudget(sheet,row,budget):
 
 
 # Weighted least-squares fit (R1-T)
-def write_R1_T_fit(results,sheet,row):
+def write_R1_T_fit(results,sheet,row,log):
     T_data = [T for T in [result['T'] for result in results]] # All T values
     T_av = GTC.fn.mean(T_data)
     T_rel = [t_k - T_av for t_k in T_data] # x-vals
@@ -194,11 +199,13 @@ def write_R1_T_fit(results,sheet,row):
     if len(set(T_data)) <= 1: # No temperature variation recorded, so can't fit to T
         R1  = GTC.fn.mean(y)
         print 'R1_LV (av, not fit):',R1
+        log.write('\nR1_LV (av, not fit): ' + str(R1))
     else:
         #a_ta,b_ta = GTC.ta.line_fit_wls(T_rel,y,u_y).a_b
         # Assume uncert of individual measurements dominate uncert of fit
         R1,alpha = GTC.fn.line_fit_wls(T_rel,y).a_b
-        print 'Fit params:\t intercept=',GTC.summary(R1),'Slope=',GTC.summary(alpha)        
+        print 'Fit params:\t intercept=',GTC.summary(R1),'Slope=',GTC.summary(alpha)
+        log.write('\nFit params:\t intercept= ' + str(GTC.summary(R1)) + ' Slope= ' + str(GTC.summary(alpha)))
         
     sheet['R'+str(row)] = GTC.value(R1)
     sheet['S'+str(row)] = GTC.uncertainty(R1)

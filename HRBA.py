@@ -43,7 +43,6 @@ from openpyxl.cell import get_column_letter #column_index_from_string
 import GTC
 
 import R_info # useful functions
-#import xlrd
 
 VERSION = 1.2
 
@@ -52,17 +51,18 @@ VERSION = 1.2
 #INF = 1e6 # 'inf' dof
 ZERO = GTC.ureal(0,0)
 
-# I:\MSL\Private\Electricity\Commercial\Working\IV Converters for Light\\2016 Reports
-# I:\MSL\Private\Electricity\Staff\TBL\Python\High_Res_Bridge\Development\\test version\Validation
-os.environ['XLPATH'] = 'I:\MSL\Private\Electricity\Commercial\Working\IV Converters for Light\\2016 Reports'
-# xldir = os.environ['XLPATH']
-xldir = raw_input('Path to data directory:')
-# xlfile = 'HRBC_HRBA_for_IV-conv Laurie.xlsx' #  # new_High-Res_validation.xlsx
-xlfile = raw_input('Excel filename:')
-xlfilename = os.path.join(xldir, xlfile)
+datadir = raw_input('Path to data directory:')
+xlname = raw_input('Excel filename:')
+xlfile = os.path.join(datadir, xlname)
+
+logname = R_info.Make_Log_Name(VERSION)
+logfile = os.path.join(datadir, logname)
+log = open(logfile,'w')
+
+log.write(xlfile+'\n')
 
 # open existing workbook
-wb_io = load_workbook(xlfilename) # did have ', data_only=False'
+wb_io = load_workbook(xlfile) # did have ', data_only=False'
 ws_Data = wb_io.get_sheet_by_name('Data')
 ws_Rlink = wb_io.get_sheet_by_name('Rlink')
 ws_Summary = wb_io.get_sheet_by_name('Results')
@@ -86,6 +86,7 @@ for row in range(Data_start_row, Data_start_row+10): # 10 roles in total
 #______________Extract resistor and instrument parameters_____________#
 
 print 'Reading parameters...'
+log.write('Reading parameters...')
 headings = (u'Resistor Info:', u'Instrument Info:',
             u'description', u'parameter', u'value',
             u'uncert', u'dof', u'label', u'Comment / Reference')
@@ -160,9 +161,11 @@ for r in ws_Params.rows: # a tuple of row objects
 # Compile into dictionaries
 I_INFO = dict(zip(I_DESCR,I_sublist))
 print len(I_INFO),'instruments (%d rows)'%last_I_row
+log.write('\n'+str(len(I_INFO))+' instruments ('+str(last_I_row)+') rows')
 
 R_INFO = dict(zip(R_DESCR,R_sublist))
 print len(R_INFO),'resistors.(%d rows)\n'%last_R_row
+log.write('\n'+str(len(R_INFO))+' resistors ('+str(last_R_row)+') rows')
 
 #--------------End of parameter extraction---------------#
 ##########################################################
@@ -215,14 +218,18 @@ results_LV = [] # Low voltage measurements
 
 # Get run comment and extract R names & R values
 Data_comment = ws_Data['Z'+str(Data_row)].value
+
 assert Data_comment is not None,'Missing Comment!'
 
 R1_name,R2_name = R_info.ExtractNames(Data_comment)
 R1val = R_info.GetRval(R1_name)
 R2val = R_info.GetRval(R2_name)
+
 print Data_comment
+log.write('\n'+ Data_comment)
 print 'Run Id:',Run_Id
-    
+log.write('\nRun Id: '+ Run_Id)
+   
 # Check for knowledge of R2:
 if not R_INFO.has_key(R2_name):
     sys.exit('ERROR - Unknown Rs: '+R2_name)
@@ -230,6 +237,7 @@ if not R_INFO.has_key(R2_name):
 ##############################
 ##___Loop over data rows ___##
 print '\nLooping over data rows',Data_start_row,'to',Data_stop_row,'...'
+log.write('\nLooping over data rows '+str(Data_start_row)+' to '+str(Data_stop_row)+'\n')
 while Data_row <= Data_stop_row:    
     
     # R2 parameters:
@@ -318,13 +326,7 @@ while Data_row <= Data_stop_row:
         times.append(ws_Data['G'+str(r)].value)
         times.append(ws_Data['M'+str(r)].value)
         times.append(ws_Data['P'+str(r)].value)
-        
-#        if ws_Data['Y'+str(r)].value is not None:
-#        assert ws_Data['Y'+str(r)].value is not None,'No %RH data!'
-#        RHs.append(ws_Data['Y'+str(r)].value)
-#        else:
-#            RHs.append(0)
-        
+               
         assert ws_Data['S'+str(r)].value is not None,'No R1 raw DVM (temperature) data!'
         raw_dvm1 = ws_Data['S'+str(r)].value
         
@@ -462,7 +464,7 @@ while Data_row <= Data_stop_row:
     jump = head_height + N_reads # rows to jump between starts of each header
     
     # Find correct RLink data-header
-    RL_start_row = R_info.GetRLstartrow(ws_Rlink,Run_Id,jump)
+    RL_start_row = R_info.GetRLstartrow(ws_Rlink,Run_Id,jump,log)
     
     # Next, define nom_R,abs_V quantities
     val1 = ws_Rlink['C'+str(RL_start_row+2)].value
@@ -585,15 +587,20 @@ summary_row = summary_start_row + 1
 
 # Weighted total least-squares fit (R1-T), LV
 print '\nLV:'
-R1_LV, Ohm_per_C_LV, T_LV, V_LV, date = R_info.write_R1_T_fit(results_LV,ws_Summary,summary_row)
+log.write('\nLV:')
+R1_LV, Ohm_per_C_LV, T_LV, V_LV, date = R_info.write_R1_T_fit(results_LV,ws_Summary,summary_row,log)
 alpha_LV = Ohm_per_C_LV/R1_LV
 
 summary_row += 1
 
-print '\nHV:'
+
 # Weighted total least-squares fit (R1-T), HV
-R1_HV, Ohm_per_C_HV, T_HV, V_HV, date = R_info.write_R1_T_fit(results_HV,ws_Summary,summary_row)
+print '\nHV:'
+log.write('\nHV:')
+R1_HV, Ohm_per_C_HV, T_HV, V_HV, date = R_info.write_R1_T_fit(results_HV,ws_Summary,summary_row,log)
 alpha_HV = Ohm_per_C_HV/R1_HV
+
+log.write('\nRlink = ' + str(GTC.summary(Rd)))
 
 alpha = GTC.fn.mean([alpha_LV,alpha_HV])
 beta = GTC.ureal(0,0) # assume no beta
@@ -634,5 +641,7 @@ else:
     print 'Already know about',R1_name
     
 # Save workbook
-wb_io.save(xlfilename)
+wb_io.save(xlfile)
 print '_____________HRBA DONE_______________'
+log.write('\n_____________HRBA DONE_______________')
+log.close()
