@@ -57,7 +57,7 @@ xlfile = os.path.join(datadir, xlname)
 
 logname = R_info.Make_Log_Name(VERSION)
 logfile = os.path.join(datadir, logname)
-log = open(logfile,'w')
+log = open(logfile,'a')
 
 log.write(xlfile+'\n')
 
@@ -510,6 +510,8 @@ while Data_row <= Data_stop_row:
     Rd = GTC.ar.result(av_dV/I,label = 'Rlink ' + Run_Id)
     assert Rd.x < 0.01,'High link resistance!'
     assert Rd.x > Rd.u,'Link resistance uncertainty > value!'
+    # ______End of 'get_Rd_value' section____
+    
     influencies.append(Rd) # R2 dependancy
     
     # Calculate R2 (corrected for T and V)
