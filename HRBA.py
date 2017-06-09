@@ -39,7 +39,8 @@ import sys
 sys.path.append("C:\Python27\Lib\site-packages\GTC")
 
 from openpyxl import load_workbook, cell
-from openpyxl.cell import get_column_letter #column_index_from_string
+#from openpyxl.cell import get_column_letter #column_index_from_string
+from openpyxl.utils import get_column_letter
 import GTC
 
 import R_info # useful functions
@@ -92,21 +93,21 @@ headings = (u'Resistor Info:', u'Instrument Info:',
             u'uncert', u'dof', u'label', u'Comment / Reference')
         
  # Determine colummn indices from column letters:
-col_A = cell.column_index_from_string('A') - 1
-col_B = cell.column_index_from_string('B') - 1
-col_C = cell.column_index_from_string('C') - 1
-col_D = cell.column_index_from_string('D') - 1
-col_E = cell.column_index_from_string('E') - 1
-col_F = cell.column_index_from_string('F') - 1
-col_G = cell.column_index_from_string('G') - 1
-#col_H = cell.column_index_from_string('H') - 1
-col_I = cell.column_index_from_string('I') - 1
-col_J = cell.column_index_from_string('J') - 1
-col_K = cell.column_index_from_string('K') - 1
-col_L = cell.column_index_from_string('L') - 1
-col_M = cell.column_index_from_string('M') - 1
-col_N = cell.column_index_from_string('N') - 1
-col_O = cell.column_index_from_string('O') - 1
+col_A = cell.cell.column_index_from_string('A') - 1
+col_B = cell.cell.column_index_from_string('B') - 1
+col_C = cell.cell.column_index_from_string('C') - 1
+col_D = cell.cell.column_index_from_string('D') - 1
+col_E = cell.cell.column_index_from_string('E') - 1
+col_F = cell.cell.column_index_from_string('F') - 1
+col_G = cell.cell.column_index_from_string('G') - 1
+
+col_I = cell.cell.column_index_from_string('I') - 1
+col_J = cell.cell.column_index_from_string('J') - 1
+col_K = cell.cell.column_index_from_string('K') - 1
+col_L = cell.cell.column_index_from_string('L') - 1
+col_M = cell.cell.column_index_from_string('M') - 1
+col_N = cell.cell.column_index_from_string('N') - 1
+col_O = cell.cell.column_index_from_string('O') - 1
         
 R_params = []
 R_row_items = []
