@@ -38,6 +38,9 @@ import os
 import sys
 sys.path.append("C:\Python27\Lib\site-packages\GTC")
 
+import datetime as dt
+import math
+
 from openpyxl import load_workbook, cell
 #from openpyxl.cell import get_column_letter #column_index_from_string
 from openpyxl.utils import get_column_letter
@@ -60,9 +63,12 @@ logname = R_info.Make_Log_Name(VERSION)
 logfile = os.path.join(datadir, logname)
 log = open(logfile,'a')
 
-log.write(xlfile+'\n')
+now_tup = dt.datetime.now()
+now_fmt = now_tup.strftime('%d/%m/%Y %H:%M:%S')
+log.write(now_fmt +'\n' + xlfile + '\n')
 
 # open existing workbook
+print str(xlfile)
 wb_io = load_workbook(xlfile) # did have ', data_only=False'
 ws_Data = wb_io.get_sheet_by_name('Data')
 ws_Rlink = wb_io.get_sheet_by_name('Rlink')
@@ -171,6 +177,7 @@ log.write('\n'+str(len(R_INFO))+' resistors ('+str(last_R_row)+') rows')
 #--------------End of parameter extraction---------------#
 ##########################################################
 
+
 # Determine the meanings of 'LV' and 'HV'
 V1set_a = abs(ws_Data['A'+str(Data_start_row)].value)
 assert V1set_a is not None,'Missing initial V1 value!'
@@ -199,8 +206,90 @@ assert Run_Id is not None,'Missing Run Id!'
 ws_Summary['C'+str(summary_start_row)] = 'Run Id:'
 ws_Summary['D'+str(summary_start_row)] = str(Run_Id)
 
+# Get run comment and extract R names & R values
+Data_comment = ws_Data['Z'+str(Data_row)].value
+assert Data_comment is not None,'Missing Comment!'
+
+print Data_comment
+log.write('\n'+ Data_comment)
+print 'Run Id:',Run_Id
+log.write('\nRun Id: '+ Run_Id)
+
 # Write headings
 summary_row = R_info.WriteHeadings(ws_Summary,summary_start_row,VERSION)
+
+# Lists of dictionaries (with name,time,R,T,V entries)
+results_HV = [] # High voltage measurements
+results_LV = [] # Low voltage measurements
+
+# Get resistor names and values
+R1_name,R2_name = R_info.ExtractNames(Data_comment)
+R1val = R_info.GetRval(R1_name)
+R2val = R_info.GetRval(R2_name)
+
+# Check for knowledge of R2:
+if not R_INFO.has_key(R2_name):
+    sys.exit('ERROR - Unknown Rs: '+R2_name)
+
+
+#### __________Get Rd value__________####
+# 1st, detetermine data format
+N_revs = ws_Rlink['B2'].value # Number of reversals = number of columns
+assert N_revs is not None and N_revs > 0,'Missing or no reversals!'
+N_reads = ws_Rlink['B3'].value # Number of readings = number of rows
+assert N_reads is not None and N_reads > 0,'Missing or no reads!'
+head_height = 6 # Rows of header before each block of data
+jump = head_height + N_reads # rows to jump between starts of each header
+
+# Find correct RLink data-header
+RL_start_row = R_info.GetRLstartrow(ws_Rlink,Run_Id,jump,log)
+
+# Next, define nom_R,abs_V quantities
+val1 = ws_Rlink['C'+str(RL_start_row+2)].value
+assert val1 is not None,'Missing nominal R1 value!'
+nom_R1 = GTC.constant(val1,label='nom_R1') # don't know uncertainty of nominal values
+val2 = ws_Rlink['C'+str(RL_start_row+3)].value
+assert val2 is not None,'Missing nominal R2 value!'
+nom_R2 = GTC.constant(val2,label='nom_R2') # don't know uncertainty of nominal values
+val1 =ws_Rlink['D'+str(RL_start_row+2)].value
+assert val1 is not None,'Missing nominal V1 value!'
+abs_V1 = GTC.constant(val1,label='abs_V1') # don't know uncertainty of nominal values
+val2 = ws_Rlink['D'+str(RL_start_row+3)].value
+assert val2 is not None,'Missing nominal V2 value!'
+abs_V2 = GTC.constant(val2,label='abs_V2') # don't know uncertainty of nominal values
+
+# Calculate I
+I=(abs_V1+abs_V2)/(nom_R1+nom_R2)
+I.label = 'Rd_I' + Run_Id
+
+# Average all +Vs and -Vs
+Vp = []
+Vn = []
+    
+for Vrow in range(RL_start_row+5,RL_start_row+5+N_reads):
+    col = 1
+    while col <= N_revs: # cycle through cols 1 to N_revs
+        Vp.append(ws_Rlink[get_column_letter(col)+str(Vrow)].value)
+        assert Vp[-1] is not None,'Missing Vp value!'
+        col +=1
+
+        Vn.append(ws_Rlink[get_column_letter(col)+str(Vrow)].value)
+        assert Vn[-1] is not None,'Missing Vn value!'
+        col +=1
+
+av_dV_p = GTC.ta.estimate(Vp)
+av_dV_p.label='av_dV_p' + Run_Id
+av_dV_n = GTC.ta.estimate(Vn)
+av_dV_n.label='av_dV_n' + Run_Id
+av_dV = 0.5*(av_dV_p - av_dV_n)
+av_dV.label = 'Rd_dV' + Run_Id
+
+# Finally, calculate Rd
+Rd = GTC.ar.result(av_dV/I,label = 'Rlink ' + Run_Id)
+assert Rd.x < 0.01,'High link resistance!'
+assert Rd.x > Rd.u,'Link resistance uncertainty > value!'
+log.write('\nRlink = ' + str(GTC.summary(Rd)))
+####__________End of Rd section___________####
 
 cor_gmh1 = []
 cor_gmh2 = []
@@ -212,28 +301,6 @@ times = []
 RHs = []
 Ps = []
 Ts = []
-
-# Lists of dictionaries (with name,time,R,T,V entries)
-results_HV = [] # High voltage measurements
-results_LV = [] # Low voltage measurements
-
-# Get run comment and extract R names & R values
-Data_comment = ws_Data['Z'+str(Data_row)].value
-
-assert Data_comment is not None,'Missing Comment!'
-
-R1_name,R2_name = R_info.ExtractNames(Data_comment)
-R1val = R_info.GetRval(R1_name)
-R2val = R_info.GetRval(R2_name)
-
-print Data_comment
-log.write('\n'+ Data_comment)
-print 'Run Id:',Run_Id
-log.write('\nRun Id: '+ Run_Id)
-   
-# Check for knowledge of R2:
-if not R_INFO.has_key(R2_name):
-    sys.exit('ERROR - Unknown Rs: '+R2_name)
 
 ##############################
 ##___Loop over data rows ___##
@@ -453,65 +520,7 @@ while Data_row <= Data_stop_row:
     # Mean voltages
     V1av = (V1[0]-2*V1[1]+V1[2])/4
     V2av = (V2[0]-2*V2[1]+V2[2])/4
-    Vdav = (Vd[0]-2*Vd[1]+Vd[2])/4 + Vlin_Vd + Vdrift['Vd']    
-    
-    # __________Get Rd value__________
-    # 1st, detetermine data format
-    N_revs = ws_Rlink['B2'].value # Number of reversals = number of columns
-    assert N_revs is not None and N_revs > 0,'Missing or no reversals!'
-    N_reads = ws_Rlink['B3'].value # Number of readings = number of rows
-    assert N_reads is not None and N_reads > 0,'Missing or no reads!'
-    head_height = 6 # Rows of header before each block of data
-    jump = head_height + N_reads # rows to jump between starts of each header
-    
-    # Find correct RLink data-header
-    RL_start_row = R_info.GetRLstartrow(ws_Rlink,Run_Id,jump,log)
-    
-    # Next, define nom_R,abs_V quantities
-    val1 = ws_Rlink['C'+str(RL_start_row+2)].value
-    assert val1 is not None,'Missing nominal R1 value!'
-    nom_R1 = GTC.constant(val1,label='nom_R1') # don't know uncertainty of nominal values
-    val2 = ws_Rlink['C'+str(RL_start_row+3)].value
-    assert val2 is not None,'Missing nominal R2 value!'
-    nom_R2 = GTC.constant(val2,label='nom_R2') # don't know uncertainty of nominal values
-    val1 =ws_Rlink['D'+str(RL_start_row+2)].value
-    assert val1 is not None,'Missing nominal V1 value!'
-    abs_V1 = GTC.constant(val1,label='abs_V1') # don't know uncertainty of nominal values
-    val2 = ws_Rlink['D'+str(RL_start_row+3)].value
-    assert val2 is not None,'Missing nominal V2 value!'
-    abs_V2 = GTC.constant(val2,label='abs_V2') # don't know uncertainty of nominal values
-     
-    # Calculate I
-    I=(abs_V1+abs_V2)/(nom_R1+nom_R2)
-    I.label = 'Rd_I' + Run_Id
-    
-    # Average all +Vs and -Vs
-    Vp = []
-    Vn = []
-    
-    for Vrow in range(RL_start_row+5,RL_start_row+5+N_reads):
-        col = 1
-        while col <= N_revs: # cycle through cols 1 to N_revs
-            Vp.append(ws_Rlink[get_column_letter(col)+str(Vrow)].value)
-            assert Vp[-1] is not None,'Missing Vp value!'
-            col +=1
-            
-            Vn.append(ws_Rlink[get_column_letter(col)+str(Vrow)].value)
-            assert Vn[-1] is not None,'Missing Vn value!'
-            col +=1
-            
-    av_dV_p = GTC.ta.estimate(Vp)
-    av_dV_p.label='av_dV_p' + Run_Id
-    av_dV_n = GTC.ta.estimate(Vn)
-    av_dV_n.label='av_dV_n' + Run_Id
-    av_dV = 0.5*(av_dV_p - av_dV_n)
-    av_dV.label = 'Rd_dV' + Run_Id
-    
-    # Finally, calculate Rd
-    Rd = GTC.ar.result(av_dV/I,label = 'Rlink ' + Run_Id)
-    assert Rd.x < 0.01,'High link resistance!'
-    assert Rd.x > Rd.u,'Link resistance uncertainty > value!'
-    # ______End of 'get_Rd_value' section____
+    Vdav = (Vd[0]-2*Vd[1]+Vd[2])/4 + Vlin_Vd + Vdrift['Vd']
     
     influencies.append(Rd) # R2 dependancy
     
@@ -596,14 +605,11 @@ alpha_LV = Ohm_per_C_LV/R1_LV
 
 summary_row += 1
 
-
 # Weighted total least-squares fit (R1-T), HV
 print '\nHV:'
 log.write('\nHV:')
 R1_HV, Ohm_per_C_HV, T_HV, V_HV, date = R_info.write_R1_T_fit(results_HV,ws_Summary,summary_row,log)
 alpha_HV = Ohm_per_C_HV/R1_HV
-
-log.write('\nRlink = ' + str(GTC.summary(Rd)))
 
 alpha = GTC.fn.mean([alpha_LV,alpha_HV])
 beta = GTC.ureal(0,0) # assume no beta
@@ -620,13 +626,23 @@ ws_Summary['V'+str(summary_row)] = 'gamma (/V)'
 
 summary_row += 1
 
-ws_Summary['R'+str(summary_row)] = GTC.value(alpha)
-ws_Summary['S'+str(summary_row)] = GTC.uncertainty(alpha)
-ws_Summary['T'+str(summary_row)] = round(GTC.dof(alpha))
+ws_Summary['R'+str(summary_row)] = alpha.x
+ws_Summary['S'+str(summary_row)] = alpha.u
+if math.isinf(alpha.df):
+    print'alpha.df is',alpha.df
+    ws_Summary['T'+str(summary_row)] = str(alpha.df)
+else:
+    print'alpha.df =',alpha.df
+    ws_Summary['T'+str(summary_row)] = round(alpha.df)
 
-ws_Summary['V'+str(summary_row)] = GTC.value(gamma)
-ws_Summary['W'+str(summary_row)] = GTC.uncertainty(gamma)
-ws_Summary['X'+str(summary_row)] = round(GTC.dof(gamma))
+ws_Summary['V'+str(summary_row)] = gamma.x
+ws_Summary['W'+str(summary_row)] = gamma.u
+if math.isinf(gamma.df):
+    print'gamma.df is',gamma.df
+    ws_Summary['X'+str(summary_row)] = str(gamma.df)
+else:
+    print'gamma.df =',gamma.df
+    ws_Summary['X'+str(summary_row)] = round(gamma.df)
 
 #######################################################################
 # Finally, if R1 is a resistor that is not included in the 'parameters'
@@ -635,7 +651,6 @@ ws_Summary['X'+str(summary_row)] = round(GTC.dof(gamma))
 params = ['R0_LV','TRef_LV','VRef_LV','R0_HV','TRef_HV','VRef_HV','alpha',
           'beta','gamma','date','T_sensor']
 R_data = [R1_LV,T_LV,V_LV,R1_HV,T_HV,V_HV,alpha,beta,gamma, date, 'none']
-#R_dict = dict(zip(params,R_data))
 
 if not R_INFO.has_key(R1_name):
     print 'Adding',R1_name,'to resistor info...'
@@ -646,5 +661,5 @@ else:
 # Save workbook
 wb_io.save(xlfile)
 print '_____________HRBA DONE_______________'
-log.write('\n_____________HRBA DONE_______________')
+log.write('\n_____________HRBA DONE_______________\n\n')
 log.close()

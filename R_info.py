@@ -157,6 +157,7 @@ def WriteHeadings(sheet,row,version):
 
 # Write measurement summary   
 def WriteThisResult(sheet,row,result):
+    pass
     sheet['A'+str(row)].font = Font(color=colors.YELLOW)
     sheet['A'+str(row)].fill = PatternFill(patternType='solid', fgColor=colors.RED)
     sheet['A'+str(row)] = str(result['name'])
@@ -165,7 +166,12 @@ def WriteThisResult(sheet,row,result):
     sheet['D'+str(row)] = result['T'].x
     sheet['E'+str(row)] = result['R'].x
     sheet['F'+str(row)] = result['R'].u
-    sheet['G'+str(row)] = result['R'].df
+    if math.isinf(result['R'].df):
+        print'WriteThisResult(): result.dof is',result['R'].df
+        sheet['G'+str(row)] = str(result['R'].df)
+    else:
+        print'WriteThisResult(): result.dof =',result['R'].df
+        sheet['G'+str(row)] = round(result['R'].df)
     # Exp Uncert:
     sheet['H'+str(row)] = result['R_expU']
   
@@ -177,12 +183,17 @@ def by_u_cont(line):
  
 def WriteBudget(sheet,row,budget):
     for line in budget:
-        sheet['J'+str(row)] = line[0]
-        sheet['K'+str(row)] = line[1]
-        sheet['L'+str(row)] = line[2]
-        sheet['M'+str(row)] = line[3]
-        sheet['N'+str(row)] = line[4]
-        sheet['O'+str(row)] = line[5]
+        sheet['J'+str(row)] = line[0] # Quantity (label)
+        sheet['K'+str(row)] = line[1] # Value
+        sheet['L'+str(row)] = line[2] # Uncert.
+        if math.isinf(line[3]):
+            print'WriteBudget(): dof (',line[0],') is',line[3]
+            sheet['M'+str(row)] = str(line[3]) # dof
+        else:
+            print'WriteBudget(): dof (',line[0],') =',line[3]
+            sheet['M'+str(row)] = round(line[3]) # dof
+        sheet['N'+str(row)] = line[4] # Sens. coef.
+        sheet['O'+str(row)] = line[5] # Uncert. contrib.
         row += 1
     return row
 
@@ -207,15 +218,25 @@ def write_R1_T_fit(results,sheet,row,log):
         print 'Fit params:\t intercept=',GTC.summary(R1),'Slope=',GTC.summary(alpha)
         log.write('\nFit params:\t intercept= ' + str(GTC.summary(R1)) + ' Slope= ' + str(GTC.summary(alpha)))
         
-    sheet['R'+str(row)] = GTC.value(R1)
-    sheet['S'+str(row)] = GTC.uncertainty(R1)
-    sheet['T'+str(row)] = round(GTC.dof(R1))
+    sheet['R'+str(row)] = R1.x
+    sheet['S'+str(row)] = R1.u
+    if math.isinf(R1.df):
+        print'write_R1_T_fit(): R1.df is',R1.df
+        sheet['T'+str(row)] = str(R1.df)
+    else:
+        print'write_R1_T_fit(): R1.df =',R1.df
+        sheet['T'+str(row)] = round(R1.df)
     
     sheet['U'+str(row)] = R1.u*GTC.rp.k_factor(R1.df)
     
-    sheet['V'+str(row)] = GTC.value(T_av)
-    sheet['W'+str(row)] = GTC.uncertainty(T_av)
-    sheet['X'+str(row)] = round(GTC.dof(T_av))
+    sheet['V'+str(row)] = T_av.x
+    sheet['W'+str(row)] = T_av.u
+    if math.isinf(T_av.df):
+        print'write_R1_T_fit(): T_av.df is',T_av.df
+        sheet['X'+str(row)] = str(T_av.df)
+    else:
+        print'write_R1_T_fit(): T_av.df =',T_av.df
+        sheet['X'+str(row)] = round(T_av.df)
     
     t = [result['time_fl'] for result in results] # x data (time,s from epoch)
     t_av = GTC.ta.estimate(t)
@@ -224,10 +245,14 @@ def write_R1_T_fit(results,sheet,row,log):
     
     V1 = [V for V in [result['V'] for result in results]]
     V_av = GTC.fn.mean(V1)
-    sheet['Z'+str(row)] = GTC.value(V_av)
-    sheet['AA'+str(row)] = GTC.uncertainty(V_av)
-    sheet['AB'+str(row)] = round(GTC.dof(V_av))
-    
+    sheet['Z'+str(row)] = V_av.x
+    sheet['AA'+str(row)] = V_av.u
+    if math.isinf(V_av.df):
+        print'write_R1_T_fit(): V_av.df is',V_av.df
+        sheet['AB'+str(row)] = str(V_av.df)
+    else:
+        print'write_R1_T_fit(): V_av.df =',V_av.df
+        sheet['AB'+str(row)] = round(V_av.df)
     return (R1,alpha,T_av,V_av,time_av)
 
 
@@ -235,21 +260,26 @@ def update_R_Info(name,params,data,sheet,row,Id,v):
     R_dict = dict(zip(params,data))
     
     for param in params:
-#        label = name.replace(' ','') + '_'+ param + Id
-        label = name.split()[0] + '_'+ param + ' ' + Id
+        label = name.split()[0] + '_'+ param + '_' + Id
         row += 1
         sheet['A'+str(row)] = name
         sheet['B'+str(row)] = param
-        if param not in ('date','T_sensor'): # Non-numeric params
+        if param not in ('date','T_sensor'): # GTC.ureal params
             sheet['C'+str(row)] = R_dict[param].x
             sheet['D'+str(row)] = R_dict[param].u
-            sheet['E'+str(row)] = R_dict[param].df
+            if math.isinf(R_dict[param].df):
+                print'update_R_Info(): ',name,'(',param,') is',R_dict[param].df
+                sheet['E'+str(row)] = str(R_dict[param].df)
+            else:
+                print'update_R_Info(): ',name,'(',param,') =',R_dict[param].df
+                sheet['E'+str(row)] = round(R_dict[param].df)
             sheet['F'+str(row)] = label
         else:
             sheet['C'+str(row)] = R_dict[param]
         
         now_tup = dt.datetime.now()
-        sheet['G'+str(row)] = 'HRBA'+ str(v) + '_'+ now_tup.strftime('%d/%m/%Y %H:%M:%S')
+        now_fmt = now_tup.strftime('%d/%m/%Y %H:%M:%S')
+        sheet['G'+str(row)] = 'HRBA'+ str(v) + '_'+ now_fmt
     
     # Mark end of data with a bottom border on cells of last row:
     b = Border(bottom = Side(style='thin'))
