@@ -27,7 +27,7 @@ import string
 import numpy as np
 import wx
 from openpyxl import load_workbook
-from openpyxl.cell import get_column_letter #column_index_from_string
+from openpyxl.utils import get_column_letter #column_index_from_string
 from openpyxl.styles import Font, colors
 
 import HighRes_events as evts
