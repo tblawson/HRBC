@@ -313,12 +313,12 @@ class SetupPage(wx.Panel):
         headings = (None, u'description',u'Instrument Info:',u'parameter',u'value',u'uncert',u'dof',u'label')
         
         # Determine colummn indices from column letters:
-        col_I = cell.column_index_from_string('I') - 1
-        col_J = cell.column_index_from_string('J') - 1
-        col_K = cell.column_index_from_string('K') - 1
-        col_L = cell.column_index_from_string('L') - 1
-        col_M = cell.column_index_from_string('M') - 1
-        col_N = cell.column_index_from_string('N') - 1
+        col_I = cell.cell.column_index_from_string('I') - 1
+        col_J = cell.cell.column_index_from_string('J') - 1
+        col_K = cell.cell.column_index_from_string('K') - 1
+        col_L = cell.cell.column_index_from_string('L') - 1
+        col_M = cell.cell.column_index_from_string('M') - 1
+        col_N = cell.cell.column_index_from_string('N') - 1
 
         params = []
         values = []
@@ -398,6 +398,7 @@ class SetupPage(wx.Panel):
             # create a visa instrument instance
             print'\nnbpages.SetupPage.CreateInstr(): Creating VISA device (%s -> %s).'%(d,r)
             devices.ROLES_INSTR.update({r:devices.instrument(d)})
+            devices.ROLES_INSTR[r].Open()
         self.SetInstr(d,r)
 
 
