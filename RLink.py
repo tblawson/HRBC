@@ -26,7 +26,7 @@ import string
 
 import numpy as np
 import wx
-from openpyxl import load_workbook
+# from openpyxl import load_workbook # WEDNESDAY
 from openpyxl.utils import get_column_letter #column_index_from_string
 from openpyxl.styles import Font, colors
 
@@ -60,8 +60,12 @@ class RLThread(Thread):
         self.xlfilename = self.SetupPage.XLFile.GetValue()
 
         # open existing workbook
-        self.wb_io = load_workbook(self.xlfilename) # load_workbook(self.xlfilename, data_only=True)
-        self.ws = self.wb_io.get_sheet_by_name('Rlink')
+#        self.wb_io = load_workbook(self.xlfilename) # load_workbook(self.xlfilename, data_only=True)
+#        self.ws = self.wb_io.get_sheet_by_name('Rlink')
+        
+        # Find existing workbook
+        self.wb_io = self.SetupPage.wb # WEDNESDAY
+        self.ws = self.wb_io.get_sheet_by_name('Data') # WEDNESDAY
 
          # read start row & run parameters from Excel file
         self.start_row = self.ws['B1'].value # 1st row of actual data (after 6 lines of header)
@@ -137,7 +141,7 @@ class RLThread(Thread):
         devices.ROLES_INSTR['DVMd'].SendCmd('DCV,'+str(dvmOP)) # 'DCV,'+str(self.AbsV1) # visastuff replaced
         devices.ROLES_INSTR['DVMd'].SendCmd('LFREQ LINE') # visastuff replaced
         devices.ROLES_INSTR['SRC1'].SendCmd('R0=') # srcV1  'R0=' # visastuff replaced
-        time.sleep(1) # 3
+        time.sleep(3) # WEDNESDAY
 
         self.V1set = self.AbsV1
         self.V2set = self.AbsV2*-1
@@ -151,9 +155,9 @@ class RLThread(Thread):
             
             # Apply source voltages
             self.RunPage.V1Setting.SetValue(str(self.V1set)) # Voltage displays control sources
-            time.sleep(1) # 5
+            time.sleep(5) # WEDNESDAY
             self.RunPage.V2Setting.SetValue(str(self.V2set))
-            time.sleep(1) # 60
+            time.sleep(60) # WEDNESDAY
             row = 1 # self.start_row + 1
 
             # Only store 10 readings per line, and then clear

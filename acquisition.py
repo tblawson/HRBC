@@ -24,7 +24,7 @@ import time
 
 import numpy as np
 
-from openpyxl import load_workbook
+#from openpyxl import load_workbook # WEDNESDAY
 from openpyxl.styles import Font,Border,Side
 
 import HighRes_events as evts
@@ -66,8 +66,12 @@ class AqnThread(Thread):
         self.xlfilename = self.SetupPage.XLFile.GetValue()
 
         # open existing workbook
-        self.wb_io = load_workbook(self.xlfilename,data_only=True) # 'data_only=True' ensures we read cell value, NOT formula
-        self.ws = self.wb_io.get_sheet_by_name('Data')
+#        self.wb_io = load_workbook(self.xlfilename,data_only=True) # 'data_only=True' ensures we read cell value, NOT formula
+#        self.ws = self.wb_io.get_sheet_by_name('Data')
+
+        # Find existing workbook
+        self.wb_io = self.SetupPage.wb # WEDNESDAY
+        self.ws = self.wb_io.get_sheet_by_name('Data') # WEDNESDAY
 
         # read start/stop row numbers from Excel file
         self.start_row = self.ws['B1'].value
@@ -202,7 +206,7 @@ class AqnThread(Thread):
 
             stat_ev = evts.StatusEvent(msg='Short delay 1...', field=1)
             wx.PostEvent(self.TopLevel, stat_ev)
-            time.sleep(0.1) # 5
+            time.sleep(5) # WEDNESDAY
 
             self.SetUpMeasThisRow(row)
 
@@ -488,7 +492,7 @@ class AqnThread(Thread):
         self.ws['Y'+str(row)] = self.RHroom
         self.ws['Z'+str(row)] = self.Comment
 
-        self.wb_io.save(self.xlfilename)
+        #self.wb_io.save(self.xlfilename)# WEDNESDAY
 
     def AbortRun(self):
         # prematurely end run, prompted by regular checks of _want_abort flag

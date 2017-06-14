@@ -307,8 +307,8 @@ class SetupPage(wx.Panel):
         self.XLFile.SetValue(e.path)
     
         # Read parameters sheet - gather instrument info:
-        wb = load_workbook(self.XLFile.GetValue())
-        ws_params = wb.get_sheet_by_name('Parameters')
+        self.wb = load_workbook(self.XLFile.GetValue()) # WEDNESDAY
+        self.ws_params = self.wb.get_sheet_by_name('Parameters') # WEDNESDAY
         
         headings = (None, u'description',u'Instrument Info:',u'parameter',u'value',u'uncert',u'dof',u'label')
         
@@ -323,7 +323,7 @@ class SetupPage(wx.Panel):
         params = []
         values = []
         
-        for r in ws_params.rows: # a tuple of row objects
+        for r in self.ws_params.rows: # a tuple of row objects
             descr = r[col_I].value # cell.value
             param = r[col_J].value # cell.value
             v_u_d_l = [r[col_K].value, r[col_L].value, r[col_M].value, r[col_N].value] # value,uncert,dof,label
