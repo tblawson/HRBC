@@ -108,7 +108,8 @@ class MainFrame(wx.Frame):
         dlg.Destroy() # Destroy when done.
 
     def OnSave(self,event=None):
-        pass
+        # WEDNESDAY
+        self.page1.wb.save(self.page1.XLFile.GetValue())
     
     def OnOpen(self,event=None):
         dlg = wx.FileDialog(self,message="Select data file", defaultDir=os.getcwd(), defaultFile="", wildcard="*",style=wx.OPEN|wx.CHANGE_DIR)
