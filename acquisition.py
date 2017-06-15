@@ -530,13 +530,13 @@ class AqnThread(Thread):
         stat_ev = evts.StatusEvent(msg='', field=1)
         wx.PostEvent(self.TopLevel, stat_ev)
         
-        for r in devices.ROLES_INSTR.keys():
-            d = devices.ROLES_INSTR[r].Descr
-            if devices.ROLES_INSTR[r].demo == False:
-                print'AqnThread.FinishRun(): Closing',d
-                devices.ROLES_INSTR[r].Close()
-            else:
-                print'AqnThread.FinishRun(): %s already closed'%d
+#        for r in devices.ROLES_INSTR.keys():
+#            d = devices.ROLES_INSTR[r].Descr
+#            if devices.ROLES_INSTR[r].demo == False:
+#                print'AqnThread.FinishRun(): Closing',d
+#                devices.ROLES_INSTR[r].Close()
+#            else:
+#                print'AqnThread.FinishRun(): %s already closed'%d
 
         self.RunPage.StartBtn.Enable(True)
 
