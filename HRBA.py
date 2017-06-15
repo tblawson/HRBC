@@ -44,6 +44,7 @@ import math
 from openpyxl import load_workbook, cell
 #from openpyxl.cell import get_column_letter #column_index_from_string
 from openpyxl.utils import get_column_letter
+
 import GTC
 
 import R_info # useful functions
@@ -281,7 +282,7 @@ av_dV_p = GTC.ta.estimate(Vp)
 av_dV_p.label='av_dV_p' + Run_Id
 av_dV_n = GTC.ta.estimate(Vn)
 av_dV_n.label='av_dV_n' + Run_Id
-av_dV = 0.5*(av_dV_p - av_dV_n)
+av_dV = 0.5*GTC.magnitude(av_dV_p - av_dV_n)
 av_dV.label = 'Rd_dV' + Run_Id
 
 # Finally, calculate Rd
