@@ -65,7 +65,7 @@ class RLThread(Thread):
         
         # Find existing workbook
         self.wb_io = self.SetupPage.wb # WEDNESDAY
-        self.ws = self.wb_io.get_sheet_by_name('Data') # WEDNESDAY
+        self.ws = self.wb_io.get_sheet_by_name('Rlink') # WEDNESDAY
 
          # read start row & run parameters from Excel file
         self.start_row = self.ws['B1'].value # 1st row of actual data (after 6 lines of header)
