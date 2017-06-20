@@ -109,7 +109,9 @@ class MainFrame(wx.Frame):
 
     def OnSave(self,event=None):
         # WEDNESDAY
+        print 'Saving',self.page1.XLFile.GetValue(),'...'
         self.page1.wb.save(self.page1.XLFile.GetValue())
+    
     
     def OnOpen(self,event=None):
         dlg = wx.FileDialog(self,message="Select data file", defaultDir=os.getcwd(), defaultFile="", wildcard="*",style=wx.OPEN|wx.CHANGE_DIR)
