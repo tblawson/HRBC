@@ -172,7 +172,7 @@ class RLThread(Thread):
                     devices.ROLES_INSTR['DVMd'].SendCmd('LFREQ LINE') # visastuff replaced
                     time.sleep(1)
                     devices.ROLES_INSTR['DVMd'].SendCmd('AZERO ONCE') # visastuff replaced
-                    time.sleep(10)
+                    time.sleep(1) # was 10
                     dvmOP = devices.ROLES_INSTR['DVMd'].Read() # visastuff replaced
                     self.RLink_data.append(float(filter(self.filt,dvmOP)))
                 P = 100*((revs-1)*self.N_readings+row)/(self.N_reversals*self.N_readings) # % progress
@@ -187,7 +187,9 @@ class RLThread(Thread):
                 self.ws.cell(row = self.start_row+row-1, column = revs).value = self.RLink_data[row-1]
                 row += 1
             # (end of readings loop)
-
+                
+            print self.RLink_data[row-2,]
+            
             # Reverse source polarities
             self.V1set *= -1
             self.V2set *= -1
@@ -216,7 +218,7 @@ class RLThread(Thread):
 
     def FinishRun(self):
         # save data in xl file
-        self.wb_io.save(self.xlfilename)
+        # self.wb_io.save(self.xlfilename)
 
         self.Standby() # Set sources to 0V and leave system safe
 
