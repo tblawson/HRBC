@@ -261,7 +261,12 @@ class AqnThread(Thread):
             devices.ROLES_INSTR['switchbox'].SendCmd(devices.SWITCH_CONFIGS['V2']) # replaced visastuff
             self.SetupPage.Switchbox.SetValue('V2') # update switchbox configuration icb
             
-            devices.ROLES_INSTR['DVM12'].SendCmd('DCV,'+str(self.V2_set)) # Reset DVM range # replaced visastuff
+            # If running with fixed range set range to 'str(self.V1_set)':
+            if self.RunPage.RangeTBtn.GetValue() == True:
+                range2 = self.V2_set
+            else:
+                range2 = self.V1_set
+            devices.ROLES_INSTR['DVM12'].SendCmd('DCV,'+str(range2)) # Reset DVM range # replaced visastuff
             if self._want_abort:
                 self.AbortRun()
                 return

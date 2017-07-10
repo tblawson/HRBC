@@ -565,6 +565,9 @@ class RunPage(wx.Panel):
 
         ZeroVoltsBtn = wx.Button(self, id = wx.ID_ANY, label='Set zero volts')
         ZeroVoltsBtn.Bind(wx.EVT_BUTTON, self.OnZeroVolts)
+        
+        self.RangeTBtn = wx.ToggleButton(self,id = wx.ID_ANY,label='DVM12 Range mode')
+        self.RangeTBtn.Bind(wx.EVT_TOGGLEBUTTON,self.OnRangeMode)
 
         # Delay widgets
         SettleDelLbl = wx.StaticText(self,id = wx.ID_ANY, label = 'Settle delay:')
@@ -620,7 +623,7 @@ class RunPage(wx.Panel):
         gbSizer.Add(self.V1Setting,pos=(2,2), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
         gbSizer.Add(V2SrcLbl,pos=(2,3), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
         gbSizer.Add(self.V2Setting,pos=(2,4), span=(1,1), flag=wx.ALL, border=5)
-        #gbSizer.Add(self.h_sep2, pos=(4,0), span=(1,5), flag=wx.ALL|wx.EXPAND, border=5)
+        gbSizer.Add(self.RangeTBtn, pos=(2,5), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
         
         # Delay widgets
         gbSizer.Add(SettleDelLbl, pos=(3,0), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
@@ -660,6 +663,14 @@ class RunPage(wx.Panel):
 
         self.autocomstr = ''
         self.manstr = ''
+        
+    def OnRangeMode(self,e):
+        state = e.GetEventObject().GetValue()
+        print 'OnRangeMode(): Range toggle button value =',state
+        if state == True:
+            e.GetEventObject().SetLabel("Auto-range DVM12")
+        else:
+            e.GetEventObject().SetLabel("Fixed-range DVM12")
 
     def OnNewRunID(self,e):
         start = self.fullstr.find('R1: ')
