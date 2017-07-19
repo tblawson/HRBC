@@ -668,9 +668,9 @@ class RunPage(wx.Panel):
         state = e.GetEventObject().GetValue()
         print 'OnRangeMode(): Range toggle button value =',state
         if state == True:
-            e.GetEventObject().SetLabel("Auto-range DVM12")
+            e.GetEventObject().SetLabel("AUTO-range DVM12")
         else:
-            e.GetEventObject().SetLabel("Fixed-range DVM12")
+            e.GetEventObject().SetLabel("FIXED-range DVM12")
 
     def OnNewRunID(self,e):
         start = self.fullstr.find('R1: ')
