@@ -32,7 +32,7 @@ import devices
 
 matplotlib.rc('lines', linewidth=1, color='blue')
 
-os.environ['XLPATH'] = 'C:\Documents and Settings\\t.lawson\My Documents\Python Scripts\High_Res_Bridge'
+#os.environ['XLPATH'] = 'C:\Documents and Settings\\t.lawson\My Documents\Python Scripts\High_Res_Bridge'
 '''
 ------------------------
 # Setup Page definition:
@@ -304,8 +304,13 @@ class SetupPage(wx.Panel):
 
 
     def UpdateFilepath(self, e):
-        self.XLFile.SetValue(e.path)
-    
+        self.XLFile.SetValue(e.XLpath)
+        
+        # Open logfile
+        logname = 'HRBCv'+str(e.v)+'_'+str(dt.date.today())+'.log'
+        logfile = os.path.join(e.d, logname)
+        self.log = open(logfile,'a')
+        
         # Read parameters sheet - gather instrument info:
         self.wb = load_workbook(self.XLFile.GetValue()) # WEDNESDAY
         self.ws_params = self.wb.get_sheet_by_name('Parameters') # WEDNESDAY
@@ -333,21 +338,25 @@ class SetupPage(wx.Panel):
             else: # not header
                 params.append(param)
                 if v_u_d_l[1] is None: # single-valued (no uncert)
-                    values.append(v_u_d_l[0]) # append value as next item 
+                    values.append(v_u_d_l[0]) # append value as next item
                     print descr,' : ',param,' = ',v_u_d_l[0]
-                else: #multi-valued
+                    print >>self.log, descr,' : ',param,' = ',v_u_d_l[0]
+                else: # multi-valued
                     while v_u_d_l[-1] is None: # remove empty cells
                         del v_u_d_l[-1] # v_u_d_l.pop()
                     values.append(v_u_d_l) # append value-list as next item 
                     print descr,' : ',param,' = ',v_u_d_l
+                    print >>self.log, descr,' : ',param,' = ',v_u_d_l # self.log.write(logline)
                 
                 if param == u'test': # last parameter for this description
                     devices.DESCR.append(descr) # build description list
                     devices.sublist.append(dict(zip(params,values))) # adds parameter dictionary to sublist
                     del params[:]
                     del values[:] 
-    
-        print'----END OF PARAMETER LIST----'            
+
+        print '----END OF PARAMETER LIST----' 
+        print >>self.log, '----END OF PARAMETER LIST----'
+        
         # Compile into a dictionary that lives in devices.py...  
         devices.INSTR_DATA = dict(zip(devices.DESCR,devices.sublist))
         self.BuildComboChoices()

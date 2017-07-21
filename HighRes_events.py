@@ -49,3 +49,6 @@ FilePathEvent, EVT_FILEPATH = wx.lib.newevent.NewEvent()
 
 # Event to update Switchbox config (description)
 SB_ConfEvent, EVT_SBCONF = wx.lib.newevent.NewEvent()
+
+# Event to update log file
+LogEvent, EVT_LOG = wx.lib.newevent.NewEvent()

@@ -110,15 +110,19 @@ class MainFrame(wx.Frame):
     def OnSave(self,event=None):
         # WEDNESDAY
         print 'Saving',self.page1.XLFile.GetValue(),'...'
-        self.page1.wb.save(self.page1.XLFile.GetValue())
+        if self.ExcelPath is not None:
+            self.page1.wb.save(self.page1.XLFile.GetValue())
+            self.page1.log.close()
     
     
     def OnOpen(self,event=None):
         dlg = wx.FileDialog(self,message="Select data file", defaultDir=os.getcwd(), defaultFile="", wildcard="*",style=wx.OPEN|wx.CHANGE_DIR)
         if dlg.ShowModal()==wx.ID_OK:
             self.ExcelPath = dlg.GetPath()
+            self.directory = dlg.GetDirectory()
+            print self.directory
             print self.ExcelPath
-            file_evt = evts.FilePathEvent(path = self.ExcelPath)
+            file_evt = evts.FilePathEvent(XLpath = self.ExcelPath, d = self.directory, v = VERSION)
             wx.PostEvent(self.page1,file_evt)
         dlg.Destroy()
 

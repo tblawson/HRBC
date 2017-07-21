@@ -45,6 +45,8 @@ class RLThread(Thread):
         self.comment = self.RunPage.Comment.GetValue()
         self._want_abort = 0
         self.RLink_data = []
+        
+        self.log = self.SetupPage.log
 
         print'\nRole -> Instrument:'
         print'------------------------------'
@@ -217,8 +219,8 @@ class RLThread(Thread):
 
 
     def FinishRun(self):
-        # save data in xl file
-        # self.wb_io.save(self.xlfilename)
+        #save data in xl file
+        self.wb_io.save(self.xlfilename)
 
         self.Standby() # Set sources to 0V and leave system safe
 
