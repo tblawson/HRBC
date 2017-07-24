@@ -533,6 +533,7 @@ class AqnThread(Thread):
         self.ws['Z'+str(row)] = self.Comment
         print >>self.log,'WriteDataThisRow(): cell','Z'+str(row),':',self.Comment
 
+        # Save after every row
         self.wb_io.save(self.xlfilename)
 
     def AbortRun(self):
