@@ -197,8 +197,8 @@ class SetupPage(wx.Panel):
         ResponseLbl = wx.StaticText(self, label='Instrument Test Response:', id = wx.ID_ANY)
         self.Response = wx.TextCtrl(self, id = wx.ID_ANY, value= '', style = wx.TE_READONLY)
         
-        self.TR1 = wx.TextCtrl(self, id = wx.ID_ANY, value = 'T(R1)', style = wx.TE_READONLY)
-        self.TR2 = wx.TextCtrl(self, id = wx.ID_ANY, value = 'T(R2)', style = wx.TE_READONLY)
+#        self.TR1 = wx.TextCtrl(self, id = wx.ID_ANY, value = 'T(R1)', style = wx.TE_READONLY)
+#        self.TR2 = wx.TextCtrl(self, id = wx.ID_ANY, value = 'T(R2)', style = wx.TE_READONLY)
 
         gbSizer = wx.GridBagSizer()
 
@@ -235,9 +235,9 @@ class SetupPage(wx.Panel):
         gbSizer.Add(self.GMHroomPorts, pos=(8,2), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)    
         gbSizer.Add(self.SwitchboxAddr, pos=(9,2), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
         # R Name
-        gbSizer.Add(self.R1Name, pos=(6,5), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
-        gbSizer.Add(self.R2Name, pos=(7,5), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
-        gbSizer.Add(RNamesLbl, pos=(5,5), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
+        gbSizer.Add(self.R1Name, pos=(6,4), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
+        gbSizer.Add(self.R2Name, pos=(7,4), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
+        gbSizer.Add(RNamesLbl, pos=(5,4), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
         # Filename
         gbSizer.Add(FileLbl, pos=(11,0), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
         gbSizer.Add(self.XLFile, pos=(11,1), span=(1,5), flag=wx.ALL|wx.EXPAND, border=5)
@@ -253,15 +253,15 @@ class SetupPage(wx.Panel):
         gbSizer.Add(self.GMHroomTest, pos=(8,3), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
         gbSizer.Add(self.SwitchboxTest, pos=(9,3), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
         
-        gbSizer.Add(ResponseLbl, pos=(1,4), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
-        gbSizer.Add(self.Response, pos=(2,4), span=(1,3), flag=wx.ALL|wx.EXPAND, border=5)
-        gbSizer.Add(self.TR1, pos=(6,4), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
-        gbSizer.Add(self.TR2, pos=(7,4), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
-        gbSizer.Add(self.VisaList, pos=(3,5), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
-        gbSizer.Add(self.ResList, pos=(3,4), span=(3,1), flag=wx.ALL|wx.EXPAND, border=5)
+        gbSizer.Add(ResponseLbl, pos=(3,4), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
+        gbSizer.Add(self.Response, pos=(4,4), span=(1,3), flag=wx.ALL|wx.EXPAND, border=5)
+#        gbSizer.Add(self.TR1, pos=(6,4), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
+#        gbSizer.Add(self.TR2, pos=(7,4), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
+        gbSizer.Add(self.VisaList, pos=(0,5), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
+        gbSizer.Add(self.ResList, pos=(0,4), span=(3,1), flag=wx.ALL|wx.EXPAND, border=5)
 
         # Autopopulate btn
-        gbSizer.Add(self.AutoPop, pos=(0,4), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
+        gbSizer.Add(self.AutoPop, pos=(2,5), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
 
         self.SetSizerAndFit(gbSizer)
 
