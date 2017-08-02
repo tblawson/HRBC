@@ -349,9 +349,12 @@ class AqnThread(Thread):
             wx.PostEvent(self.RunPage, update_ev)
 
             # Record room conditions
-            self.Troom = devices.ROLES_INSTR['GMHroom'].Measure('T')
-            self.Proom = devices.ROLES_INSTR['GMHroom'].Measure('P')
-            self.RHroom = devices.ROLES_INSTR['GMHroom'].Measure('RH')
+            if devices.ROLES_INSTR['GMHroom'].demo == False:
+                self.Troom = devices.ROLES_INSTR['GMHroom'].Measure('T')
+                self.Proom = devices.ROLES_INSTR['GMHroom'].Measure('P')
+                self.RHroom = devices.ROLES_INSTR['GMHroom'].Measure('RH')
+            else:
+                self.Troom = self.Proom = self.RHroom = 0.0
             
             self.WriteDataThisRow(row)
 
