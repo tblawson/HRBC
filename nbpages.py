@@ -304,6 +304,9 @@ class SetupPage(wx.Panel):
 
 
     def UpdateFilepath(self, e):
+        '''
+        Called when a new Excel file has been selected.
+        '''
         self.XLFile.SetValue(e.XLpath)
         
         # Open logfile
@@ -312,8 +315,8 @@ class SetupPage(wx.Panel):
         self.log = open(logfile,'a')
         
         # Read parameters sheet - gather instrument info:
-        self.wb = load_workbook(self.XLFile.GetValue()) # WEDNESDAY
-        self.ws_params = self.wb.get_sheet_by_name('Parameters') # WEDNESDAY
+        self.wb = load_workbook(self.XLFile.GetValue(),data_only = True) # Need cell VALUE, not FORMULA, so set data_only = True
+        self.ws_params = self.wb.get_sheet_by_name('Parameters')
         
         headings = (None, u'description',u'Instrument Info:',u'parameter',u'value',u'uncert',u'dof',u'label')
         
@@ -363,9 +366,11 @@ class SetupPage(wx.Panel):
 
 
     def OnAutoPop(self, e):
-        # Pre-select instrument and address comboboxes -
-        # Choose from instrument descriptions listed in devices.DESCR
-        # (Uses address assignments in devices.INSTR_DATA)
+        '''
+        Pre-select instrument and address comboboxes -
+        Choose from instrument descriptions listed in devices.DESCR
+        (Uses address assignments in devices.INSTR_DATA)
+        '''
         self.instrument_choice = {'SRC1':'SRC: D4808',
                                   'SRC2':'SRC: F5520A',
                                   'DVM12':'DVM: HP3458A, s/n452',
@@ -385,12 +390,14 @@ class SetupPage(wx.Panel):
 
 
     def UpdateInstr(self, e):
-        # An instrument was selected for a role.
-        # Find description d and role r, then pass to CreatInstr()
+        '''
+        An instrument was selected for a role.
+        Find description d and role r, then pass to CreatInstr()
+        '''
         d = e.GetString()
         for r in devices.ROLES_WIDGETS.keys(): # Cycle through roles
             if devices.ROLES_WIDGETS[r]['icb'] == e.GetEventObject():
-                break # stop looking when we've found the right instrument, role
+                break # stop looking when we've found the right instrument & role
         self.CreateInstr(d,r)
 
 
@@ -399,7 +406,7 @@ class SetupPage(wx.Panel):
         # Create each instrument in software & open visa session (for GPIB instruments)
         # For GMH instruments, use GMH dll not visa
 
-        if 'GMH' in d:
+        if 'GMH' in r: # Changed from d to r
             # create and open a GMH instrument instance
             print'\nnbpages.SetupPage.CreateInstr(): Creating GMH device (%s -> %s).'%(d,r)
             devices.ROLES_INSTR.update({r:devices.GMH_Sensor(d)})
