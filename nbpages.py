@@ -772,7 +772,7 @@ class RunPage(wx.Panel):
     def OnZeroVolts(self,e):
         # V1:
         src1 = devices.ROLES_INSTR['SRC1']
-        if self.V1Setting.GetValue() == '0':
+        if self.V1Setting.GetValue() == 0:
             print'RunPage.OnZeroVolts(): Zero/Stby directly (not via V1 display)'
             src1.SetV(0)
             src1.Stby()
@@ -782,7 +782,7 @@ class RunPage(wx.Panel):
 
         # V2:
         src2 = devices.ROLES_INSTR['SRC2']
-        if self.V2Setting.GetValue() == '0':
+        if self.V2Setting.GetValue() == 0:
             print'RunPage.OnZeroVolts(): Zero/Stby directly (not via V2 display)'
             src2.SetV(0)
             src2.Stby()
