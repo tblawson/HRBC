@@ -543,21 +543,21 @@ class AqnThread(Thread):
         # prematurely end run, prompted by regular checks of _want_abort flag
         self.Standby() # Set sources to 0V and leave system safe
 
-        stat_ev = evts.StatusEvent(msg='AbortRun(): Run stopped', field=0)
-        wx.PostEvent(self.TopLevel, stat_ev)
+#        stat_ev = evts.StatusEvent(msg='AbortRun(): Run stopped', field=0)
+#        wx.PostEvent(self.TopLevel, stat_ev)
 
         stop_ev = evts.DataEvent(t='-', Vm='-', Vsd='-', P=0, r='-',flag='E') # End
         wx.PostEvent(self.RunPage, stop_ev)
         
-        for r in devices.ROLES_INSTR.keys():
-            d = devices.ROLES_INSTR[r].Descr
-            if devices.ROLES_INSTR[r].demo == False:
-                print'AqnThread.AbortRun(): Closing',d
-                print >>self.log,'AqnThread.AbortRun(): Closing',d
-                devices.ROLES_INSTR[r].Close()
-            else:
-                print'AqnThread.AbortRun(): %s already closed'%d
-                print>>self.log,'AqnThread.AbortRun(): %s already closed'%d
+#        for r in devices.ROLES_INSTR.keys():
+#            d = devices.ROLES_INSTR[r].Descr
+#            if devices.ROLES_INSTR[r].demo == False:
+#                print'AqnThread.AbortRun(): Closing',d
+#                print >>self.log,'AqnThread.AbortRun(): Closing',d
+#                devices.ROLES_INSTR[r].Close()
+#            else:
+#                print'AqnThread.AbortRun(): %s already closed'%d
+#                print>>self.log,'AqnThread.AbortRun(): %s already closed'%d
 
         self.RunPage.StartBtn.Enable(True)
 
@@ -567,8 +567,8 @@ class AqnThread(Thread):
 
         self.Standby() # Set sources to 0V and leave system safe
 
-        stat_ev = evts.StatusEvent(msg='Closing instruments...', field=0)
-        wx.PostEvent(self.TopLevel, stat_ev)
+#        stat_ev = evts.StatusEvent(msg='Closing instruments...', field=0)
+#        wx.PostEvent(self.TopLevel, stat_ev)
 
         stop_ev = evts.DataEvent(t='-', Vm='-', Vsd='-', P=0, r='-', flag='F') # Finished
         wx.PostEvent(self.RunPage, stop_ev)

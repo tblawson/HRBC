@@ -170,7 +170,7 @@ class RLThread(Thread):
                     dvmOP = np.random.normal(self.Vdiff*1.0e-6,abs(self.Vdiff*1.0e-8))
                     self.RLink_data.append(dvmOP)
                 else:
-                    print 'RLink.py, run(): %s in demo mode:%i'%(d,devices.INSTR_DATA[d]['demo']) # visastuff replaced
+#                    print 'RLink.py, run(): %s demo mode:%i'%(d,devices.INSTR_DATA[d]['demo']) # visastuff replaced
                     devices.ROLES_INSTR['DVMd'].SendCmd('LFREQ LINE') # visastuff replaced
                     time.sleep(1)
                     devices.ROLES_INSTR['DVMd'].SendCmd('AZERO ONCE') # visastuff replaced
@@ -190,7 +190,7 @@ class RLThread(Thread):
                 row += 1
             # (end of readings loop)
                 
-            print self.RLink_data[row-2,]
+            print self.RLink_data[row-2]
             
             # Reverse source polarities
             self.V1set *= -1
