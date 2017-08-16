@@ -534,6 +534,7 @@ while Data_row <= Data_stop_row:
     assert abs(R2.x-nom_R2)/nom_R2 < 1e-4,'R2 > 100 ppm from nominal! R2 = {0}'.format(R2.x)
     
     # Gain factor due to null meter input Z
+    G = (Vd[3]- Vd[2] + Vlin_gain + Vdrift['gain'])/(V2[3]-V2[2])
     if abs_V1/abs_V2 == 10:
         nom_G = 0.91
     elif abs_V1/abs_V2 == 1:
