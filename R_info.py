@@ -79,7 +79,7 @@ def Uncertainize(row_items):
             un_num = GTC.ureal(v,u,d,l)
         return un_num
     else: # non-numeric value
-#        print 'NON-NUMERIC!',row_items
+#        print 'Uncertainize(): Value is NON-NUMERIC!',row_items
         return v
     
     
