@@ -333,14 +333,14 @@ while Data_row <= Data_stop_row:
 
     if int(round(V1set)) == int(round(V2set)):
         v_ratio_code = 'VRC_eq'
-    elif int(round(V1set)) == 10 and int(round(V2set)) == -1:
-        v_ratio_code = 'VRC_10ton1'
-    elif int(round(V1set)) == -10 and int(round(V2set)) == 1:
-        v_ratio_code = 'VRC_n10to1'    
-    elif int(round(V1set)) == 100 and int(round(V2set)) == -10:
-        v_ratio_code = 'VRC_100ton10'
-    elif int(round(V1set)) == -100 and int(round(V2set)) == 10:
-        v_ratio_code = 'VRC_n100to10'
+    elif abs(int(round(V1set))) == 5 and abs(int(round(V2set,1))) == 0.5:
+        v_ratio_code = 'VRC_5to0.5'
+    elif abs(int(round(V1set))) == 10 and abs(int(round(V2set))) == 1:
+        v_ratio_code = 'VRC_10to1'    
+    elif abs(int(round(V1set))) == 100 and abs(int(round(V2set))) == 10:
+        v_ratio_code = 'VRC_100to10'
+#    elif int(round(V1set)) == -100 and int(round(V2set)) == 10:
+#        v_ratio_code = 'VRC_n100to10'
     else:
         v_ratio_code = None
     assert v_ratio_code is not None,'Unable to determine voltage ratio ({0}/{1})!'.format(int(round(V1set)),int(round(V2set)))
