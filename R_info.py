@@ -268,10 +268,10 @@ def update_R_Info(name,params,data,sheet,row,Id,v):
             sheet['C'+str(row)] = R_dict[param].x
             sheet['D'+str(row)] = R_dict[param].u
             if math.isinf(R_dict[param].df):
-                print'update_R_Info(): ',name,'(',param,') is',R_dict[param].df
+                print'update_R_Info(): ',name,'(',param,').dof is',R_dict[param].df
                 sheet['E'+str(row)] = str(R_dict[param].df)
             else:
-                print'update_R_Info(): ',name,'(',param,') =',R_dict[param].df
+                print'update_R_Info(): ',name,'(',param,').dof =',R_dict[param].df
                 sheet['E'+str(row)] = round(R_dict[param].df)
             sheet['F'+str(row)] = label
         else:
