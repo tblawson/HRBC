@@ -268,7 +268,7 @@ Vp = []
 Vn = []
     
 for Vrow in range(RL_start_row+5,RL_start_row+5+N_reads):
-    print 'Rlink row:',Vrow
+    
     col = 1
     while col <= N_revs: # cycle through cols 1 to N_revs
         Vp.append(ws_Rlink[get_column_letter(col)+str(Vrow)].value)
@@ -293,8 +293,10 @@ assert Rd.x < 0.01,'High link resistance!'
 log.write('\nRlink = ' + str(GTC.summary(Rd)))
 ####__________End of Rd section___________####
 
-cor_gmh1 = []
-cor_gmh2 = []
+#cor_gmh1 = []
+raw_gmh1 = []
+#cor_gmh2 = []
+raw_gmh2 = []
 T_dvm1 = []
 T_dvm2 = []
 R_dvm1 = []
@@ -311,9 +313,9 @@ log.write('\nLooping over data rows '+str(Data_start_row)+' to '+str(Data_stop_r
 while Data_row <= Data_stop_row:    
     
     # R2 parameters:
-    V2set = ws_Data['B'+str(Data_start_row)].value
+    V2set = ws_Data['B'+str(Data_row)].value # Changed from Data_start_row!
     assert V2set is not None,'Missing V2 setting!'
-    V1set = ws_Data['A'+str(Data_start_row)].value
+    V1set = ws_Data['A'+str(Data_row)].value  # Changed from Data_start_row!
     assert V1set is not None,'Missing V1 setting!'
     
     # Select R2 info based on applied voltage ('LV' or 'HV')
@@ -332,18 +334,16 @@ while Data_row <= Data_stop_row:
         R2TRef = R_INFO[R2_name]['TRef_LV']
         R2VRef = R_INFO[R2_name]['VRef_LV']
 
-    if int(round(V1set)) == int(round(V2set)):
+    if round(V1set) == round(V2set):
         v_ratio_code = 'VRC_eq'
-    elif abs(int(round(V1set))) == 1 and abs(int(round(V2set,1))) == 0.1:
+    elif abs(round(V1set)) == 1 and abs(round(V2set,1)) == 0.1:
         v_ratio_code = 'VRC_1to0.1'
-    elif abs(int(round(V1set))) == 5 and abs(int(round(V2set,1))) == 0.5:
+    elif abs(round(V1set)) == 5 and abs(round(V2set,1)) == 0.5:
         v_ratio_code = 'VRC_5to0.5'
-    elif abs(int(round(V1set))) == 10 and abs(int(round(V2set))) == 1:
+    elif abs(round(V1set)) == 10 and abs(round(V2set)) == 1:
         v_ratio_code = 'VRC_10to1'    
-    elif abs(int(round(V1set))) == 100 and abs(int(round(V2set))) == 10:
+    elif abs(round(V1set)) == 100 and abs(round(V2set)) == 10:
         v_ratio_code = 'VRC_100to10'
-#    elif int(round(V1set)) == -100 and int(round(V2set)) == 10:
-#        v_ratio_code = 'VRC_n100to10'
     else:
         v_ratio_code = None
     assert v_ratio_code is not None,'Unable to determine voltage ratio ({0}/{1})!'.format(int(round(V1set)),int(round(V2set)))
@@ -373,8 +373,10 @@ while Data_row <= Data_stop_row:
     
     
     # Temperature measurement, RH and times:
-    del cor_gmh1[:] # list for 4 corrected T1 gmh readings
-    del cor_gmh2[:] # list for 4 corrected T2 gmh readings
+    #del cor_gmh1[:] # list for 4 corrected T1 gmh readings
+    #del cor_gmh2[:] # list for 4 corrected T2 gmh readings
+    del raw_gmh1[:] # list for 4 corrected T1 gmh readings
+    del raw_gmh2[:] # list for 4 corrected T2 gmh readings
     del T_dvm1[:] # list for 4 corrected T1(dvm) readings
     del T_dvm2[:] # list for 4 corrected T2(dvm) readings
     del R_dvm1[:] # list for 4 corrected dvm readings
@@ -389,8 +391,10 @@ while Data_row <= Data_stop_row:
     for r in range(Data_row,Data_row+4): # build list of 4 gmh / T-probe dvm readings
         assert ws_Data['U'+str(r)].value is not None,'No R1 GMH temperature data!'
         assert ws_Data['V'+str(r)].value is not None,'No R2 GMH temperature data!'
-        cor_gmh1.append(ws_Data['U'+str(r)].value + GMH1_cor)
-        cor_gmh2.append(ws_Data['V'+str(r)].value + GMH2_cor)
+        #cor_gmh1.append(ws_Data['U'+str(r)].value + GMH1_cor)
+        #cor_gmh2.append(ws_Data['V'+str(r)].value + GMH2_cor)
+        raw_gmh1.append(ws_Data['U'+str(r)].value)
+        raw_gmh2.append(ws_Data['V'+str(r)].value)
         #print 'gmh1:',cor_gmh1[-1].s, '. gmh2:',cor_gmh2[-1].s
         
         assert ws_Data['G'+str(r)].value is not None,'No V2 timestamp!'
@@ -427,11 +431,13 @@ while Data_row <= Data_stop_row:
     
     # Mean temperature from GMH
     # Data are ureals (once corrected), so use fn.mean() to return a ureal
-    assert len(cor_gmh1) > 1,'Not enough GMH1 temperatures to average!'
-    T1_av_gmh = GTC.ar.result(GTC.fn.mean(cor_gmh1),label='T1_av_gmh '+ Run_Id)
-    assert len(cor_gmh2) > 1,'Not enough GMH2 temperatures to average!'
-    T2_av_gmh = GTC.ar.result(GTC.fn.mean(cor_gmh2),label='T2_av_gmh '+ Run_Id)
-    print T1_av_gmh.s, T2_av_gmh.s
+    #assert len(cor_gmh1) > 1,'Not enough GMH1 temperatures to average!'
+    #T1_av_gmh = GTC.ar.result(GTC.fn.mean(cor_gmh1),label='T1_av_gmh '+ Run_Id)
+    T1_av_gmh = GTC.ar.result(GTC.fn.mean(raw_gmh1) + GMH1_cor,label='T1_av_gmh '+ Run_Id)
+    #assert len(cor_gmh2) > 1,'Not enough GMH2 temperatures to average!'
+    #T2_av_gmh = GTC.ar.result(GTC.fn.mean(cor_gmh2),label='T2_av_gmh '+ Run_Id)
+    T2_av_gmh = GTC.ar.result(GTC.fn.mean(raw_gmh2) + GMH2_cor,label='T2_av_gmh '+ Run_Id)
+    #print T1_av_gmh.s, T2_av_gmh.s
     
     assert len(times) > 1,'Not enough timestamps to average!'
     times_av_str = R_info.av_t_strin(times,'str') # mean time(as a time string)
@@ -525,8 +531,11 @@ while Data_row <= Data_stop_row:
     
     # Mean voltages
     V1av = (V1[0]-2*V1[1]+V1[2])/4
+    #print 'V1av=',V1av.s
     V2av = (V2[0]-2*V2[1]+V2[2])/4
+    #print 'V2av=',V2av.s
     Vdav = (Vd[0]-2*Vd[1]+Vd[2])/4 + Vlin_Vd + Vdrift['Vd']
+    #print 'Vdav=',Vdav.s
     
     influencies.append(Rd) # R2 dependancy
     
@@ -537,9 +546,10 @@ while Data_row <= Data_stop_row:
 
     R2 = R2_0*(1+R2alpha*dT2 + R2beta*dT2**2 + R2gamma*dV2) + Rd
     assert abs(R2.x-nom_R2)/nom_R2 < 1e-4,'R2 > 100 ppm from nominal! R2 = {0}'.format(R2.x)
-    
+    print 'R2=',R2.x
     # Gain factor due to null meter input Z
     G = (Vd[3]- Vd[2] + Vlin_gain + Vdrift['gain'])/(V2[3]-V2[2])
+    #print G.s
     if abs_V1/abs_V2 == 10:
         nom_G = 0.91
     elif abs_V1/abs_V2 == 1:
@@ -550,6 +560,7 @@ while Data_row <= Data_stop_row:
        
     # calculate R1  
     R1 = -R2*(1+vrc)*V1av*G/(G*V2av - Vdav)
+    print R1.s
     assert abs(R1.x-nom_R1)/nom_R1 < 1e-3,'R1 > 1000 ppm from nominal!'
     
     T1 = T1_av + T_def1
