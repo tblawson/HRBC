@@ -268,6 +268,7 @@ Vp = []
 Vn = []
     
 for Vrow in range(RL_start_row+5,RL_start_row+5+N_reads):
+    print 'Rlink row:',Vrow
     col = 1
     while col <= N_revs: # cycle through cols 1 to N_revs
         Vp.append(ws_Rlink[get_column_letter(col)+str(Vrow)].value)
@@ -333,6 +334,8 @@ while Data_row <= Data_stop_row:
 
     if int(round(V1set)) == int(round(V2set)):
         v_ratio_code = 'VRC_eq'
+    elif abs(int(round(V1set))) == 1 and abs(int(round(V2set,1))) == 0.1:
+        v_ratio_code = 'VRC_1to0.1'
     elif abs(int(round(V1set))) == 5 and abs(int(round(V2set,1))) == 0.5:
         v_ratio_code = 'VRC_5to0.5'
     elif abs(int(round(V1set))) == 10 and abs(int(round(V2set))) == 1:
@@ -388,6 +391,7 @@ while Data_row <= Data_stop_row:
         assert ws_Data['V'+str(r)].value is not None,'No R2 GMH temperature data!'
         cor_gmh1.append(ws_Data['U'+str(r)].value + GMH1_cor)
         cor_gmh2.append(ws_Data['V'+str(r)].value + GMH2_cor)
+        #print 'gmh1:',cor_gmh1[-1].s, '. gmh2:',cor_gmh2[-1].s
         
         assert ws_Data['G'+str(r)].value is not None,'No V2 timestamp!'
         assert ws_Data['M'+str(r)].value is not None,'No Vd1 timestamp!'
@@ -422,11 +426,12 @@ while Data_row <= Data_stop_row:
         R_dvm2.append(raw_dvm2*(1+T2DVM_cor))
     
     # Mean temperature from GMH
-    # Data are plain numbers, so use ta.estimate() to return a ureal
+    # Data are ureals (once corrected), so use fn.mean() to return a ureal
     assert len(cor_gmh1) > 1,'Not enough GMH1 temperatures to average!'
-    T1_av_gmh = GTC.ar.result(GTC.ta.estimate(cor_gmh1),label='T1_av_gmh '+ Run_Id)
+    T1_av_gmh = GTC.ar.result(GTC.fn.mean(cor_gmh1),label='T1_av_gmh '+ Run_Id)
     assert len(cor_gmh2) > 1,'Not enough GMH2 temperatures to average!'
-    T2_av_gmh = GTC.ar.result(GTC.ta.estimate(cor_gmh2),label='T2_av_gmh '+ Run_Id)
+    T2_av_gmh = GTC.ar.result(GTC.fn.mean(cor_gmh2),label='T2_av_gmh '+ Run_Id)
+    print T1_av_gmh.s, T2_av_gmh.s
     
     assert len(times) > 1,'Not enough timestamps to average!'
     times_av_str = R_info.av_t_strin(times,'str') # mean time(as a time string)
@@ -546,10 +551,12 @@ while Data_row <= Data_stop_row:
     # calculate R1  
     R1 = -R2*(1+vrc)*V1av*G/(G*V2av - Vdav)
     assert abs(R1.x-nom_R1)/nom_R1 < 1e-3,'R1 > 1000 ppm from nominal!'
+    
+    T1 = T1_av + T_def1
    
     # Combine data for this measurement: name,time,R,T,V and write to Summary sheet
     this_result = {'name':R1_name,'time_str':times_av_str,'time_fl':times_av_fl,'V':V1av,
-                   'R':R1,'T':T1_av,'R_expU':R1.u*GTC.rp.k_factor(R1.df, quick=False)}
+                   'R':R1,'T':T1,'R_expU':R1.u*GTC.rp.k_factor(R1.df, quick=False)}
                    
     R_info.WriteThisResult(ws_Summary,summary_row,this_result)
     
