@@ -167,10 +167,10 @@ def WriteThisResult(sheet,row,result):
     sheet['E'+str(row)] = result['R'].x
     sheet['F'+str(row)] = result['R'].u
     if math.isinf(result['R'].df):
-        print'WriteThisResult(): result.dof is',result['R'].df
+        #print'WriteThisResult(): result.dof is',result['R'].df
         sheet['G'+str(row)] = str(result['R'].df)
     else:
-        print'WriteThisResult(): result.dof =',result['R'].df
+        #print'WriteThisResult(): result.dof =',result['R'].df
         sheet['G'+str(row)] = round(result['R'].df)
     # Exp Uncert:
     sheet['H'+str(row)] = result['R_expU']
@@ -187,10 +187,10 @@ def WriteBudget(sheet,row,budget):
         sheet['K'+str(row)] = line[1] # Value
         sheet['L'+str(row)] = line[2] # Uncert.
         if math.isinf(line[3]):
-            print'WriteBudget(): dof (',line[0],') is',line[3]
+            #print'WriteBudget(): dof (',line[0],') is',line[3]
             sheet['M'+str(row)] = str(line[3]) # dof
         else:
-            print'WriteBudget(): dof (',line[0],') =',line[3]
+            #print'WriteBudget(): dof (',line[0],') =',line[3]
             sheet['M'+str(row)] = round(line[3]) # dof
         sheet['N'+str(row)] = line[4] # Sens. coef.
         sheet['O'+str(row)] = line[5] # Uncert. contrib.
@@ -221,10 +221,10 @@ def write_R1_T_fit(results,sheet,row,log):
     sheet['R'+str(row)] = R1.x
     sheet['S'+str(row)] = R1.u
     if math.isinf(R1.df):
-        print'write_R1_T_fit(): R1.df is',R1.df
+        #print'write_R1_T_fit(): R1.df is',R1.df
         sheet['T'+str(row)] = str(R1.df)
     else:
-        print'write_R1_T_fit(): R1.df =',R1.df
+        #print'write_R1_T_fit(): R1.df =',R1.df
         sheet['T'+str(row)] = round(R1.df)
     
     sheet['U'+str(row)] = R1.u*GTC.rp.k_factor(R1.df)
@@ -232,10 +232,10 @@ def write_R1_T_fit(results,sheet,row,log):
     sheet['V'+str(row)] = T_av.x
     sheet['W'+str(row)] = T_av.u
     if math.isinf(T_av.df):
-        print'write_R1_T_fit(): T_av.df is',T_av.df
+        #print'write_R1_T_fit(): T_av.df is',T_av.df
         sheet['X'+str(row)] = str(T_av.df)
     else:
-        print'write_R1_T_fit(): T_av.df =',T_av.df
+        #print'write_R1_T_fit(): T_av.df =',T_av.df
         sheet['X'+str(row)] = round(T_av.df)
     
     t = [result['time_fl'] for result in results] # x data (time,s from epoch)
@@ -268,10 +268,10 @@ def update_R_Info(name,params,data,sheet,row,Id,v):
             sheet['C'+str(row)] = R_dict[param].x
             sheet['D'+str(row)] = R_dict[param].u
             if math.isinf(R_dict[param].df):
-                print'update_R_Info(): ',name,'(',param,').dof is',R_dict[param].df
+                #print'update_R_Info(): ',name,'(',param,').dof is',R_dict[param].df
                 sheet['E'+str(row)] = str(R_dict[param].df)
             else:
-                print'update_R_Info(): ',name,'(',param,').dof =',R_dict[param].df
+                #print'update_R_Info(): ',name,'(',param,').dof =',R_dict[param].df
                 sheet['E'+str(row)] = round(R_dict[param].df)
             sheet['F'+str(row)] = label
         else:
