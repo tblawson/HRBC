@@ -202,6 +202,7 @@ def WriteBudget(sheet,row,budget):
 def write_R1_T_fit(results,sheet,row,log):
     T_data = [T for T in [result['T'] for result in results]] # All T values
     T_av = GTC.fn.mean(T_data)
+    print'write_R1_T_fit():u(T_av)=',T_av.u,'dof(T_av)=',T_av.df
     T_rel = [t_k - T_av for t_k in T_data] # x-vals
     
     y = [R for R in [result['R'] for result in results]] # All R values
