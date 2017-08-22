@@ -27,6 +27,11 @@ def Make_Log_Name(v):
 
 
 # Extract resistor names from comment
+"""
+Parse first part of comment for resistor names.
+Names must appear immediately after the strings 'R1: ' and 'R2: ' and
+immediately before the string ' monitored by GMH'.
+"""
 def ExtractNames(comment):
     assert comment.find('R1: ') >= 0,'R1 name not found in comment!'
     assert comment.find('R2: ') >= 0,'R2 name not found in comment!'
@@ -36,6 +41,13 @@ def ExtractNames(comment):
 
 
 # Extract nominal resistor value from name
+"""
+Parse the resistor name for the nominal value.Resistor names MUST be of the form
+'xxx nnp', where 'xxx ' is a one-word description ending with a SINGLE SPACE,
+'nn' is an integer (usually a decade value) and the last character 'p' is a letter
+indicating a decade multiplier.
+
+"""
 def GetRval(name):
     prefixes = {'r':1,'R':1,'k':1000,'M':1e6,'G':1e9}
     
@@ -50,7 +62,7 @@ def GetRval(name):
 
 def GetRLstartrow(sheet,Id,jump,log):
     search_row = 1
-    while search_row < RL_SEARCH_LIMIT: # Don't search for ever.
+    while search_row < RL_SEARCH_LIMIT: # Don't search forever.
         result = sheet['A'+str(search_row)].value # scan down column A
         if result == 'Run Id:':
             RL_Id = sheet['B'+str(search_row)].value # Find a run Id
@@ -293,3 +305,23 @@ def update_R_Info(name,params,data,sheet,row,Id,v):
     sheet['G'+str(row)].border = b    
     
     return row
+
+def GetDigi(readings):
+    """
+    Return maximum digitization level of a set of data.
+    """
+    max_n = 0
+    for x in readings:
+        if 'e' in str(x) or 'E' in str(x):
+            (m,e) = math.modf(x)
+            n = int(str(m).split('e')[1])
+        else:
+            n = -1*len(str(x).split('.')[1])
+            
+        if max_n < n:
+            max_n = n
+    d = 10**max_n
+    return d
+            
+        
+        
