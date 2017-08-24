@@ -618,6 +618,7 @@ class RunPage(wx.Panel):
         self.StartBtn.Bind(wx.EVT_BUTTON, self.OnStart)
         self.StopBtn = wx.Button(self, id = wx.ID_ANY, label='Abort run')
         self.StopBtn.Bind(wx.EVT_BUTTON, self.OnAbort)
+        self.StopBtn.Enable(False)
         self.RLinkBtn = wx.Button(self, id = wx.ID_ANY, label='Measure R-link')
         self.RLinkBtn.Bind(wx.EVT_BUTTON, self.OnRLink)
         
