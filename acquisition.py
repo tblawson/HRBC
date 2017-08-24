@@ -108,7 +108,12 @@ class AqnThread(Thread):
 
     def run(self):
         # Run Worker Thread. This is where all the important stuff goes, in a repeated cycle
-
+        
+        # Set button availability
+        self.RunPage.StopBtn.Enable(True)
+        self.RunPage.StartBtn.Enable(False)
+        self.RunPage.RLinkBtn.Enable(False)
+        
         # Clear plots
         clr_plot_ev = evts.ClearPlotEvent()
         wx.PostEvent(self.PlotPage, clr_plot_ev)
@@ -560,6 +565,8 @@ class AqnThread(Thread):
 #                print>>self.log,'AqnThread.AbortRun(): %s already closed'%d
 
         self.RunPage.StartBtn.Enable(True)
+        self.RunPage.RLinkBtn.Enable(True)
+        self.RunPage.StopBtn.Enable(False)
 
     def FinishRun(self):
         # Run complete - leave system safe and final xl save
@@ -586,6 +593,8 @@ class AqnThread(Thread):
 #                print'AqnThread.FinishRun(): %s already closed'%d
 
         self.RunPage.StartBtn.Enable(True)
+        self.RunPage.RLinkBtn.Enable(True)
+        self.RunPage.StopBtn.Enable(False)
 
     def Standby(self):
         # Set sources to 0V and disable outputs
