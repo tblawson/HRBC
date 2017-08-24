@@ -94,6 +94,11 @@ class RLThread(Thread):
 
     def run(self):
         # Run Worker Thread. This is where all the important stuff goes.
+    
+        # Set button availibility
+        self.RunPage.StopBtn.Enable(True)
+        self.RunPage.StartBtn.Enable(False)
+        self.RunPage.RLinkBtn.Enable(False)
 
         stat_ev = evts.StatusEvent(msg='RLThread.run():',field = 0)
         wx.PostEvent(self.TopLevel, stat_ev)
@@ -216,6 +221,8 @@ class RLThread(Thread):
         wx.PostEvent(self.RunPage, stop_ev)
 
         self.RunPage.RLinkBtn.Enable(True)
+        self.RunPage.StartBtn.Enable(True)
+        self.RunPage.StopBtn.Enable(False)
 
 
     def FinishRun(self):
@@ -232,10 +239,14 @@ class RLThread(Thread):
         wx.PostEvent(self.TopLevel, stat_ev)
 
         self.RunPage.RLinkBtn.Enable(True)
-
+        self.RunPage.StartBtn.Enable(True)
+        self.RunPage.StopBtn.Enable(False)
+        
+        
     def Standby(self):
         self.RunPage.V1Setting.SetValue('0')
         self.RunPage.V2Setting.SetValue('0')
+
 
     def abort(self):
         """abort worker thread."""
