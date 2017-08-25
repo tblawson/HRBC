@@ -169,21 +169,29 @@ def WriteHeadings(sheet,row,version):
 
 # Write measurement summary   
 def WriteThisResult(sheet,row,result):
-    pass
     sheet['A'+str(row)].font = Font(color=colors.YELLOW)
     sheet['A'+str(row)].fill = PatternFill(patternType='solid', fgColor=colors.RED)
     sheet['A'+str(row)] = str(result['name'])
-    sheet['B'+str(row)] = result['V'].x
+    
+    sheet['B'+str(row+1)] = result['V'].x
+    sheet['B'+str(row+2)] = result['V'].u
+    sheet['B'+str(row)] = result['V'].df
+    
     sheet['C'+str(row)] = str(result['time_str'])
+    
     sheet['D'+str(row)] = result['T'].x
+    sheet['D'+str(row+1)] = result['T'].u
+    sheet['D'+str(row+2)] = result['T'].df
+    
     sheet['E'+str(row)] = result['R'].x
+    
     sheet['F'+str(row)] = result['R'].u
+    
     if math.isinf(result['R'].df):
-        #print'WriteThisResult(): result.dof is',result['R'].df
         sheet['G'+str(row)] = str(result['R'].df)
     else:
-        #print'WriteThisResult(): result.dof =',result['R'].df
         sheet['G'+str(row)] = round(result['R'].df)
+
     # Exp Uncert:
     sheet['H'+str(row)] = result['R_expU']
   
