@@ -557,11 +557,8 @@ while Data_row <= Data_stop_row:
     
     # Mean voltages
     V1av = (V1[0]-2*V1[1]+V1[2])/4
-    #print 'V1av=',V1av.s
     V2av = (V2[0]-2*V2[1]+V2[2])/4
-    #print 'V2av=',V2av.s
     Vdav = (Vd[0]-2*Vd[1]+Vd[2])/4 + Vlin_Vd + Vdrift['Vd']
-    #print 'Vdav=',Vdav.s
     
     influencies.append(Rd) # R2 dependancy
     

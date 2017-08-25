@@ -173,9 +173,9 @@ def WriteThisResult(sheet,row,result):
     sheet['A'+str(row)].fill = PatternFill(patternType='solid', fgColor=colors.RED)
     sheet['A'+str(row)] = str(result['name'])
     
-    sheet['B'+str(row+1)] = result['V'].x
-    sheet['B'+str(row+2)] = result['V'].u
-    sheet['B'+str(row)] = result['V'].df
+    sheet['B'+str(row)] = result['V'].x
+    sheet['B'+str(row+1)] = result['V'].u
+    sheet['B'+str(row+2)] = result['V'].df
     
     sheet['C'+str(row)] = str(result['time_str'])
     
