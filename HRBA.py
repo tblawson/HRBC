@@ -576,12 +576,13 @@ while Data_row <= Data_stop_row:
     # Gain factor due to null meter input Z
     G = (Vd[3]- Vd[2] + Vlin_gain + Vdrift['gain'])/(V2[3]-V2[2])
     
-    if abs_V1/abs_V2 == 10:
-        nom_G = 1/11
-    elif abs_V1/abs_V2 == 1:
+    if round(abs_V1.x/abs_V2.x) == 10:
+        nom_G = 10.0/11.0
+    elif round(abs_V1.x/abs_V2.x) == 1:
         nom_G = 0.5 # nominally = 1/2
     else:
         assert False,'Wrong V1/V2 ratio!'
+    
     assert abs(G.x-nom_G)/nom_G < PPM_TOLERANCE['G'],'Gain > 1% from nominal! G = {0}, nom_G = {1}'.format(G.x,nom_G)
        
     # calculate R1  
