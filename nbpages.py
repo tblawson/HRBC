@@ -28,17 +28,17 @@ from openpyxl import load_workbook, cell
 import HighRes_events as evts
 import acquisition as acq
 import RLink as rl
-import visastuff
-import GMHstuff as GMH
+import devices
 
 matplotlib.rc('lines', linewidth=1, color='blue')
 
-os.environ['XLPATH'] = 'C:\Documents and Settings\\t.lawson\My Documents\Python Scripts\High_Res_Bridge'
+#os.environ['XLPATH'] = 'C:\Documents and Settings\\t.lawson\My Documents\Python Scripts\High_Res_Bridge'
 '''
 ------------------------
 # Setup Page definition:
 ------------------------
 '''
+
 class SetupPage(wx.Panel):
     def __init__(self, parent):
         wx.Panel.__init__(self, parent)
@@ -50,13 +50,14 @@ class SetupPage(wx.Panel):
 
         self.SRC_COMBO_CHOICE = ['none']
         self.DVM_COMBO_CHOICE = ['none']
-        self.GMH_COMBO_CHOICE = visastuff.GMH_DESCR # ('GMH s/n628', 'GMH s/n627')
-        self.SB_COMBO_CHOICE =  visastuff.SWITCH_CONFIGS.keys()
-        self.T_SENSOR_CHOICE = visastuff.T_Sensors
+        self.GMH_COMBO_CHOICE = ['none'] # devices.GMH_DESCR # ('GMH s/n628', 'GMH s/n627')
+        self.SB_COMBO_CHOICE =  devices.SWITCH_CONFIGS.keys()
+        self.T_SENSOR_CHOICE = devices.T_Sensors
         self.cbox_addr_COM = []
         self.cbox_addr_GPIB = []
         self.cbox_instr_SRC = []
         self.cbox_instr_DVM = []
+        self.cbox_instr_GMH = []
 
         self.BuildComboChoices()
 
@@ -73,39 +74,46 @@ class SetupPage(wx.Panel):
         # Instruments
         Src1Lbl = wx.StaticText(self, label='V1 source (SRC 1):', id = wx.ID_ANY)
         self.V1Sources = wx.ComboBox(self,wx.ID_ANY, choices = self.SRC_COMBO_CHOICE, size = (150,10), style = wx.CB_DROPDOWN)
-        self.V1Sources.Bind(wx.EVT_COMBOBOX, self.UpdateRole)
+        self.V1Sources.Bind(wx.EVT_COMBOBOX, self.UpdateInstr)
         self.cbox_instr_SRC.append(self.V1Sources)
         Src2Lbl = wx.StaticText(self, label='V2 source (SRC 2):', id = wx.ID_ANY)
         self.V2Sources = wx.ComboBox(self,wx.ID_ANY, choices = self.SRC_COMBO_CHOICE, style=wx.CB_DROPDOWN)
-        self.V2Sources.Bind(wx.EVT_COMBOBOX, self.UpdateRole)
+        self.V2Sources.Bind(wx.EVT_COMBOBOX, self.UpdateInstr)
         self.cbox_instr_SRC.append(self.V2Sources)
         DVM_V1V2Lbl = wx.StaticText(self, label='V1,V2 DVM (DVM12):', id = wx.ID_ANY)
         self.V1V2Dvms = wx.ComboBox(self,wx.ID_ANY, choices = self.DVM_COMBO_CHOICE, style=wx.CB_DROPDOWN)
-        self.V1V2Dvms.Bind(wx.EVT_COMBOBOX, self.UpdateRole)
+        self.V1V2Dvms.Bind(wx.EVT_COMBOBOX, self.UpdateInstr)
         self.cbox_instr_DVM.append(self.V1V2Dvms)
         DVM_VdLbl = wx.StaticText(self, label='Vd DVM (DVMd):', id = wx.ID_ANY)
         self.VdDvms = wx.ComboBox(self,wx.ID_ANY, choices = self.DVM_COMBO_CHOICE, style=wx.CB_DROPDOWN)
-        self.VdDvms.Bind(wx.EVT_COMBOBOX, self.UpdateRole)
+        self.VdDvms.Bind(wx.EVT_COMBOBOX, self.UpdateInstr)
         self.cbox_instr_DVM.append(self.VdDvms)
         T1DvmLbl = wx.StaticText(self, label='R1 T-probe DVM (DVMT1):', id = wx.ID_ANY)
         self.T1Dvms = wx.ComboBox(self,wx.ID_ANY, choices = self.DVM_COMBO_CHOICE, style=wx.CB_DROPDOWN)
-        self.T1Dvms.Bind(wx.EVT_COMBOBOX, self.UpdateRole)
+        self.T1Dvms.Bind(wx.EVT_COMBOBOX, self.UpdateInstr)
         self.cbox_instr_DVM.append(self.T1Dvms)
         T2DvmLbl = wx.StaticText(self, label='R2 T-probe DVM (DVMT2):', id = wx.ID_ANY)
         self.T2Dvms = wx.ComboBox(self,wx.ID_ANY, choices = self.DVM_COMBO_CHOICE, style=wx.CB_DROPDOWN)
-        self.T2Dvms.Bind(wx.EVT_COMBOBOX, self.UpdateRole)
+        self.T2Dvms.Bind(wx.EVT_COMBOBOX, self.UpdateInstr)
         self.cbox_instr_DVM.append(self.T2Dvms)
+        
         GMH1Lbl = wx.StaticText(self, label='R1 GMH probe (GMH1):', id = wx.ID_ANY)
         self.GMH1Probes = wx.ComboBox(self,wx.ID_ANY, choices = self.GMH_COMBO_CHOICE, style=wx.CB_DROPDOWN)
         self.GMH1Probes.Bind(wx.EVT_COMBOBOX, self.BuildCommStr)
-
+        self.cbox_instr_GMH.append(self.GMH1Probes)
         GMH2Lbl = wx.StaticText(self, label='R2 GMH probe (GMH2):', id = wx.ID_ANY)
         self.GMH2Probes = wx.ComboBox(self,wx.ID_ANY, choices = self.GMH_COMBO_CHOICE, style=wx.CB_DROPDOWN)
         self.GMH2Probes.Bind(wx.EVT_COMBOBOX, self.BuildCommStr)
-
+        self.cbox_instr_GMH.append(self.GMH2Probes)
+        
+        GMHroomLbl = wx.StaticText(self, label='Room conds. GMH probe (GMHroom):', id = wx.ID_ANY)
+        self.GMHroomProbes = wx.ComboBox(self,wx.ID_ANY, choices = self.GMH_COMBO_CHOICE, style=wx.CB_DROPDOWN)
+        self.GMHroomProbes.Bind(wx.EVT_COMBOBOX, self.UpdateInstr)
+        self.cbox_instr_GMH.append(self.GMHroomProbes)
+        
         SwitchboxLbl = wx.StaticText(self, label='Switchbox configuration:', id = wx.ID_ANY)
         self.Switchbox = wx.ComboBox(self,wx.ID_ANY, choices = self.SB_COMBO_CHOICE, style=wx.CB_DROPDOWN)
-        self.Switchbox.Bind(wx.EVT_COMBOBOX, self.UpdateRole)
+        self.Switchbox.Bind(wx.EVT_COMBOBOX, self.UpdateInstr)
 
         # Addresses
         self.V1SrcAddr = wx.ComboBox(self,wx.ID_ANY, choices = self.GPIBAddressList, size = (150,10), style=wx.CB_DROPDOWN)
@@ -126,15 +134,21 @@ class SetupPage(wx.Panel):
         self.T2DvmAddr = wx.ComboBox(self,wx.ID_ANY, choices = self.GPIBAddressList, style=wx.CB_DROPDOWN)
         self.cbox_addr_GPIB.append(self.T2DvmAddr)
         self.T2DvmAddr.Bind(wx.EVT_COMBOBOX, self.UpdateAddr)
+        
         self.GMH1Ports = wx.ComboBox(self,wx.ID_ANY, choices = self.COMAddressList, style=wx.CB_DROPDOWN)
         self.cbox_addr_COM.append(self.GMH1Ports)
-        self.GMH1Ports.Bind(wx.EVT_COMBOBOX, self.UpdateAddr) # was self.OnSelectGMH1port
+        self.GMH1Ports.Bind(wx.EVT_COMBOBOX, self.UpdateAddr)
         self.GMH2Ports = wx.ComboBox(self,wx.ID_ANY, choices = self.COMAddressList, style=wx.CB_DROPDOWN)
         self.cbox_addr_COM.append(self.GMH2Ports)
+        self.GMH2Ports.Bind(wx.EVT_COMBOBOX, self.UpdateAddr)
         
-        self.GMH2Ports.Bind(wx.EVT_COMBOBOX, self.UpdateAddr) # was self.OnSelectGMH2port
+        self.GMHroomPorts = wx.ComboBox(self,wx.ID_ANY, choices = self.COMAddressList, style=wx.CB_DROPDOWN)
+        self.cbox_addr_COM.append(self.GMHroomPorts)
+        self.GMHroomPorts.Bind(wx.EVT_COMBOBOX, self.UpdateAddr)
+        
         self.SwitchboxAddr = wx.ComboBox(self,wx.ID_ANY, choices = self.COMAddressList, style=wx.CB_DROPDOWN)
         self.cbox_addr_COM.append(self.SwitchboxAddr)
+        
 
         # Filename
         FileLbl = wx.StaticText(self, label='Excel file full path:', id = wx.ID_ANY)
@@ -168,16 +182,23 @@ class SetupPage(wx.Panel):
         self.DT1Test.Bind(wx.EVT_BUTTON, self.OnTest)
         self.DT2Test = wx.Button(self,id = wx.ID_ANY, label='Test')
         self.DT2Test.Bind(wx.EVT_BUTTON, self.OnTest)
+        
         self.GMH1Test = wx.Button(self,id = wx.ID_ANY, label='Test')
-        self.GMH1Test.Bind(wx.EVT_BUTTON, self.OnGMH1Test)
+        self.GMH1Test.Bind(wx.EVT_BUTTON, self.OnTest)
         self.GMH2Test = wx.Button(self,id = wx.ID_ANY, label='Test')
-        self.GMH2Test.Bind(wx.EVT_BUTTON, self.OnGMH2Test)
+        self.GMH2Test.Bind(wx.EVT_BUTTON, self.OnTest)
+        
+        self.GMHroomTest = wx.Button(self,id = wx.ID_ANY, label='Test')
+        self.GMHroomTest.Bind(wx.EVT_BUTTON, self.OnTest)
+        
         self.SwitchboxTest = wx.Button(self,id = wx.ID_ANY, label='Test')
         self.SwitchboxTest.Bind(wx.EVT_BUTTON, self.OnSwitchTest)
+        
         ResponseLbl = wx.StaticText(self, label='Instrument Test Response:', id = wx.ID_ANY)
         self.Response = wx.TextCtrl(self, id = wx.ID_ANY, value= '', style = wx.TE_READONLY)
-        self.TR1 = wx.TextCtrl(self, id = wx.ID_ANY, value = 'T(R1)', style = wx.TE_READONLY)
-        self.TR2 = wx.TextCtrl(self, id = wx.ID_ANY, value = 'T(R2)', style = wx.TE_READONLY)
+        
+#        self.TR1 = wx.TextCtrl(self, id = wx.ID_ANY, value = 'T(R1)', style = wx.TE_READONLY)
+#        self.TR2 = wx.TextCtrl(self, id = wx.ID_ANY, value = 'T(R2)', style = wx.TE_READONLY)
 
         gbSizer = wx.GridBagSizer()
 
@@ -198,8 +219,10 @@ class SetupPage(wx.Panel):
         gbSizer.Add(self.GMH1Probes, pos=(6,1), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
         gbSizer.Add(GMH2Lbl, pos=(7,0), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
         gbSizer.Add(self.GMH2Probes, pos=(7,1), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
-        gbSizer.Add(SwitchboxLbl, pos=(8,0), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
-        gbSizer.Add(self.Switchbox, pos=(8,1), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
+        gbSizer.Add(GMHroomLbl, pos=(8,0), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
+        gbSizer.Add(self.GMHroomProbes, pos=(8,1), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
+        gbSizer.Add(SwitchboxLbl, pos=(9,0), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
+        gbSizer.Add(self.Switchbox, pos=(9,1), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
         # Addresses
         gbSizer.Add(self.V1SrcAddr, pos=(0,2), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
         gbSizer.Add(self.V2SrcAddr, pos=(1,2), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
@@ -209,14 +232,15 @@ class SetupPage(wx.Panel):
         gbSizer.Add(self.T2DvmAddr, pos=(5,2), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
         gbSizer.Add(self.GMH1Ports, pos=(6,2), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
         gbSizer.Add(self.GMH2Ports, pos=(7,2), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
-        gbSizer.Add(self.SwitchboxAddr, pos=(8,2), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
+        gbSizer.Add(self.GMHroomPorts, pos=(8,2), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)    
+        gbSizer.Add(self.SwitchboxAddr, pos=(9,2), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
         # R Name
-        gbSizer.Add(self.R1Name, pos=(6,5), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
-        gbSizer.Add(self.R2Name, pos=(7,5), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
-        gbSizer.Add(RNamesLbl, pos=(5,5), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
+        gbSizer.Add(self.R1Name, pos=(6,4), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
+        gbSizer.Add(self.R2Name, pos=(7,4), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
+        gbSizer.Add(RNamesLbl, pos=(5,4), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
         # Filename
-        gbSizer.Add(FileLbl, pos=(10,0), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
-        gbSizer.Add(self.XLFile, pos=(10,1), span=(1,5), flag=wx.ALL|wx.EXPAND, border=5)
+        gbSizer.Add(FileLbl, pos=(11,0), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
+        gbSizer.Add(self.XLFile, pos=(11,1), span=(1,5), flag=wx.ALL|wx.EXPAND, border=5)
         # Test buttons
         gbSizer.Add(self.S1Test, pos=(0,3), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
         gbSizer.Add(self.S2Test, pos=(1,3), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
@@ -226,37 +250,42 @@ class SetupPage(wx.Panel):
         gbSizer.Add(self.DT2Test, pos=(5,3), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
         gbSizer.Add(self.GMH1Test, pos=(6,3), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
         gbSizer.Add(self.GMH2Test, pos=(7,3), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
-        gbSizer.Add(ResponseLbl, pos=(1,4), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
-        gbSizer.Add(self.Response, pos=(2,4), span=(1,3), flag=wx.ALL|wx.EXPAND, border=5)
-        gbSizer.Add(self.TR1, pos=(6,4), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
-        gbSizer.Add(self.TR2, pos=(7,4), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
-        gbSizer.Add(self.SwitchboxTest, pos=(8,3), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
-        gbSizer.Add(self.VisaList, pos=(3,5), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
-        gbSizer.Add(self.ResList, pos=(3,4), span=(3,1), flag=wx.ALL|wx.EXPAND, border=5)
+        gbSizer.Add(self.GMHroomTest, pos=(8,3), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
+        gbSizer.Add(self.SwitchboxTest, pos=(9,3), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
+        
+        gbSizer.Add(ResponseLbl, pos=(3,4), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
+        gbSizer.Add(self.Response, pos=(4,4), span=(1,3), flag=wx.ALL|wx.EXPAND, border=5)
+#        gbSizer.Add(self.TR1, pos=(6,4), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
+#        gbSizer.Add(self.TR2, pos=(7,4), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
+        gbSizer.Add(self.VisaList, pos=(0,5), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
+        gbSizer.Add(self.ResList, pos=(0,4), span=(3,1), flag=wx.ALL|wx.EXPAND, border=5)
 
         # Autopopulate btn
-        gbSizer.Add(self.AutoPop, pos=(0,4), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
+        gbSizer.Add(self.AutoPop, pos=(2,5), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
 
         self.SetSizerAndFit(gbSizer)
 
         # Roles and corresponding comboboxes/test btns are associated here:
-        visastuff.ROLES_WIDGETS = {'SRC1':{'icb':self.V1Sources,'acb':self.V1SrcAddr,'tbtn':self.S1Test}}
-        visastuff.ROLES_WIDGETS.update({'SRC2':{'icb':self.V2Sources,'acb':self.V2SrcAddr,'tbtn':self.S2Test}})
-        visastuff.ROLES_WIDGETS.update({'DVM12':{'icb':self.V1V2Dvms,'acb':self.V1V2DvmAddr,'tbtn':self.D12Test}})
-        visastuff.ROLES_WIDGETS.update({'DVMd':{'icb':self.VdDvms,'acb':self.VdDvmAddr,'tbtn':self.DdTest}})
-        visastuff.ROLES_WIDGETS.update({'DVMT1':{'icb':self.T1Dvms,'acb':self.T1DvmAddr,'tbtn':self.DT1Test}})
-        visastuff.ROLES_WIDGETS.update({'DVMT2':{'icb':self.T2Dvms,'acb':self.T2DvmAddr,'tbtn':self.DT2Test}})
-        visastuff.ROLES_WIDGETS.update({'GMH1':{'icb':self.GMH1Probes,'acb':self.GMH1Ports,'tbtn':self.GMH1Test}})
-        visastuff.ROLES_WIDGETS.update({'GMH2':{'icb':self.GMH2Probes,'acb':self.GMH2Ports,'tbtn':self.GMH2Test}})
-        visastuff.ROLES_WIDGETS.update({'switchbox':{'icb':self.Switchbox,'acb':self.SwitchboxAddr,'tbtn':self.SwitchboxTest}})
+        devices.ROLES_WIDGETS = {'SRC1':{'icb':self.V1Sources,'acb':self.V1SrcAddr,'tbtn':self.S1Test}}
+        devices.ROLES_WIDGETS.update({'SRC2':{'icb':self.V2Sources,'acb':self.V2SrcAddr,'tbtn':self.S2Test}})
+        devices.ROLES_WIDGETS.update({'DVM12':{'icb':self.V1V2Dvms,'acb':self.V1V2DvmAddr,'tbtn':self.D12Test}})
+        devices.ROLES_WIDGETS.update({'DVMd':{'icb':self.VdDvms,'acb':self.VdDvmAddr,'tbtn':self.DdTest}})
+        devices.ROLES_WIDGETS.update({'DVMT1':{'icb':self.T1Dvms,'acb':self.T1DvmAddr,'tbtn':self.DT1Test}})
+        devices.ROLES_WIDGETS.update({'DVMT2':{'icb':self.T2Dvms,'acb':self.T2DvmAddr,'tbtn':self.DT2Test}})
+        devices.ROLES_WIDGETS.update({'GMH1':{'icb':self.GMH1Probes,'acb':self.GMH1Ports,'tbtn':self.GMH1Test}})
+        devices.ROLES_WIDGETS.update({'GMH2':{'icb':self.GMH2Probes,'acb':self.GMH2Ports,'tbtn':self.GMH2Test}})
+        devices.ROLES_WIDGETS.update({'GMHroom':{'icb':self.GMHroomProbes,'acb':self.GMHroomPorts,'tbtn':self.GMHroomTest}})
+        devices.ROLES_WIDGETS.update({'switchbox':{'icb':self.Switchbox,'acb':self.SwitchboxAddr,'tbtn':self.SwitchboxTest}})
 
 
     def BuildComboChoices(self):
-        for d in visastuff.DESCR:
+        for d in devices.INSTR_DATA.keys():
             if 'SRC:' in d:
                 self.SRC_COMBO_CHOICE.append(d)
             elif 'DVM:' in d:
                 self.DVM_COMBO_CHOICE.append(d)
+            elif 'GMH:' in d:
+                self.GMH_COMBO_CHOICE.append(d)
 
         # Re-build combobox choices from list of SRC's
         for cbox in self.cbox_instr_SRC:
@@ -267,262 +296,202 @@ class SetupPage(wx.Panel):
         for cbox in self.cbox_instr_DVM:
            cbox.Clear()
            cbox.AppendItems(self.DVM_COMBO_CHOICE)
+        
+        # Re-build combobox choices from list of GMH's
+        for cbox in self.cbox_instr_GMH:
+           cbox.Clear()
+           cbox.AppendItems(self.GMH_COMBO_CHOICE)
+
 
     def UpdateFilepath(self, e):
-        self.XLFile.SetValue(e.path)
-    
-        # Read parameters sheet - gather instrument info.
+        '''
+        Called when a new Excel file has been selected.
+        '''
+        self.XLFile.SetValue(e.XLpath)
         
-        wb = load_workbook(self.XLFile.GetValue())
-        ws_params = wb.get_sheet_by_name('Parameters')
+        # Open logfile
+        logname = 'HRBCv'+str(e.v)+'_'+str(dt.date.today())+'.log'
+        logfile = os.path.join(e.d, logname)
+        self.log = open(logfile,'a')
+        
+        # Read parameters sheet - gather instrument info:
+        self.wb = load_workbook(self.XLFile.GetValue(),data_only = True) # Need cell VALUE, not FORMULA, so set data_only = True
+        self.ws_params = self.wb.get_sheet_by_name('Parameters')
         
         headings = (None, u'description',u'Instrument Info:',u'parameter',u'value',u'uncert',u'dof',u'label')
         
         # Determine colummn indices from column letters:
-        col_H = cell.column_index_from_string('H') - 1
-        col_I = cell.column_index_from_string('I') - 1
-        col_J = cell.column_index_from_string('J') - 1
-        col_K = cell.column_index_from_string('K') - 1
-        col_L = cell.column_index_from_string('L') - 1
-        col_M = cell.column_index_from_string('M') - 1
-        
+        col_I = cell.cell.column_index_from_string('I') - 1
+        col_J = cell.cell.column_index_from_string('J') - 1
+        col_K = cell.cell.column_index_from_string('K') - 1
+        col_L = cell.cell.column_index_from_string('L') - 1
+        col_M = cell.cell.column_index_from_string('M') - 1
+        col_N = cell.cell.column_index_from_string('N') - 1
+
         params = []
         values = []
         
-        for r in ws_params.rows: # a tuple of row objects
-            descr = r[col_H].value # cell.value
-            param = r[col_I].value # cell.value
-            v_u_d_l = [r[col_J].value, r[col_K].value, r[col_L].value, r[col_M].value] # value,uncert,dof,label
+        for r in self.ws_params.rows: # a tuple of row objects
+            descr = r[col_I].value # cell.value
+            param = r[col_J].value # cell.value
+            v_u_d_l = [r[col_K].value, r[col_L].value, r[col_M].value, r[col_N].value] # value,uncert,dof,label
         
             if descr in headings and param in headings:
                 continue # Skip this row
             else: # not header
-#                print 'visastuff.py:parameter row:',r[col_H].row
                 params.append(param)
                 if v_u_d_l[1] is None: # single-valued (no uncert)
-                    values.append(v_u_d_l[0]) # append value as next item 
+                    values.append(v_u_d_l[0]) # append value as next item
                     print descr,' : ',param,' = ',v_u_d_l[0]
-                else: #multi-valued
+                    print >>self.log, descr,' : ',param,' = ',v_u_d_l[0]
+                else: # multi-valued
                     while v_u_d_l[-1] is None: # remove empty cells
                         del v_u_d_l[-1] # v_u_d_l.pop()
                     values.append(v_u_d_l) # append value-list as next item 
                     print descr,' : ',param,' = ',v_u_d_l
+                    print >>self.log, descr,' : ',param,' = ',v_u_d_l # self.log.write(logline)
                 
-                if param == u'demo': # last parameter for this description
-                    visastuff.DESCR.append(descr) # build description list
-                    visastuff.sublist.append(dict(zip(params,values))) # adds parameter dictionary to sublist
+                if param == u'test': # last parameter for this description
+                    devices.DESCR.append(descr) # build description list
+                    devices.sublist.append(dict(zip(params,values))) # adds parameter dictionary to sublist
                     del params[:]
                     del values[:] 
-                    
-        # Compile into a dictionary that lives in visastuff.py...  
-        visastuff.INSTR_DATA = dict(zip(visastuff.DESCR,visastuff.sublist))
+
+        print '----END OF PARAMETER LIST----' 
+        print >>self.log, '----END OF PARAMETER LIST----'
+        
+        # Compile into a dictionary that lives in devices.py...  
+        devices.INSTR_DATA = dict(zip(devices.DESCR,devices.sublist))
         self.BuildComboChoices()
 
 
-    def UpdateRole(self, e):
-        # An instrument was manually selected for a role
-        # Open a visa session, change INSTR_DATA, then update displays...
-        d = e.GetString()
-        for r in visastuff.ROLES_WIDGETS.keys(): # Cycle through roles
-            if visastuff.ROLES_WIDGETS[r]['icb'] == e.GetEventObject():
-                self.SetRole(d,r)
-                self.CreateInstr(d,r)
-                break # stop looking when we've found the right instrument, role
-
-    def SetRole(self,d,r):
-        # Called by both AutoPop() and UpdateRole().
-        # Updates INSTR_DATA and then updates address display..
-        # ... and enables/disables testbuttons as necessary.
-        print 'SetRole:',r,'will now be',d
-        visastuff.INSTR_DATA[d]['role'] = r # INSTR_DATA updated
-        # Set the address cb to correct value (according to visastuff.INSTR_DATA)
-        a_cb = visastuff.ROLES_WIDGETS[r]['acb']
-        a_cb.SetValue((visastuff.INSTR_DATA[d]['str_addr']))
-        if d == 'none':
-            visastuff.ROLES_WIDGETS[r]['tbtn'].Enable(False)
-        else:
-            visastuff.ROLES_WIDGETS[r]['tbtn'].Enable(True)
-
-    def CreateInstr(self,d,r):
-        # Called by both AutoPop() and UpdateRole()
-        # Create each instrument in software & open visa session
-        demo_mode = True
-        visastuff.INSTR_DATA[d]['demo'] = demo_mode
-        visastuff.ROLES_INSTR.update({r:visastuff.instrument(d,demo=demo_mode)}) # create an instrument instance here
-        try:
-            visastuff.ROLES_INSTR[r].Open()
-        except visastuff.visa.VisaIOError:
-            self.status.SetStatusText('No instrument with address %s!'%visastuff.INSTR_DATA[d]['str_addr'],1)
-            visastuff.INSTR_DATA[d]['demo'] = True
-            visastuff.ROLES_INSTR[r].Demo = True
-
-    def UpdateAddr(self, e):
-        # An address was manually selected
-        # Change DATA first...
-        # 1st, we'll need instrument description d...
-        d = 'none'
-        acb = e.GetEventObject() # 'a'ddress 'c'ombo 'b'ox
-        for r in visastuff.ROLES_WIDGETS.keys():
-            if visastuff.ROLES_WIDGETS[r]['acb'] == acb:
-                d = visastuff.ROLES_WIDGETS[r]['icb'].GetValue()
-                if 'GMH' in r:
-                    G1 =self.GMH1Ports.GetValue()
-                    if G1 == 1:
-                        self.GMH2Ports.SetValue('2')
-                    else:
-                        self.GMH2Ports.SetValue('1')
-                break # stop looking when we've found the right instrument description
-        a = e.GetString() # address string, eg 'COM5' or 'GPIB0::23'
-        if (a not in self.GPIBAddressList) or (a not in self.COMAddressList): # Ignore dummy values
-            visastuff.INSTR_DATA[d]['str_addr'] = a
-            addr = a.lstrip('COMGPIB0:') # leave only numeric part of address string
-            visastuff.INSTR_DATA[d]['addr'] = int(addr)
-        
-
     def OnAutoPop(self, e):
-        # Pre-select instrument and address comboboxes -
-        # Choose from instrument descriptions listed in visastuff.DESCR
-        # (Uses address assignments in visastuff.INSTR_DATA)
+        '''
+        Pre-select instrument and address comboboxes -
+        Choose from instrument descriptions listed in devices.DESCR
+        (Uses address assignments in devices.INSTR_DATA)
+        '''
         self.instrument_choice = {'SRC1':'SRC: D4808',
                                   'SRC2':'SRC: F5520A',
                                   'DVM12':'DVM: HP3458A, s/n452',
                                   'DVMd':'DVM: HP3458A, s/n230',
                                   'DVMT1':'none',#'DVM: HP34401A, s/n976'
                                   'DVMT2':'none',#'DVM: HP34420A, s/n130'
-                                  'GMH1':'GMH, s/n627',
-                                  'GMH2':'GMH, s/n628',
+                                  'GMH1':'GMH: s/n627',
+                                  'GMH2':'GMH: s/n628',
+                                  'GMHroom':'GMH: s/n367',
                                   'switchbox':'V1'}
         for r in self.instrument_choice.keys():
             d = self.instrument_choice[r]
-            self.SetRole(d,r) # Link role and descr in visastuff.INSTR_DATA, and update a_cb
-            visastuff.ROLES_WIDGETS[r]['icb'].SetValue(d) # Update i_cb
+            devices.ROLES_WIDGETS[r]['icb'].SetValue(d) # Update i_cb
             self.CreateInstr(d,r)
         self.R1Name.SetValue('CHANGE_THIS! 1G')
         self.R2Name.SetValue('CHANGE_THIS! 1M')
 
+
+    def UpdateInstr(self, e):
+        '''
+        An instrument was selected for a role.
+        Find description d and role r, then pass to CreatInstr()
+        '''
+        d = e.GetString()
+        for r in devices.ROLES_WIDGETS.keys(): # Cycle through roles
+            if devices.ROLES_WIDGETS[r]['icb'] == e.GetEventObject():
+                break # stop looking when we've found the right instrument & role
+        self.CreateInstr(d,r)
+
+
+    def CreateInstr(self,d,r):
+        # Called by both OnAutoPop() and UpdateInstr()
+        # Create each instrument in software & open visa session (for GPIB instruments)
+        # For GMH instruments, use GMH dll not visa
+
+        if 'GMH' in r: # Changed from d to r
+            # create and open a GMH instrument instance
+            print'\nnbpages.SetupPage.CreateInstr(): Creating GMH device (%s -> %s).'%(d,r)
+            devices.ROLES_INSTR.update({r:devices.GMH_Sensor(d)})
+        else:
+            # create a visa instrument instance
+            print'\nnbpages.SetupPage.CreateInstr(): Creating VISA device (%s -> %s).'%(d,r)
+            devices.ROLES_INSTR.update({r:devices.instrument(d)})
+            devices.ROLES_INSTR[r].Open()
+        self.SetInstr(d,r)
+
+
+    def SetInstr(self,d,r):
+        """
+        Called by CreateInstr().
+        Updates internal info (INSTR_DATA) and Enables/disables testbuttons as necessary.
+        """
+#        print 'nbpages.SetupPage.SetInstr():',d,'assigned to role',r,'demo mode:',devices.ROLES_INSTR[r].demo
+        assert devices.INSTR_DATA.has_key(d),'Unknown instrument: %s - check Excel file is loaded.'%d
+        assert devices.INSTR_DATA[d].has_key('role'),'Unknown instrument parameter - check Excel Parameters sheet is populated.'
+        devices.INSTR_DATA[d]['role'] = r # update default role
+        
+        # Set the address cb to correct value (according to devices.INSTR_DATA)
+        a_cb = devices.ROLES_WIDGETS[r]['acb']
+        a_cb.SetValue((devices.INSTR_DATA[d]['str_addr']))
+        if d == 'none':
+            devices.ROLES_WIDGETS[r]['tbtn'].Enable(False)
+        else:
+            devices.ROLES_WIDGETS[r]['tbtn'].Enable(True)
+
+
+    def UpdateAddr(self, e):
+        # An address was manually selected
+        # Change INSTR_DATA ...
+        # 1st, we'll need instrument description d...
+        d = 'none'
+        acb = e.GetEventObject() # 'a'ddress 'c'ombo 'b'ox
+        for r in devices.ROLES_WIDGETS.keys():
+            if devices.ROLES_WIDGETS[r]['acb'] == acb:
+                d = devices.ROLES_WIDGETS[r]['icb'].GetValue()
+                break # stop looking when we've found the right instrument description
+        a = e.GetString() # address string, eg 'COM5' or 'GPIB0::23'
+        if (a not in self.GPIBAddressList) or (a not in self.COMAddressList): # Ignore dummy values, like 'NO_ADDRESS'
+            devices.INSTR_DATA[d]['str_addr'] = a
+            devices.ROLES_INSTR[r].str_addr = a
+            addr = a.lstrip('COMGPIB0:') # leave only numeric part of address string
+            devices.INSTR_DATA[d]['addr'] = int(addr)
+            devices.ROLES_INSTR[r].addr = int(addr)
+        print'UpdateAddr():',r,'using',d,'set to addr',addr,'(',a,')'
+            
+
     def OnTest(self, e):
         # Called when a 'test' button is clicked
         d = 'none'
-        for r in visastuff.ROLES_WIDGETS.keys():
-            if visastuff.ROLES_WIDGETS[r]['tbtn'] == e.GetEventObject():
-                d = visastuff.ROLES_WIDGETS[r]['icb'].GetValue()
+        for r in devices.ROLES_WIDGETS.keys(): # check every role
+            if devices.ROLES_WIDGETS[r]['tbtn'] == e.GetEventObject():
+                d = devices.ROLES_WIDGETS[r]['icb'].GetValue()
                 break # stop looking when we've found the right instrument description
-        print'OnTest():d =',d
-        self.TestVisa(d,r)
-
-    def TestVisa(self,d,r):
-        if visastuff.INSTR_DATA[d].has_key('test'):
-            test = visastuff.INSTR_DATA[d]['test'] # test string
-            self.Response.SetValue(str(visastuff.ROLES_INSTR[r].SendCmd(test)))
-        else:
-            test = 'none'
+        print'\nnbpages.SetupPage.OnTest():',d
+        assert devices.INSTR_DATA[d].has_key('test'), 'No test exists for this device.'
+        test = devices.INSTR_DATA[d]['test'] # test string
+        print '\tTest string:',test
+        self.Response.SetValue(str(devices.ROLES_INSTR[r].Test(test)))
         self.status.SetStatusText('Testing %s with cmd %s' % (d,test),0)
 
-    def OnGMH1Test(self, e):
-        self.TR1.SetValue('-----')
-        self.status.SetStatusText('',0)
-        self.status.SetStatusText('',1)
-        d = self.GMH1Probes.GetValue()
-        self.GMH1Addr = visastuff.INSTR_DATA[d]['hw_addr']
-        COM = GMH.ct.c_short(int(self.GMH1Ports.GetValue().replace('COM',''))) # just a number
-        open_code = GMH.GMHLIB.GMH_OpenCom(COM)
-        if open_code > 11:
-            self.status.SetStatusText('Failed to open COM%d port - return code: %d'
-                                        % (COM.value, open_code),1)
-            GMH.GMHLIB.GMH_CloseCom()
-            return
-        Prio = GMH.ct.c_short()
-        flData = GMH.ct.c_double() # Don't change this type!! It's the exactly right one!
-        intData = GMH.ct.c_long()
-        ValFunc = GMH.ct.c_short(0) # GetValue()
-        if self.GMH1Addr == 0: # Haven't determined GMH address yet - valid values are 1-99.
-            for Address in range(1,100,10): # 1,11,21,...
-                Addr = GMH.ct.c_short(Address)
-                trans_code = GMH.GMHLIB.GMH_Transmit(Addr,
-                                                     ValFunc,
-                                                     GMH.ct.byref(Prio),
-                                                     GMH.ct.byref(flData),
-                                                     GMH.ct.byref(intData))
-                if trans_code == 0: # success
-                    self.GMH1Addr = Address
-                    break
-        else: # Already know GMH address
-            Addr = GMH.ct.c_short(self.GMH1Addr)
-            trans_code = GMH.GMHLIB.GMH_Transmit(Addr,
-                                                 ValFunc,
-                                                 GMH.ct.byref(Prio),
-                                                 GMH.ct.byref(flData),
-                                                 GMH.ct.byref(intData))
-        if trans_code < 0: # failure
-            self.status.SetStatusText('Failed to read from COM%d' % COM.value,1)
-            return
-        self.TR1.SetValue(str(flData.value))
-        self.status.SetStatusText('Read COM%d, address %d'%(COM.value,self.GMH1Addr),0)
-        GMH.GMHLIB.GMH_CloseCom()
-        return
-
-    def OnGMH2Test(self, e):
-        self.TR2.SetValue('-----')
-        self.status.SetStatusText('',0)
-        self.status.SetStatusText('',1)
-        d = self.GMH2Probes.GetValue()
-        self.GMH1Addr = visastuff.INSTR_DATA[d]['hw_addr']
-        COM = GMH.ct.c_short(int(self.GMH2Ports.GetValue().replace('COM',''))) # just a number
-        open_code = GMH.GMHLIB.GMH_OpenCom(COM)
-        if open_code > 11:
-            self.status.SetStatusText('Failed to open COM%d port - return code: %d'
-                                        % (COM.value, open_code),1)
-            GMH.GMHLIB.GMH_CloseCom()
-            return
-        Prio = GMH.ct.c_short()
-        flData = GMH.ct.c_double() # Don't change this type!! It's the exactly right one!
-        intData = GMH.ct.c_long()
-        ValFunc = GMH.ct.c_short(0) # GetValue()
-        if self.GMH2Addr == 0: # Haven't determined GMH address yet
-            for Address in range(1,100,10):
-                Addr = GMH.ct.c_short(Address)
-                trans_code = GMH.GMHLIB.GMH_Transmit(Addr,
-                                                     ValFunc,
-                                                     GMH.ct.byref(Prio),
-                                                     GMH.ct.byref(flData),
-                                                     GMH.ct.byref(intData))
-                if trans_code == 0: # success
-                    self.GMH2Addr = Address
-                    break
-        else:  # Already know GMH address
-            Addr = GMH.ct.c_short(self.GMH2Addr)
-            trans_code = GMH.GMHLIB.GMH_Transmit(Addr,
-                                                 ValFunc,
-                                                 GMH.ct.byref(Prio),
-                                                 GMH.ct.byref(flData),
-                                                 GMH.ct.byref(intData))
-        if trans_code < 0: # failure
-            self.status.SetStatusText('Failed to read from COM%d' % COM.value,1)
-            return
-        self.TR2.SetValue(str(flData.value))
-        self.status.SetStatusText('Read COM%d, address %d'%(COM.value,self.GMH2Addr),0)
-        GMH.GMHLIB.GMH_CloseCom()
-        return
 
     def OnSwitchTest(self, e):
         resource = self.SwitchboxAddr.GetValue()
-        config = str(visastuff.SWITCH_CONFIGS[self.Switchbox.GetValue()])
+        config = str(devices.SWITCH_CONFIGS[self.Switchbox.GetValue()])
         try:
-            instr = visastuff.RM.open_resource(resource)
+            instr = devices.RM.open_resource(resource)
             instr.write(config)
-        except visastuff.visa.VisaIOError:
+        except devices.visa.VisaIOError:
             self.Response.SetValue('Couldn\'t open visa resource for switchbox!')
+
 
     def BuildCommStr(self,e):
     # Called by a change in GMH probe selection, or resistor name
         d = e.GetString()
         if 'GMH' in d: # A GMH probe selection changed
             # Find the role associated with the selected instrument description
-            for r in visastuff.ROLES_WIDGETS.keys():
-                if visastuff.ROLES_WIDGETS[r]['icb'].GetValue() == d:
+            for r in devices.ROLES_WIDGETS.keys():
+                if devices.ROLES_WIDGETS[r]['icb'].GetValue() == d:
                     break
-            # Update our knowledge of role <-> instr. descr. asssociation   
-            self.SetRole(d,r)
+            # Update our knowledge of role <-> instr. descr. association
+            self.CreateInstr(d,r)
         RunPage = self.GetParent().GetPage(1)
         params={'R1':self.R1Name.GetValue(),'TR1':self.GMH1Probes.GetValue(),
                 'R2':self.R2Name.GetValue(),'TR2':self.GMH2Probes.GetValue()}
@@ -531,8 +500,9 @@ class SetupPage(wx.Panel):
         evt = evts.UpdateCommentEvent(str=commstr)
         wx.PostEvent(RunPage,evt)
 
+
     def OnVisaList(self, e):
-        res_list = visastuff.RM.list_resources()
+        res_list = devices.RM.list_resources()
         del self.ResourceList[:] # list of COM ports ('COM X') & GPIB addresses
         del self.ComList[:] # list of COM ports (numbers only)
         del self.GPIBList[:] # list of GPIB addresses (numbers only)
@@ -611,6 +581,9 @@ class RunPage(wx.Panel):
 
         ZeroVoltsBtn = wx.Button(self, id = wx.ID_ANY, label='Set zero volts')
         ZeroVoltsBtn.Bind(wx.EVT_BUTTON, self.OnZeroVolts)
+        
+        self.RangeTBtn = wx.ToggleButton(self,id = wx.ID_ANY,label='DVM12 Range mode')
+        self.RangeTBtn.Bind(wx.EVT_TOGGLEBUTTON,self.OnRangeMode)
 
         # Delay widgets
         SettleDelLbl = wx.StaticText(self,id = wx.ID_ANY, label = 'Settle delay:')
@@ -645,6 +618,7 @@ class RunPage(wx.Panel):
         self.StartBtn.Bind(wx.EVT_BUTTON, self.OnStart)
         self.StopBtn = wx.Button(self, id = wx.ID_ANY, label='Abort run')
         self.StopBtn.Bind(wx.EVT_BUTTON, self.OnAbort)
+        self.StopBtn.Enable(False)
         self.RLinkBtn = wx.Button(self, id = wx.ID_ANY, label='Measure R-link')
         self.RLinkBtn.Bind(wx.EVT_BUTTON, self.OnRLink)
         
@@ -666,7 +640,7 @@ class RunPage(wx.Panel):
         gbSizer.Add(self.V1Setting,pos=(2,2), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
         gbSizer.Add(V2SrcLbl,pos=(2,3), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
         gbSizer.Add(self.V2Setting,pos=(2,4), span=(1,1), flag=wx.ALL, border=5)
-        #gbSizer.Add(self.h_sep2, pos=(4,0), span=(1,5), flag=wx.ALL|wx.EXPAND, border=5)
+        gbSizer.Add(self.RangeTBtn, pos=(2,5), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
         
         # Delay widgets
         gbSizer.Add(SettleDelLbl, pos=(3,0), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
@@ -706,6 +680,14 @@ class RunPage(wx.Panel):
 
         self.autocomstr = ''
         self.manstr = ''
+        
+    def OnRangeMode(self,e):
+        state = e.GetEventObject().GetValue()
+        print 'OnRangeMode(): Range toggle button value =',state
+        if state == True:
+            e.GetEventObject().SetLabel("AUTO-range DVM12")
+        else:
+            e.GetEventObject().SetLabel("FIXED-range DVM12")
 
     def OnNewRunID(self,e):
         start = self.fullstr.find('R1: ')
@@ -766,7 +748,7 @@ class RunPage(wx.Panel):
     def OnV1Set(self,e):
         # Called by change in value (manually OR by software!)
         V1 = e.GetValue()
-        src1 = visastuff.ROLES_INSTR['SRC1']
+        src1 = devices.ROLES_INSTR['SRC1']
         src1.SetV(V1) #'M+0R0='
         time.sleep(0.5)
         if V1 == 0:
@@ -779,7 +761,7 @@ class RunPage(wx.Panel):
     def OnV2Set(self,e):
         # Called by change in value (manually OR by software!)
         V2 = e.GetValue()
-        src2 = visastuff.ROLES_INSTR['SRC2']
+        src2 = devices.ROLES_INSTR['SRC2']
         src2.SetV(V2)
         time.sleep(0.5)
         if V2 == 0:
@@ -790,8 +772,8 @@ class RunPage(wx.Panel):
 
     def OnZeroVolts(self,e):
         # V1:
-        src1 = visastuff.ROLES_INSTR['SRC1']
-        if self.V1Setting.GetValue() == '0':
+        src1 = devices.ROLES_INSTR['SRC1']
+        if self.V1Setting.GetValue() == 0:
             print'RunPage.OnZeroVolts(): Zero/Stby directly (not via V1 display)'
             src1.SetV(0)
             src1.Stby()
@@ -800,8 +782,8 @@ class RunPage(wx.Panel):
             print'RunPage.OnZeroVolts():  Zero/Stby via V1 display'
 
         # V2:
-        src2 = visastuff.ROLES_INSTR['SRC2']
-        if self.V2Setting.GetValue() == '0':
+        src2 = devices.ROLES_INSTR['SRC2']
+        if self.V2Setting.GetValue() == 0:
             print'RunPage.OnZeroVolts(): Zero/Stby directly (not via V2 display)'
             src2.SetV(0)
             src2.Stby()

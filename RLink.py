@@ -26,12 +26,12 @@ import string
 
 import numpy as np
 import wx
-from openpyxl import load_workbook
-from openpyxl.cell import get_column_letter #column_index_from_string
+# from openpyxl import load_workbook # WEDNESDAY
+from openpyxl.utils import get_column_letter #column_index_from_string
 from openpyxl.styles import Font, colors
 
 import HighRes_events as evts
-import visastuff
+import devices #visastuff
 
 class RLThread(Thread):
     """RLink Thread Class."""
@@ -45,23 +45,29 @@ class RLThread(Thread):
         self.comment = self.RunPage.Comment.GetValue()
         self._want_abort = 0
         self.RLink_data = []
+        
+        self.log = self.SetupPage.log
 
         print'\nRole -> Instrument:'
         print'------------------------------'
         # Print all instrument objects
-        for r in visastuff.ROLES_WIDGETS.keys():
-            d = visastuff.ROLES_WIDGETS[r]['icb'].GetValue()
-            print'%s -> %s'%(visastuff.INSTR_DATA[d]['role'],d)
-            if r != visastuff.INSTR_DATA[d]['role']:
-                visastuff.INSTR_DATA[d]['role'] = r
+        for r in devices.ROLES_WIDGETS.keys():
+            d = devices.ROLES_WIDGETS[r]['icb'].GetValue()
+            print'%s -> %s'%(devices.INSTR_DATA[d]['role'],d)
+            if r != devices.INSTR_DATA[d]['role']:
+                devices.INSTR_DATA[d]['role'] = r
                 print'Role data corrected to:',r,'->',d
 
         # Get filename of Excel file
         self.xlfilename = self.SetupPage.XLFile.GetValue()
 
         # open existing workbook
-        self.wb_io = load_workbook(self.xlfilename) # load_workbook(self.xlfilename, data_only=True)
-        self.ws = self.wb_io.get_sheet_by_name('Rlink')
+#        self.wb_io = load_workbook(self.xlfilename) # load_workbook(self.xlfilename, data_only=True)
+#        self.ws = self.wb_io.get_sheet_by_name('Rlink')
+        
+        # Find existing workbook
+        self.wb_io = self.SetupPage.wb # WEDNESDAY
+        self.ws = self.wb_io.get_sheet_by_name('Rlink') # WEDNESDAY
 
          # read start row & run parameters from Excel file
         self.start_row = self.ws['B1'].value # 1st row of actual data (after 6 lines of header)
@@ -88,6 +94,11 @@ class RLThread(Thread):
 
     def run(self):
         # Run Worker Thread. This is where all the important stuff goes.
+    
+        # Set button availibility
+        self.RunPage.StopBtn.Enable(True)
+        self.RunPage.StartBtn.Enable(False)
+        self.RunPage.RLinkBtn.Enable(False)
 
         stat_ev = evts.StatusEvent(msg='RLThread.run():',field = 0)
         wx.PostEvent(self.TopLevel, stat_ev)
@@ -130,14 +141,14 @@ class RLThread(Thread):
         revs = 1
 
         # Configuration and initialisation
-        visastuff.ROLES_INSTR['switchbox'].SendCmd(visastuff.SWITCH_CONFIGS['V2']) # Is 'V2' right/needed ?
+        devices.ROLES_INSTR['switchbox'].SendCmd(devices.SWITCH_CONFIGS['V2']) # Is 'V2' right/needed ? # visastuff replaced
         self.SetupPage.Switchbox.SetValue('V2') # update switchbox configuration icb
-        visastuff.ROLES_INSTR['DVMd'].SendCmd('FUNC DCV,AUTO')
-        dvmOP = visastuff.ROLES_INSTR['DVMd'].Read() # Pre-read voltage to set appropriate range
-        visastuff.ROLES_INSTR['DVMd'].SendCmd('DCV,'+str(dvmOP)) # 'DCV,'+str(self.AbsV1)
-        visastuff.ROLES_INSTR['DVMd'].SendCmd('LFREQ LINE')
-        visastuff.ROLES_INSTR['SRC1'].SendCmd('R0=') # srcV1  'R0='
-        time.sleep(1) # 3
+        devices.ROLES_INSTR['DVMd'].SendCmd('FUNC DCV,AUTO') # visastuff replaced
+        dvmOP = devices.ROLES_INSTR['DVMd'].Read() # Pre-read voltage to set appropriate range # visastuff replaced
+        devices.ROLES_INSTR['DVMd'].SendCmd('DCV,'+str(dvmOP)) # 'DCV,'+str(self.AbsV1) # visastuff replaced
+        devices.ROLES_INSTR['DVMd'].SendCmd('LFREQ LINE') # visastuff replaced
+        devices.ROLES_INSTR['SRC1'].SendCmd('R0=') # srcV1  'R0=' # visastuff replaced
+        time.sleep(3) # WEDNESDAY
 
         self.V1set = self.AbsV1
         self.V2set = self.AbsV2*-1
@@ -151,25 +162,25 @@ class RLThread(Thread):
             
             # Apply source voltages
             self.RunPage.V1Setting.SetValue(str(self.V1set)) # Voltage displays control sources
-            time.sleep(1) # 5
+            time.sleep(5) # WEDNESDAY
             self.RunPage.V2Setting.SetValue(str(self.V2set))
-            time.sleep(1) # 60
+            time.sleep(60) # WEDNESDAY
             row = 1 # self.start_row + 1
 
             # Only store 10 readings per line, and then clear
             col_letter = get_column_letter(revs)
-            d = visastuff.ROLES_WIDGETS['DVMd']['icb'].GetValue()
+            d = devices.ROLES_WIDGETS['DVMd']['icb'].GetValue() # visastuff replaced
             while row <= self.N_readings: # row index
-                if visastuff.INSTR_DATA[d]['demo'] == True:
+                if devices.INSTR_DATA[d]['demo'] == True: # visastuff replaced
                     dvmOP = np.random.normal(self.Vdiff*1.0e-6,abs(self.Vdiff*1.0e-8))
                     self.RLink_data.append(dvmOP)
                 else:
-                    print 'RLink.py, run(): %s in demo mode:%i'%(d,visastuff.INSTR_DATA[d]['demo'])
-                    visastuff.ROLES_INSTR['DVMd'].SendCmd('LFREQ LINE')
+#                    print 'RLink.py, run(): %s demo mode:%i'%(d,devices.INSTR_DATA[d]['demo']) # visastuff replaced
+                    devices.ROLES_INSTR['DVMd'].SendCmd('LFREQ LINE') # visastuff replaced
                     time.sleep(1)
-                    visastuff.ROLES_INSTR['DVMd'].SendCmd('AZERO ONCE')
-                    time.sleep(10)
-                    dvmOP = visastuff.ROLES_INSTR['DVMd'].Read()
+                    devices.ROLES_INSTR['DVMd'].SendCmd('AZERO ONCE') # visastuff replaced
+                    time.sleep(1) # was 10
+                    dvmOP = devices.ROLES_INSTR['DVMd'].Read() # visastuff replaced
                     self.RLink_data.append(float(filter(self.filt,dvmOP)))
                 P = 100*((revs-1)*self.N_readings+row)/(self.N_reversals*self.N_readings) # % progress
                 update_ev = evts.DataEvent(t=0, Vm=self.RLink_data[row-1], Vsd=0, P=P,
@@ -183,7 +194,9 @@ class RLThread(Thread):
                 self.ws.cell(row = self.start_row+row-1, column = revs).value = self.RLink_data[row-1]
                 row += 1
             # (end of readings loop)
-
+                
+            print self.RLink_data[row-2]
+            
             # Reverse source polarities
             self.V1set *= -1
             self.V2set *= -1
@@ -208,10 +221,12 @@ class RLThread(Thread):
         wx.PostEvent(self.RunPage, stop_ev)
 
         self.RunPage.RLinkBtn.Enable(True)
+        self.RunPage.StartBtn.Enable(True)
+        self.RunPage.StopBtn.Enable(False)
 
 
     def FinishRun(self):
-        # save data in xl file
+        #save data in xl file
         self.wb_io.save(self.xlfilename)
 
         self.Standby() # Set sources to 0V and leave system safe
@@ -224,10 +239,14 @@ class RLThread(Thread):
         wx.PostEvent(self.TopLevel, stat_ev)
 
         self.RunPage.RLinkBtn.Enable(True)
-
+        self.RunPage.StartBtn.Enable(True)
+        self.RunPage.StopBtn.Enable(False)
+        
+        
     def Standby(self):
         self.RunPage.V1Setting.SetValue('0')
         self.RunPage.V2Setting.SetValue('0')
+
 
     def abort(self):
         """abort worker thread."""

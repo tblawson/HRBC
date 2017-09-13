@@ -9,7 +9,7 @@ DEVELOPMENT VERSION
 
 """
 This is the place where all information about the instruments available for use
-in the procedure is gathered. Each dictionary key (description) accesses a
+in the procedure should be recorded. Each dictionary key (description) accesses a
 particular instrument and the corresponding dictionary value is a lower-level dictionary
 of key:value pairs, eg: GPIB address, initiation command string
 (which may or may not result in output),Voltage-setting command, data read
@@ -22,13 +22,6 @@ allows any command string to be sent to the instrument and any response to be re
 
 import visa
 
-#from openpyxl import load_workbook, cell
-#import os.path
-#os.environ['XLPATH'] = 'I:\MSL\Private\Electricity\Staff\TBL\Python\High_Res_Bridge\Development\\test version\Validation'
-#xlfile = 'new_High-Res_validation.xlsx'
-#xldir = os.environ['XLPATH']
-#xlfilename = os.path.join(xldir, xlfile)
-
 
 # Only ONE resource manager is required at any time -
 # All comunications for all GPIB and RS232 instruments
@@ -39,7 +32,7 @@ RM = visa.ResourceManager()
 SWITCH_CONFIGS = {'V1':'A','Vd1':'C','Vd2':'D','V2':'B'}
 
 # GMH probe communications are handled by low-level routines in
-# GMHdll\GMH3x32E.dll
+# GMHdll.dll
 GMH_DESCR = ('GMH, s/n627',
              'GMH, s/n628')
 
@@ -246,6 +239,7 @@ class instrument():
         if self.role == 'switchbox': # update icb
             pass # may need an event here...
         if self.Demo == True:
+            print 'visastuff.instrument.SendCmd(): returning',demo_reply
             return demo_reply
         # Check if s contains '?' or 'X' or is an empty string
         # ... in which case a response is expected
