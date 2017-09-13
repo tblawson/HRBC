@@ -304,6 +304,10 @@ Rd = GTC.ar.result(av_dV/I,label = 'Rlink ' + Run_Id)
 assert Rd.x < 0.01,'High link resistance!'
 #assert Rd.x > Rd.u,'Link resistance uncertainty > value!' # (TEMPORARY RELAXATION OF TEST!)
 log.write('\nRlink = ' + str(GTC.summary(Rd)))
+
+# Start list of influence variables
+influencies = [Rd,] # R2 dependancy
+
 ####__________End of Rd section___________####
 
 raw_gmh1 = []
@@ -345,36 +349,30 @@ while Data_row <= Data_stop_row:
         R2TRef = R_INFO[R2_name]['TRef_LV']
         R2VRef = R_INFO[R2_name]['VRef_LV']
 
-    if round(V1set) == round(V2set):
-        v_ratio_code = 'VRC_eq'
-    elif abs(round(V1set)) == 1 and abs(round(V2set,1)) == 0.1:
-        v_ratio_code = 'VRC_1to0.1'
-    elif abs(round(V1set)) == 5 and abs(round(V2set,1)) == 0.5:
-        v_ratio_code = 'VRC_5to0.5'
-    elif abs(round(V1set)) == 10 and abs(round(V2set)) == 1:
-        v_ratio_code = 'VRC_10to1'    
-    elif abs(round(V1set)) == 100 and abs(round(V2set)) == 10:
-        v_ratio_code = 'VRC_100to10'
-    else:
-        v_ratio_code = None
-    assert v_ratio_code is not None,'Unable to determine voltage ratio ({0}/{1})!'.format(int(round(V1set)),int(round(V2set)))
+
     
     # Select appropriate value of VRC, etc.
     """
     #################################################################
-    NOTE: In future, replace VRCs with individual gain factors for
+    NOTE: Now replace VRCs with individual gain factors for
     each test-V (at mid- or top-of-range), on each instrument. Since
     this matches available info in DMM cal. cert. and minimises the
     number of possible values (ie: No. of test-Vs] < [No. of possible
     voltage ratios]).
     #################################################################
     """
-    vrc = I_INFO[role_descr['DVM12']][v_ratio_code]
-    Vlin_gain = I_INFO[role_descr['DVMd']]['linearity_gain'] # linearity used in G calculation
-    Vlin_Vd = I_INFO[role_descr['DVMd']]['linearity_Vd'] # linearity used in Vd calculation
+    G1_code = R_info.Vgain_codes[round(V1set)]
+    G1 = I_INFO[role_descr['DVM12']][G1_code]
+    G2_code = R_info.Vgain_codes[round(V2set)]
+    G2 = I_INFO[role_descr['DVM12']][G2_code]
+    vrc = G2/G1
+    
+#    vrc = I_INFO[role_descr['DVM12']][v_ratio_code]
+    Vlin_pert = I_INFO[role_descr['DVMd']]['linearity_pert'] # linearity used in G calculation
+    Vlin_Vdav = I_INFO[role_descr['DVMd']]['linearity_Vdav'] # linearity used in Vd calculation
     
     # Start list of influence variables
-    influencies = [vrc,Vlin_gain,Vlin_Vd,R2TRef,R2VRef] # R2 dependancies
+    influencies.extend([vrc,Vlin_pert,Vlin_Vdav,R2TRef,R2VRef]) # R2 dependancies
 
     R2alpha = R_INFO[R2_name]['alpha']
     R2beta = R_INFO[R2_name]['beta']
@@ -552,15 +550,16 @@ while Data_row <= Data_stop_row:
     GTC.tb.distribution['gaussian'](abs(Vd[2]-(Vd[0]+((Vd[3]-Vd[2])/(V2[3]-V2[2]))*(V2[2]-V2[0])))/4),
                                 8,label='Vdrift_Vd '+ Run_Id)
     # 
-    Vdrift = {'gain':Vdrift1,'Vd':Vdrift2}
-    influencies.extend([Vdrift['gain'],Vdrift['Vd']]) # R2 dependancies
+    Vdrift = {'pert':Vdrift1,'Vdav':Vdrift2}
+    influencies.extend([Vdrift['pert'],Vdrift['Vdav']]) # R2 dependancies
     
     # Mean voltages
     V1av = (V1[0]-2*V1[1]+V1[2])/4
     V2av = (V2[0]-2*V2[1]+V2[2])/4
-    Vdav = (Vd[0]-2*Vd[1]+Vd[2])/4 + Vlin_Vd + Vdrift['Vd']
+    Vdav = (Vd[0]-2*Vd[1]+Vd[2])/4 + Vlin_Vdav + Vdrift['Vd']
     
-    influencies.append(Rd) # R2 dependancy
+    Vd_ = Vd[3] + Vlin_pert + Vdrift['pert'] # Perturbation
+    V2_ = V2[3] # Perturbation
     
     # Calculate R2 (corrected for T and V)
     dT2 = T2_av - R2TRef + T_def2
@@ -569,21 +568,9 @@ while Data_row <= Data_stop_row:
 
     R2 = R2_0*(1+R2alpha*dT2 + R2beta*dT2**2 + R2gamma*dV2) + Rd
     assert abs(R2.x-nom_R2)/nom_R2 < PPM_TOLERANCE['R2'],'R2 > 100 ppm from nominal! R2 = {0}'.format(R2.x)
-    
-    # Gain factor due to null meter input Z
-    G = (Vd[3]- Vd[2] + Vlin_gain + Vdrift['gain'])/(V2[3]-V2[2])
-    
-    if round(abs_V1.x/abs_V2.x) == 10:
-        nom_G = 10.0/11.0
-    elif round(abs_V1.x/abs_V2.x) == 1:
-        nom_G = 0.5 # nominally = 1/2
-    else:
-        assert False,'Wrong V1/V2 ratio!'
-    
-    assert abs(G.x-nom_G)/nom_G < PPM_TOLERANCE['G'],'Gain > 1% from nominal! G = {0}, nom_G = {1}'.format(G.x,nom_G)
        
     # calculate R1  
-    R1 = -R2*(1+vrc)*V1av*G/(G*V2av - Vdav)
+    R1 = -R2*vrc*V1av*( Vd_-Vdav )/( V2av*Vd_ - Vdav*V2_ )
     assert abs(R1.x-nom_R1)/nom_R1 < PPM_TOLERANCE['R1'],'R1 > 1000 ppm from nominal!'
     
     T1 = T1_av + T_def1
@@ -623,6 +610,7 @@ while Data_row <= Data_stop_row:
    
 ##----- End of data-row loop -----#
 ###################################
+
 
 # At this point the summary row has reached its maximum for this analysis run
 # ...so make a note of it, for use as the next run's starting row:

@@ -20,6 +20,8 @@ RL_SEARCH_LIMIT = 500
 INF = 1e6 # 'inf' dof
 ZERO = GTC.ureal(0,0)
 
+Vgain_codes = {0.1:'Vgain_01',0.5:'Vgain_05',1:'Vgain_1',5:'Vgain_5',10:'Vgain_10',100:'Vgain_100'}
+
 # ______________________________Useful funtions:_____________________________________
 
 def Make_Log_Name(v):
