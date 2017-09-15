@@ -20,7 +20,7 @@ RL_SEARCH_LIMIT = 500
 INF = 1e6 # 'inf' dof
 ZERO = GTC.ureal(0,0)
 
-Vgain_codes = {0.1:'Vgain_01',0.5:'Vgain_05',1:'Vgain_1',5:'Vgain_5',10:'Vgain_10',100:'Vgain_100'}
+Vgain_codes = {0.1:'Vgain_01',0.5:'Vgain_05',1.0:'Vgain_1',5.0:'Vgain_5',10.0:'Vgain_10',100.0:'Vgain_100'}
 
 # ______________________________Useful funtions:_____________________________________
 
@@ -89,11 +89,9 @@ def Uncertainize(row_items):
         if d == u'inf':
             un_num = GTC.ureal(v,u,label=l) # default dof = inf
         else:
-#            print v,u,d,l
             un_num = GTC.ureal(v,u,d,l)
         return un_num
     else: # non-numeric value
-#        print 'Uncertainize(): Value is NON-NUMERIC!',row_items
         return v
     
     
@@ -209,10 +207,8 @@ def WriteBudget(sheet,row,budget):
         sheet['K'+str(row)] = line[1] # Value
         sheet['L'+str(row)] = line[2] # Uncert.
         if math.isinf(line[3]):
-            #print'WriteBudget(): dof (',line[0],') is',line[3]
             sheet['M'+str(row)] = str(line[3]) # dof
         else:
-            #print'WriteBudget(): dof (',line[0],') =',line[3]
             sheet['M'+str(row)] = round(line[3]) # dof
         sheet['N'+str(row)] = line[4] # Sens. coef.
         sheet['O'+str(row)] = line[5] # Uncert. contrib.
@@ -224,7 +220,7 @@ def WriteBudget(sheet,row,budget):
 def write_R1_T_fit(results,sheet,row,log):
     T_data = [T for T in [result['T'] for result in results]] # All T values
     T_av = GTC.fn.mean(T_data)
-    print'write_R1_T_fit():u(T_av)=',T_av.u,'dof(T_av)=',T_av.df
+    #print'write_R1_T_fit():u(T_av)=',T_av.u,'dof(T_av)=',T_av.df
     T_rel = [t_k - T_av for t_k in T_data] # x-vals
     
     y = [R for R in [result['R'] for result in results]] # All R values
@@ -244,10 +240,8 @@ def write_R1_T_fit(results,sheet,row,log):
     sheet['R'+str(row)] = R1.x
     sheet['S'+str(row)] = R1.u
     if math.isinf(R1.df):
-        #print'write_R1_T_fit(): R1.df is',R1.df
         sheet['T'+str(row)] = str(R1.df)
     else:
-        #print'write_R1_T_fit(): R1.df =',R1.df
         sheet['T'+str(row)] = round(R1.df)
     
     sheet['U'+str(row)] = R1.u*GTC.rp.k_factor(R1.df)
@@ -255,10 +249,8 @@ def write_R1_T_fit(results,sheet,row,log):
     sheet['V'+str(row)] = T_av.x
     sheet['W'+str(row)] = T_av.u
     if math.isinf(T_av.df):
-        #print'write_R1_T_fit(): T_av.df is',T_av.df
         sheet['X'+str(row)] = str(T_av.df)
     else:
-        #print'write_R1_T_fit(): T_av.df =',T_av.df
         sheet['X'+str(row)] = round(T_av.df)
     
     t = [result['time_fl'] for result in results] # x data (time,s from epoch)
@@ -271,10 +263,8 @@ def write_R1_T_fit(results,sheet,row,log):
     sheet['Z'+str(row)] = V_av.x
     sheet['AA'+str(row)] = V_av.u
     if math.isinf(V_av.df):
-        print'write_R1_T_fit(): V_av.df is',V_av.df
         sheet['AB'+str(row)] = str(V_av.df)
     else:
-        print'write_R1_T_fit(): V_av.df =',V_av.df
         sheet['AB'+str(row)] = round(V_av.df)
     return (R1,alpha,T_av,V_av,time_av)
 
@@ -291,10 +281,8 @@ def update_R_Info(name,params,data,sheet,row,Id,v):
             sheet['C'+str(row)] = R_dict[param].x
             sheet['D'+str(row)] = R_dict[param].u
             if math.isinf(R_dict[param].df):
-                #print'update_R_Info(): ',name,'(',param,').dof is',R_dict[param].df
                 sheet['E'+str(row)] = str(R_dict[param].df)
             else:
-                #print'update_R_Info(): ',name,'(',param,').dof =',R_dict[param].df
                 sheet['E'+str(row)] = round(R_dict[param].df)
             sheet['F'+str(row)] = label
         else:

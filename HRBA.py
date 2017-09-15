@@ -305,9 +305,6 @@ assert Rd.x < 0.01,'High link resistance!'
 #assert Rd.x > Rd.u,'Link resistance uncertainty > value!' # (TEMPORARY RELAXATION OF TEST!)
 log.write('\nRlink = ' + str(GTC.summary(Rd)))
 
-# Start list of influence variables
-influencies = [Rd,] # R2 dependancy
-
 ####__________End of Rd section___________####
 
 raw_gmh1 = []
@@ -349,7 +346,6 @@ while Data_row <= Data_stop_row:
         R2TRef = R_INFO[R2_name]['TRef_LV']
         R2VRef = R_INFO[R2_name]['VRef_LV']
 
-
     
     # Select appropriate value of VRC, etc.
     """
@@ -361,18 +357,17 @@ while Data_row <= Data_stop_row:
     voltage ratios]).
     #################################################################
     """
-    G1_code = R_info.Vgain_codes[round(V1set)]
+    G1_code = R_info.Vgain_codes[round(V1set,1)]
     G1 = I_INFO[role_descr['DVM12']][G1_code]
-    G2_code = R_info.Vgain_codes[round(V2set)]
+    G2_code = R_info.Vgain_codes[round(abs(V2set),1)]
     G2 = I_INFO[role_descr['DVM12']][G2_code]
-    vrc = G2/G1
+    vrc = GTC.ar.result(G2/G1, label = 'vrc ' + Run_Id)
     
-#    vrc = I_INFO[role_descr['DVM12']][v_ratio_code]
     Vlin_pert = I_INFO[role_descr['DVMd']]['linearity_pert'] # linearity used in G calculation
     Vlin_Vdav = I_INFO[role_descr['DVMd']]['linearity_Vdav'] # linearity used in Vd calculation
     
     # Start list of influence variables
-    influencies.extend([vrc,Vlin_pert,Vlin_Vdav,R2TRef,R2VRef]) # R2 dependancies
+    influencies = [Rd,vrc,Vlin_pert,Vlin_Vdav,R2TRef,R2VRef] # R2 dependancies
 
     R2alpha = R_INFO[R2_name]['alpha']
     R2beta = R_INFO[R2_name]['beta']
@@ -545,21 +540,22 @@ while Data_row <= Data_stop_row:
     # Define drift
     Vdrift1=GTC.ureal(0,
     GTC.tb.distribution['gaussian'](abs(Vd[2]-(Vd[0]+((Vd[3]-Vd[2])/(V2[3]-V2[2]))*(V2[2]-V2[0])))/4),
-                                8,label='Vdrift_gain '+ Run_Id)
+                                8,label='Vdrift_pert '+ Run_Id)
     Vdrift2=GTC.ureal(0,
     GTC.tb.distribution['gaussian'](abs(Vd[2]-(Vd[0]+((Vd[3]-Vd[2])/(V2[3]-V2[2]))*(V2[2]-V2[0])))/4),
-                                8,label='Vdrift_Vd '+ Run_Id)
-    # 
+                                8,label='Vdrift_Vdav '+ Run_Id)
+ 
     Vdrift = {'pert':Vdrift1,'Vdav':Vdrift2}
     influencies.extend([Vdrift['pert'],Vdrift['Vdav']]) # R2 dependancies
     
     # Mean voltages
     V1av = (V1[0]-2*V1[1]+V1[2])/4
     V2av = (V2[0]-2*V2[1]+V2[2])/4
-    Vdav = (Vd[0]-2*Vd[1]+Vd[2])/4 + Vlin_Vdav + Vdrift['Vd']
+    Vdav = (Vd[0]-2*Vd[1]+Vd[2])/4 + Vlin_Vdav + Vdrift['Vdav']
     
-    Vd_ = Vd[3] + Vlin_pert + Vdrift['pert'] # Perturbation
-    V2_ = V2[3] # Perturbation
+    # Effect of v2 perturbation
+    delta_Vd = Vd[3] - Vd[2] + Vlin_pert + Vdrift['pert']
+    delta_V2 = V2[3] - V2[2]
     
     # Calculate R2 (corrected for T and V)
     dT2 = T2_av - R2TRef + T_def2
@@ -570,10 +566,11 @@ while Data_row <= Data_stop_row:
     assert abs(R2.x-nom_R2)/nom_R2 < PPM_TOLERANCE['R2'],'R2 > 100 ppm from nominal! R2 = {0}'.format(R2.x)
        
     # calculate R1  
-    R1 = -R2*vrc*V1av*( Vd_-Vdav )/( V2av*Vd_ - Vdav*V2_ )
+    R1 = R2*vrc*V1av*delta_Vd/( Vdav*delta_V2 - V2av*delta_Vd )
     assert abs(R1.x-nom_R1)/nom_R1 < PPM_TOLERANCE['R1'],'R1 > 1000 ppm from nominal!'
     
     T1 = T1_av + T_def1
+    print R1,'at temperature',T1
    
     # Combine data for this measurement: name,time,R,T,V and write to Summary sheet:
     this_result = {'name':R1_name,'time_str':times_av_str,'time_fl':times_av_fl,'V':V1av,
@@ -614,7 +611,7 @@ while Data_row <= Data_stop_row:
 
 # At this point the summary row has reached its maximum for this analysis run
 # ...so make a note of it, for use as the next run's starting row:
-ws_Summary['B1'] = summary_row
+ws_Summary['B1'] = summary_row + 1 # Add extra row between runs
 
 # Go back to the top of summary block, ready for writing run results
 summary_row = summary_start_row + 1
@@ -662,19 +659,19 @@ ws_Summary['R'+str(summary_row)] = alpha.x
 ws_Summary['S'+str(summary_row)] = alpha.u
 
 if math.isinf(alpha.df):
-    print'alpha.df is',alpha.df
+    #print'alpha.df is',alpha.df
     ws_Summary['T'+str(summary_row)] = str(alpha.df)
 else:
-    print'alpha.df =',alpha.df
+    #print'alpha.df =',alpha.df
     ws_Summary['T'+str(summary_row)] = round(alpha.df)
 
 ws_Summary['V'+str(summary_row)] = gamma.x
 ws_Summary['W'+str(summary_row)] = gamma.u
 if math.isinf(gamma.df):
-    print'gamma.df is',gamma.df
+    #print'gamma.df is',gamma.df
     ws_Summary['X'+str(summary_row)] = str(gamma.df)
 else:
-    print'gamma.df =',gamma.df
+    #print'gamma.df =',gamma.df
     ws_Summary['X'+str(summary_row)] = round(gamma.df)
 
 #######################################################################
@@ -692,7 +689,7 @@ if not R_INFO.has_key(R1_name):
     print 'Adding',R1_name,'to resistor info...'
     last_R_row = R_info.update_R_Info(R1_name,params,R_data,ws_Params,last_R_row,Run_Id,VERSION)
 else:
-    print 'Already know about',R1_name
+    print '\nAlready know about',R1_name
 
 # Save workbook
 wb_io.save(xlfile)
