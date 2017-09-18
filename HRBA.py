@@ -90,6 +90,9 @@ for row in range(Data_start_row, Data_start_row + N_ROLES):
     assert temp_dict.keys()[-1] is not None,'Instrument assignment: Missing role!'
     assert temp_dict.values()[-1] is not None,'Instrument assignment: Missing description!'
     role_descr.update(temp_dict)
+    if ws_Data['AC'+str(row)].value == u'DVM12':
+        range_mode = ws_Data['AE'+str(row)].value
+        print 'Range mode:',range_mode
 
 #######################################################################    
 #______________Extract resistor and instrument parameters_____________#
@@ -357,17 +360,22 @@ while Data_row <= Data_stop_row:
     voltage ratios]).
     #################################################################
     """
-    G1_code = R_info.Vgain_codes[round(V1set,1)]
+    G1_code = R_info.Vgain_codes_auto[round(V1set,1)]
     G1 = I_INFO[role_descr['DVM12']][G1_code]
-    G2_code = R_info.Vgain_codes[round(abs(V2set),1)]
-    G2 = I_INFO[role_descr['DVM12']][G2_code]
+    
+    if 'AUTO' in range_mode:
+        G2_code = R_info.Vgain_codes_auto[round(abs(V2set),1)]
+    else:
+        G2_code = R_info.Vgain_codes_fixed[round(abs(V2set),1)]
+    G2 = I_INFO[role_descr['DVM12']][G2_code]  
+    
     vrc = GTC.ar.result(G2/G1, label = 'vrc ' + Run_Id)
     
     Vlin_pert = I_INFO[role_descr['DVMd']]['linearity_pert'] # linearity used in G calculation
     Vlin_Vdav = I_INFO[role_descr['DVMd']]['linearity_Vdav'] # linearity used in Vd calculation
     
     # Start list of influence variables
-    influencies = [Rd,vrc,Vlin_pert,Vlin_Vdav,R2TRef,R2VRef] # R2 dependancies
+    influencies = [Rd,G1,G2,Vlin_pert,Vlin_Vdav,R2TRef,R2VRef] # R2 dependancies
 
     R2alpha = R_INFO[R2_name]['alpha']
     R2beta = R_INFO[R2_name]['beta']

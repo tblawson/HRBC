@@ -20,7 +20,8 @@ RL_SEARCH_LIMIT = 500
 INF = 1e6 # 'inf' dof
 ZERO = GTC.ureal(0,0)
 
-Vgain_codes = {0.1:'Vgain_01',0.5:'Vgain_05',1.0:'Vgain_1',5.0:'Vgain_5',10.0:'Vgain_10',100.0:'Vgain_100'}
+Vgain_codes_auto = {0.5:'Vgain_05r1',1.0:'Vgain_1r1',5.0:'Vgain_5r10',10.0:'Vgain_10r10',100.0:'Vgain_100r100'} # Use for G1 & G2 in AUTO mode
+Vgain_codes_fixed = {0.5:'Vgain_05r10',1.0:'Vgain_1r10',10.0:'Vgain_10r100',100.0:'Vgain_100r100'} # Use for G2 in FIXED mode
 
 # ______________________________Useful funtions:_____________________________________
 
