@@ -51,6 +51,8 @@ class AqnThread(Thread):
         self.VdTimes = []
         
         self.log = self.SetupPage.log
+        
+        self.Range_Mode = {True:'AUTO',False:'FIXED'}
 
         print'Role -> Instrument:'
         print >>self.log,'Role -> Instrument:'
@@ -155,6 +157,7 @@ class AqnThread(Thread):
         self.ws['Z'+str(Head_row)] = 'Comment'
         self.ws['AC'+str(Head_row)] = 'Role'
         self.ws['AD'+str(Head_row)] = 'Instrument descr.'
+        self.ws['AE'+str(Head_row)] = 'Range mode'
 
 
         stat_ev = evts.StatusEvent(msg='AqnThread.run():',field = 0)
@@ -199,6 +202,8 @@ class AqnThread(Thread):
             self.ws['AC'+str(role_row)] = r
             d = devices.ROLES_WIDGETS[r]['icb'].GetValue() # descr # replaced visastuff
             self.ws['AD'+str(role_row)] = d
+            if r == 'DVM12':
+                self.ws['AE'+str(role_row)] = self.Range_Mode[self.RunPage.RangeTBtn.GetValue()]
             role_row += 1
 
         row = self.start_row
