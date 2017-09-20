@@ -360,8 +360,6 @@ while Data_row <= Data_stop_row:
     voltage ratios]).
     #################################################################
     """
-#    G1_code = R_info.Vgain_codes_auto[round(V1set,1)]
-#    G1 = I_INFO[role_descr['DVM12']][G1_code]
     
     if 'AUTO' in range_mode:
         G2_code = R_info.Vgain_codes_auto[round(abs(V2set),1)]
