@@ -104,7 +104,7 @@ def R_to_T(alpha,beta,R,R0,T0):
         a = beta
         b = alpha-2*T0
         c = 1-alpha*T0 + beta*T0**2 - (R/R0)
-        T = (-b + math.sqrt(b**2-4*a*c))/(2*a)
+        T = (-b + GTC.sqrt(b**2-4*a*c))/(2*a)
     return T
 
 
