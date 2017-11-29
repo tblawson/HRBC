@@ -50,7 +50,7 @@ class SetupPage(wx.Panel):
 
         self.SRC_COMBO_CHOICE = ['none']
         self.DVM_COMBO_CHOICE = ['none']
-        self.GMH_COMBO_CHOICE = ['none'] # devices.GMH_DESCR # ('GMH s/n628', 'GMH s/n627')
+        self.GMH_COMBO_CHOICE = ['none']
         self.SB_COMBO_CHOICE =  devices.SWITCH_CONFIGS.keys()
         self.T_SENSOR_CHOICE = devices.T_Sensors
         self.cbox_addr_COM = []
@@ -72,11 +72,11 @@ class SetupPage(wx.Panel):
         self.test_btns = [] # list of test buttons
 
         # Instruments
-        Src1Lbl = wx.StaticText(self, label='V1 source (SRC 1):', id = wx.ID_ANY)
+        Src1Lbl = wx.StaticText(self, label='V1 source (SRC1):', id = wx.ID_ANY)
         self.V1Sources = wx.ComboBox(self,wx.ID_ANY, choices = self.SRC_COMBO_CHOICE, size = (150,10), style = wx.CB_DROPDOWN)
         self.V1Sources.Bind(wx.EVT_COMBOBOX, self.UpdateInstr)
         self.cbox_instr_SRC.append(self.V1Sources)
-        Src2Lbl = wx.StaticText(self, label='V2 source (SRC 2):', id = wx.ID_ANY)
+        Src2Lbl = wx.StaticText(self, label='V2 source (SRC2):', id = wx.ID_ANY)
         self.V2Sources = wx.ComboBox(self,wx.ID_ANY, choices = self.SRC_COMBO_CHOICE, style=wx.CB_DROPDOWN)
         self.V2Sources.Bind(wx.EVT_COMBOBOX, self.UpdateInstr)
         self.cbox_instr_SRC.append(self.V2Sources)
@@ -287,20 +287,26 @@ class SetupPage(wx.Panel):
             elif 'GMH:' in d:
                 self.GMH_COMBO_CHOICE.append(d)
 
-        # Re-build combobox choices from list of SRC's
+        # Re-build combobox choices from list of SRCs
         for cbox in self.cbox_instr_SRC:
-           cbox.Clear()
-           cbox.AppendItems(self.SRC_COMBO_CHOICE)  
+            current_val = cbox.GetValue()
+            cbox.Clear()
+            cbox.AppendItems(list(set(self.SRC_COMBO_CHOICE)))
+            cbox.SetValue(current_val)
 
-        # Re-build combobox choices from list of DVM's
+        # Re-build combobox choices from list of DVMs
         for cbox in self.cbox_instr_DVM:
-           cbox.Clear()
-           cbox.AppendItems(self.DVM_COMBO_CHOICE)
-        
-        # Re-build combobox choices from list of GMH's
+            current_val = cbox.GetValue()
+            cbox.Clear()
+            cbox.AppendItems(list(set(self.DVM_COMBO_CHOICE)))
+            cbox.SetValue(current_val)
+
+        # Re-build combobox choices from list of GMHs
         for cbox in self.cbox_instr_GMH:
-           cbox.Clear()
-           cbox.AppendItems(self.GMH_COMBO_CHOICE)
+            current_val = cbox.GetValue()
+            cbox.Clear()
+            cbox.AppendItems(list(set(self.GMH_COMBO_CHOICE)))
+            cbox.SetValue(current_val)
 
 
     def UpdateFilepath(self, e):

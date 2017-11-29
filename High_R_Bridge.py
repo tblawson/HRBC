@@ -113,8 +113,8 @@ class MainFrame(wx.Frame):
         if self.ExcelPath is not None:
             self.page1.wb.save(self.page1.XLFile.GetValue())
             self.page1.log.close()
-    
-    
+
+
     def OnOpen(self,event=None):
         dlg = wx.FileDialog(self,message="Select data file", defaultDir=os.getcwd(), defaultFile="", wildcard="*",style=wx.OPEN|wx.CHANGE_DIR)
         if dlg.ShowModal()==wx.ID_OK:
