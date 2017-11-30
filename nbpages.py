@@ -155,16 +155,29 @@ class SetupPage(wx.Panel):
         self.XLFile = wx.TextCtrl(self, id = wx.ID_ANY, value=self.GetTopLevelParent().ExcelPath)
         
         # Resistors
-        self.R1Name = wx.TextCtrl(self, id = wx.ID_ANY, value= 'R1 Name')
+        self.def_R1name = 'R1 Name'
+        self.def_R2name = 'R2 Name'
+        self.R1Name = wx.TextCtrl(self, id=wx.ID_ANY, value=self.def_R1name)
         self.R1Name.Bind(wx.EVT_TEXT, self.BuildCommStr)
-        RNamesLbl = wx.StaticText(self, label='Resistor Names:', id = wx.ID_ANY)
-        self.R2Name = wx.TextCtrl(self, id = wx.ID_ANY, value= 'R2 Name')
+        RNamesLbl = wx.StaticText(self, label='Resistor Names:', id=wx.ID_ANY)
+        self.R2Name = wx.TextCtrl(self, id=wx.ID_ANY, value=self.def_R2name)
         self.R2Name.Bind(wx.EVT_TEXT, self.BuildCommStr)
 
         # Autopopulate btn
         self.AutoPop = wx.Button(self,id = wx.ID_ANY, label='AutoPopulate')
         self.AutoPop.Bind(wx.EVT_BUTTON, self.OnAutoPop)
-        
+
+        self.instrument_choice = {'SRC1':'SRC: D4808',
+                                  'SRC2':'SRC: F5520A',
+                                  'DVM12':'DVM: HP3458A, s/n452',
+                                  'DVMd':'DVM: HP3458A, s/n230',
+                                  'DVMT1':'none',#'DVM: HP34401A, s/n976'
+                                  'DVMT2':'none',#'DVM: HP34420A, s/n130'
+                                  'GMH1':'GMH: s/n627',
+                                  'GMH2':'GMH: s/n628',
+                                  'GMHroom':'GMH: s/n367',
+                                  'switchbox':'V1'}
+
         # Test buttons
         self.VisaList = wx.Button(self,id = wx.ID_ANY, label='List Visa res')
         self.VisaList.Bind(wx.EVT_BUTTON, self.OnVisaList)
@@ -375,24 +388,37 @@ class SetupPage(wx.Panel):
         '''
         Pre-select instrument and address comboboxes -
         Choose from instrument descriptions listed in devices.DESCR
+        Assign roles, based on devices.INSTR_DATA.
         (Uses address assignments in devices.INSTR_DATA)
         '''
-        self.instrument_choice = {'SRC1':'SRC: D4808',
-                                  'SRC2':'SRC: F5520A',
-                                  'DVM12':'DVM: HP3458A, s/n452',
-                                  'DVMd':'DVM: HP3458A, s/n230',
-                                  'DVMT1':'none',#'DVM: HP34401A, s/n976'
-                                  'DVMT2':'none',#'DVM: HP34420A, s/n130'
-                                  'GMH1':'GMH: s/n627',
-                                  'GMH2':'GMH: s/n628',
-                                  'GMHroom':'GMH: s/n367',
-                                  'switchbox':'V1'}
+        RnameChangeReminder = 'CHANGE_THIS!'
+        self.instrument_choice = self.GetInstrChoice()
         for r in self.instrument_choice.keys():
             d = self.instrument_choice[r]
-            devices.ROLES_WIDGETS[r]['icb'].SetValue(d) # Update i_cb
-            self.CreateInstr(d,r)
-        self.R1Name.SetValue('CHANGE_THIS! 1G')
-        self.R2Name.SetValue('CHANGE_THIS! 1M')
+            devices.ROLES_WIDGETS[r]['icb'].SetValue(d)  # Update i_cb
+            self.CreateInstr(d, r)
+        if self.R1Name.GetValue() == self.def_R1name:
+            self.R1Name.SetValue(RnameChangeReminder)
+        if self.R2Name.GetValue() == self.def_R2name:
+            self.R2Name.SetValue(RnameChangeReminder)
+
+
+    def GetInstrChoice(self):
+        '''
+        Return a dictionary of {role: instrument-description}
+        pairs for all possible roles
+        '''
+        dict = {}
+        for role in devices.ROLES_WIDGETS:
+            for instr in devices.INSTR_DATA:
+                if devices.INSTR_DATA[instr]['role'] == role:
+                    dict.update({role:instr})
+                    break
+                else:
+                    dict.update({role:'none'})
+            print role, ':',instr 
+        print 'GetInstrChoice():',dict
+        return dict
 
 
     def UpdateInstr(self, e):
