@@ -224,7 +224,7 @@ class AqnThread(Thread):
 
             stat_ev = evts.StatusEvent(msg='Short delay 1...', field=1)
             wx.PostEvent(self.TopLevel, stat_ev)
-            time.sleep(5) # WEDNESDAY
+            time.sleep(5)
 
             self.SetUpMeasThisRow(row)
 
@@ -232,9 +232,9 @@ class AqnThread(Thread):
             wx.PostEvent(self.RunPage, row_ev)
 
             #  V1...
-            devices.ROLES_INSTR['DVM12'].SendCmd('LFREQ LINE') # dvmV1V2:'LFREQ LINE' # replaced visastuff
+            devices.ROLES_INSTR['DVM12'].SendCmd('LFREQ LINE')
             time.sleep(0.5)
-            devices.ROLES_INSTR['DVM12'].SendCmd('DCV,'+str(int(self.V1_set))) # dvmV1V2:'DCV'+str(self.V1_set) # replaced visastuff
+            devices.ROLES_INSTR['DVM12'].SendCmd('DCV,'+str(int(self.V1_set))) # dvmV1V2:'DCV'+str(self.V1_set)
             if self._want_abort:
                 self.AbortRun()
                 return
@@ -259,8 +259,8 @@ class AqnThread(Thread):
 
             stat_ev = evts.StatusEvent(msg='Measuring V1', field=1)
             wx.PostEvent(self.TopLevel, stat_ev)
-            devices.ROLES_INSTR['DVM12'].Read()# junk = ...dvmV1V2 # replaced visastuff
-            devices.ROLES_INSTR['DVM12'].Read()# junk = ...dvmV1V2 # replaced visastuff
+            devices.ROLES_INSTR['DVM12'].Read()# junk = ...dvmV1V2
+            devices.ROLES_INSTR['DVM12'].Read()# junk = ...dvmV1V2
             for i in range(self.n_readings):
                 self.MeasureV('V1')
             self.T1 = devices.ROLES_INSTR['GMH1'].Measure('T')
@@ -278,7 +278,7 @@ class AqnThread(Thread):
 
             #  V2...
             # Set RS232 to V2 BEFORE changing DVM range
-            devices.ROLES_INSTR['switchbox'].SendCmd(devices.SWITCH_CONFIGS['V2']) # replaced visastuff
+            devices.ROLES_INSTR['switchbox'].SendCmd(devices.SWITCH_CONFIGS['V2'])
             self.SetupPage.Switchbox.SetValue('V2') # update switchbox configuration icb
             
             # If running with fixed range set range to 'str(self.V1_set)':
@@ -286,12 +286,12 @@ class AqnThread(Thread):
                 range2 = self.V2_set
             else:
                 range2 = self.V1_set
-            devices.ROLES_INSTR['DVM12'].SendCmd('DCV,'+str(range2)) # Reset DVM range # replaced visastuff
+            devices.ROLES_INSTR['DVM12'].SendCmd('DCV,'+str(range2)) # Reset DVM range
             if self._want_abort:
                 self.AbortRun()
                 return
             time.sleep(0.5) # was 0.1
-            devices.ROLES_INSTR['DVM12'].SendCmd('LFREQ LINE') # dvmV1V2:'LFREQ LINE' # replaced visastuff
+            devices.ROLES_INSTR['DVM12'].SendCmd('LFREQ LINE') # dvmV1V2:'LFREQ LINE'
             
             stat_ev = evts.StatusEvent(msg='AqnThread.run():', field=0)
             wx.PostEvent(self.TopLevel, stat_ev)
@@ -312,8 +312,8 @@ class AqnThread(Thread):
             stat_ev = evts.StatusEvent(msg='Measuring V2', field=1)
             wx.PostEvent(self.TopLevel, stat_ev)
 
-            devices.ROLES_INSTR['DVM12'].Read() # dvmV1V2 (why these 2 unused reads?) # replaced visastuff
-            devices.ROLES_INSTR['DVM12'].Read()# dvmV1V2 # replaced visastuff
+            devices.ROLES_INSTR['DVM12'].Read() # dvmV1V2 (why these 2 unused reads?)
+            devices.ROLES_INSTR['DVM12'].Read()# dvmV1V2
             for i in range(self.n_readings):
                 self.MeasureV('V2')
             self.T2 = devices.ROLES_INSTR['GMH2'].Measure('T')
@@ -574,7 +574,9 @@ class AqnThread(Thread):
         self.RunPage.StopBtn.Enable(False)
 
     def FinishRun(self):
-        # Run complete - leave system safe and final xl save
+        '''
+        Run complete - leave system safe and final xl save
+        '''
         self.wb_io.save(self.xlfilename)
 
         self.Standby() # Set sources to 0V and leave system safe
