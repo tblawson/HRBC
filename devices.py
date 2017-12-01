@@ -92,6 +92,7 @@ class GMH_Sensor(device):
         self.MeasFn = ct.c_short(180) # GetMeasCode()
         self.UnitFn = ct.c_int16(178) # GetUnitCode()
         self.ValFn = ct.c_short(0) # GetValue()
+        self.SetPowOffFn = ct.c_short(223)
         self.error_msg = ct.create_string_buffer(70)
         self.meas_alias = {'T':'Temperature',
                           'P':'Absolute Pressure',
