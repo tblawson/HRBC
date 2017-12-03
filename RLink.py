@@ -267,6 +267,7 @@ class RLThread(Thread):
         A helper function to extract the value multiplier
         from resistor name
         '''
+        multipliers = {'r': 1, 'k': 1000, 'M': 1e6, 'G': 1e9}
         mult = name[-1]
         assert mult in 'rkMG', 'Unrecognised multiplier'
         return multipliers[mult]
