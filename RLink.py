@@ -267,13 +267,18 @@ class RLThread(Thread):
         A helper function to extract the value multiplier
         from resistor name
         '''
-        if name[-1] == 'k':
-            mult = 1000
-        elif name[-1] == 'M':
-            mult = int(1e6)
-        elif name[-1] == 'G':
-            mult = int(1e9)
-        return mult
+        mult = name[-1]
+        assert mult in 'rkMG', 'Unrecognised multiplier'
+        return multipliers[mult]
+#        if name[-1] == 'r':
+#            mult = 1
+#        elif name[-1] == 'k':
+#            mult = 1000
+#        elif name[-1] == 'M':
+#            mult = int(1e6)
+#        elif name[-1] == 'G':
+#            mult = int(1e9)
+#        return mult
 
     def filt(self, char):
         '''

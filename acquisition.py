@@ -5,9 +5,7 @@ Created on Wed Jun 24 09:36:42 2015
 DEVELOPMENT VERSION
 
 @author: t.lawson
-"""
 
-"""
 acquisition.py:
 Thread class that executes processing.
 Contains definitions for usual __init__() and run() methods
@@ -19,17 +17,14 @@ import wx
 from threading import Thread
 import datetime as dt
 import time
-#import os.path
-#os.environ['XLPATH'] = 'C:\Documents and Settings\\t.lawson\My Documents\Python Scripts\High_Res_Bridge'
 
 import numpy as np
 
-#from openpyxl import load_workbook # WEDNESDAY
-from openpyxl.styles import Font,Border,Side
+from openpyxl.styles import Font, Border, Side
 
 import HighRes_events as evts
-import devices # visastuff
-#import devices as GMH
+import devices
+
 
 class AqnThread(Thread):
     """Acquisition Thread Class."""
@@ -42,27 +37,27 @@ class AqnThread(Thread):
         self.TopLevel = self.RunPage.GetTopLevelParent()
         self.Comment = self.RunPage.Comment.GetValue()
         self._want_abort = 0
-        
+
         self.V1Data = []
         self.V2Data = []
         self.VdData = []
         self.V1Times = []
         self.V2Times = []
         self.VdTimes = []
-        
+
         self.log = self.SetupPage.log
-        
-        self.Range_Mode = {True:'AUTO',False:'FIXED'}
+
+        self.Range_Mode = {True: 'AUTO', False: 'FIXED'}
 
         print'Role -> Instrument:'
-        print >>self.log,'Role -> Instrument:'
+        print >>self.log, 'Role -> Instrument:'
         print'------------------------------'
-        print >>self.log,'------------------------------'
+        print >>self.log, '------------------------------'
         # Print all GPIB instrument objects
         for r in devices.ROLES_WIDGETS.keys():
             d = devices.ROLES_WIDGETS[r]['icb'].GetValue()
             # For 'switchbox' role, d is actually the setting (V1, Vd1,...) not the instrument description.
-            
+
             print'%s -> %s'%(devices.INSTR_DATA[d]['role'],d)
             print >>self.log,'%s -> %s'%(devices.INSTR_DATA[d]['role'],d)
             if r != devices.INSTR_DATA[d]['role']:
