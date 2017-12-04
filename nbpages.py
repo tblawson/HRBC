@@ -382,6 +382,7 @@ class SetupPage(wx.Panel):
         # Compile into a dictionary that lives in devices.py...  
         devices.INSTR_DATA = dict(zip(devices.DESCR,devices.sublist))
         self.BuildComboChoices()
+        self.OnAutoPop(wx.EVT_BUTTON)  # Populate combo boxes immediately
 
 
     def OnAutoPop(self, e):
