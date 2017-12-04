@@ -78,6 +78,7 @@ class AqnThread(Thread):
         # read start/stop row numbers from Excel file
         self.start_row = self.ws['B1'].value
         self.stop_row = self.ws['B2'].value
+        assert self.stop_row >= self.start_row, 'Stop row must be > start row!'
         strt_ev = evts.StartRowEvent(row=self.start_row)
         wx.PostEvent(self.RunPage, strt_ev)
         stp_ev = evts.StopRowEvent(row=self.stop_row)
