@@ -321,7 +321,7 @@ class SetupPage(wx.Panel):
                     flag=wx.ALL | wx.EXPAND, border=5)
         gbSizer.Add(self.GMH2Ports, pos=(7, 2), span=(1, 1),
                     flag=wx.ALL | wx.EXPAND, border=5)
-        gbSizer.Add(self.GMHroomPorts, pos=(8, ), span=(1, 1),
+        gbSizer.Add(self.GMHroomPorts, pos=(8, 2), span=(1, 1),
                     flag=wx.ALL | wx.EXPAND, border=5)
         gbSizer.Add(self.SwitchboxAddr, pos=(9, 2), span=(1, 1),
                     flag=wx.ALL | wx.EXPAND, border=5)
@@ -834,7 +834,7 @@ class RunPage(wx.Panel):
                     flag=wx.ALL | wx.EXPAND, border=5)
         gbSizer.Add(self.StartDel, pos=(4, 1), span=(1, 1),
                     flag=wx.ALL | wx.EXPAND, border=5)
-        gbSizer.Add(AZERO1DelLbl, pos=(3, ), span=(1, 1),
+        gbSizer.Add(AZERO1DelLbl, pos=(3, 2), span=(1, 1),
                     flag=wx.ALL | wx.EXPAND, border=5)
         gbSizer.Add(self.AZERO1Del, pos=(4, 2), span=(1, 1),
                     flag=wx.ALL | wx.EXPAND, border=5)
