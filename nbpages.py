@@ -802,101 +802,141 @@ class RunPage(wx.Panel):
         gbSizer = wx.GridBagSizer()
 
         # Comment widgets
-        gbSizer.Add(CommentLbl,pos=(0,0), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
-        gbSizer.Add(self.Comment, pos=(0,1), span=(1,6), flag=wx.ALL|wx.EXPAND, border=5)
-        gbSizer.Add(self.NewRunIDBtn, pos=(1,0), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
-        gbSizer.Add(self.RunID, pos=(1,1), span=(1,6), flag=wx.ALL|wx.EXPAND, border=5)
-        #gbSizer.Add(self.h_sep1, pos=(2,0), span=(1,5), flag=wx.ALL|wx.EXPAND, border=5)
+        gbSizer.Add(CommentLbl, pos=(0, 0), span=(1, 1),
+                    flag=wx.ALL | wx.EXPAND, border=5)
+        gbSizer.Add(self.Comment, pos=(0, 1), span=(1, 6),
+                    flag=wx.ALL | wx.EXPAND, border=5)
+        gbSizer.Add(self.NewRunIDBtn, pos=(1, 0), span=(1, 1),
+                    flag=wx.ALL | wx.EXPAND, border=5)
+        gbSizer.Add(self.RunID, pos=(1, 1), span=(1, 6),
+                    flag=wx.ALL | wx.EXPAND, border=5)
 
         # Voltage source widgets
-        gbSizer.Add(ZeroVoltsBtn, pos=(2,0), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
-        gbSizer.Add(V1SrcLbl,pos=(2,1), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
-        gbSizer.Add(self.V1Setting,pos=(2,2), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
-        gbSizer.Add(V2SrcLbl,pos=(2,3), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
-        gbSizer.Add(self.V2Setting,pos=(2,4), span=(1,1), flag=wx.ALL, border=5)
-        gbSizer.Add(self.RangeTBtn, pos=(2,5), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
-        
+        gbSizer.Add(ZeroVoltsBtn, pos=(2, 0), span=(1, 1),
+                    flag=wx.ALL | wx.EXPAND, border=5)
+        gbSizer.Add(V1SrcLbl, pos=(2, 1), span=(1, 1),
+                    flag=wx.ALL | wx.EXPAND, border=5)
+        gbSizer.Add(self.V1Setting, pos=(2, 2), span=(1, 1),
+                    flag=wx.ALL | wx.EXPAND, border=5)
+        gbSizer.Add(V2SrcLbl, pos=(2, 3), span=(1, 1),
+                    flag=wx.ALL | wx.EXPAND, border=5)
+        gbSizer.Add(self.V2Setting, pos=(2, 4), span=(1, 1),
+                    flag=wx.ALL | wx.EXPAND, border=5)
+        gbSizer.Add(self.RangeTBtn, pos=(2, 5), span=(1, 1),
+                    flag=wx.ALL | wx.EXPAND, border=5)
+
         # Delay widgets
-        gbSizer.Add(SettleDelLbl, pos=(3,0), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
-        gbSizer.Add(self.SettleDel, pos=(4,0), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
-        gbSizer.Add(StartDelLbl, pos=(3,1), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
-        gbSizer.Add(self.StartDel, pos=(4,1), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
-        gbSizer.Add(AZERO1DelLbl, pos=(3,2), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
-        gbSizer.Add(self.AZERO1Del, pos=(4,2), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
-        gbSizer.Add(RangeDelLbl, pos=(3,3), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
-        gbSizer.Add(self.RangeDel, pos=(4,3), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
-        
-        gbSizer.Add(NSamplesLbl, pos=(3,4), span=(1,1), flag=wx.ALL, border=5)
-        gbSizer.Add(self.NSamples, pos=(4,4), span=(1,1), flag=wx.ALL, border=5)
-        #gbSizer.Add(self.h_sep3, pos=(7,0), span=(1,5), flag=wx.ALL|wx.EXPAND, border=5)
-        
+        gbSizer.Add(SettleDelLbl, pos=(3, 0), span=(1, 1),
+                    flag=wx.ALL | wx.EXPAND, border=5)
+        gbSizer.Add(self.SettleDel, pos=(4, 0), span=(1, 1),
+                    flag=wx.ALL | wx.EXPAND, border=5)
+        gbSizer.Add(StartDelLbl, pos=(3, 1), span=(1, 1),
+                    flag=wx.ALL | wx.EXPAND, border=5)
+        gbSizer.Add(self.StartDel, pos=(4, 1), span=(1, 1),
+                    flag=wx.ALL | wx.EXPAND, border=5)
+        gbSizer.Add(AZERO1DelLbl, pos=(3, ), span=(1, 1),
+                    flag=wx.ALL | wx.EXPAND, border=5)
+        gbSizer.Add(self.AZERO1Del, pos=(4, 2), span=(1, 1),
+                    flag=wx.ALL | wx.EXPAND, border=5)
+        gbSizer.Add(RangeDelLbl, pos=(3, 3), span=(1, 1),
+                    flag=wx.ALL | wx.EXPAND, border=5)
+        gbSizer.Add(self.RangeDel, pos=(4, 3), span=(1, 1),
+                    flag=wx.ALL | wx.EXPAND, border=5)
+
+        gbSizer.Add(NSamplesLbl, pos=(3, 4), span=(1, 1),
+                    flag=wx.ALL, border=5)
+        gbSizer.Add(self.NSamples, pos=(4, 4), span=(1, 1),
+                    flag=wx.ALL, border=5)
+
         #  Run control and progress widgets
-        gbSizer.Add(StartRowLbl, pos=(5,0), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
-        gbSizer.Add(self.StartRow, pos=(6,0), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
-        gbSizer.Add(StopRowLbl, pos=(5,1), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
-        gbSizer.Add(self.StopRow, pos=(6,1), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
-        gbSizer.Add(RowLbl, pos=(5,2), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
-        gbSizer.Add(self.Row, pos=(6,2), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
-        gbSizer.Add(TimeLbl, pos=(5,3), span=(1,2), flag=wx.ALL|wx.EXPAND, border=5)
-        gbSizer.Add(self.Time, pos=(6,3), span=(1,2), flag=wx.ALL|wx.EXPAND, border=5)
-        gbSizer.Add(VavLbl, pos=(5,5), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
-        gbSizer.Add(self.Vav, pos=(6,5), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
-        gbSizer.Add(VsdLbl, pos=(5,6), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
-        gbSizer.Add(self.Vsd, pos=(6,6), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
-        
-        gbSizer.Add(self.RLinkBtn, pos=(7,0), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
-        gbSizer.Add(self.StartBtn, pos=(7,1), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
-        gbSizer.Add(self.StopBtn, pos=(7,2), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
-        gbSizer.Add(ProgressLbl, pos=(7,3), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
-        gbSizer.Add(self.Progress, pos=(7,4), span=(1,3), flag=wx.ALL|wx.EXPAND, border=5)
-        
+        gbSizer.Add(StartRowLbl, pos=(5, 0), span=(1, 1),
+                    flag=wx.ALL | wx.EXPAND, border=5)
+        gbSizer.Add(self.StartRow, pos=(6, 0), span=(1, 1),
+                    flag=wx.ALL | wx.EXPAND, border=5)
+        gbSizer.Add(StopRowLbl, pos=(5, 1), span=(1, 1),
+                    flag=wx.ALL | wx.EXPAND, border=5)
+        gbSizer.Add(self.StopRow, pos=(6, 1), span=(1, 1),
+                    flag=wx.ALL | wx.EXPAND, border=5)
+        gbSizer.Add(RowLbl, pos=(5, 2), span=(1, 1), flag=wx.ALL | wx.EXPAND,
+                    border=5)
+        gbSizer.Add(self.Row, pos=(6, 2), span=(1, 1), flag=wx.ALL | wx.EXPAND,
+                    border=5)
+        gbSizer.Add(TimeLbl, pos=(5, 3), span=(1, 2), flag=wx.ALL | wx.EXPAND,
+                    border=5)
+        gbSizer.Add(self.Time, pos=(6, 3), span=(1, 2),
+                    flag=wx.ALL | wx.EXPAND, border=5)
+        gbSizer.Add(VavLbl, pos=(5, 5), span=(1, 1), flag=wx.ALL | wx.EXPAND,
+                    border=5)
+        gbSizer.Add(self.Vav, pos=(6, 5), span=(1,  1),
+                    flag=wx.ALL | wx.EXPAND, border=5)
+        gbSizer.Add(VsdLbl, pos=(5, 6), span=(1, 1), flag=wx.ALL | wx.EXPAND,
+                    border=5)
+        gbSizer.Add(self.Vsd, pos=(6, 6), span=(1, 1), flag=wx.ALL | wx.EXPAND,
+                    border=5)
+
+        gbSizer.Add(self.RLinkBtn, pos=(7, 0), span=(1, 1),
+                    flag=wx.ALL | wx.EXPAND, border=5)
+        gbSizer.Add(self.StartBtn, pos=(7, 1), span=(1, 1),
+                    flag=wx.ALL | wx.EXPAND, border=5)
+        gbSizer.Add(self.StopBtn, pos=(7, 2), span=(1, 1),
+                    flag=wx.ALL | wx.EXPAND, border=5)
+        gbSizer.Add(ProgressLbl, pos=(7, 3), span=(1, 1),
+                    flag=wx.ALL | wx.EXPAND, border=5)
+        gbSizer.Add(self.Progress, pos=(7, 4), span=(1, 3),
+                    flag=wx.ALL | wx.EXPAND, border=5)
+
         self.SetSizerAndFit(gbSizer)
 
         self.autocomstr = ''
         self.manstr = ''
-        
-        
-    def OnRangeMode(self,e):
+
+    def OnRangeMode(self, e):
         state = e.GetEventObject().GetValue()
-        print 'OnRangeMode(): Range toggle button value =',state
-        if state == True:
+        print 'OnRangeMode(): Range toggle button value =', state
+        if state is True:
             e.GetEventObject().SetLabel("AUTO-range DVM12")
         else:
             e.GetEventObject().SetLabel("FIXED-range DVM12")
 
-
-    def OnNewRunID(self,e):
+    def OnNewRunID(self, e):
         start = self.fullstr.find('R1: ')
-        end = self.fullstr.find(' monitored',start)
+        end = self.fullstr.find(' monitored', start)
         R1name = self.fullstr[start+4:end]
         start = self.fullstr.find('R2: ')
-        end = self.fullstr.find(' monitored',start)
+        end = self.fullstr.find(' monitored', start)
         R2name = self.fullstr[start+4:end]
-        self.run_id = str('HRBC.v' + self.version + ' ' + R1name + ':' + R2name + ' ' +
+        self.run_id = str('HRBC.v' + self.version + ' ' + R1name + ':' +
+                          R2name + ' ' +
                           dt.datetime.now().strftime("%d/%m/%Y %H:%M:%S"))
-        self.status.SetStatusText('Id for subsequent runs:',0)
-        self.status.SetStatusText(str(self.run_id),1)
+        self.status.SetStatusText('Id for subsequent runs:', 0)
+        self.status.SetStatusText(str(self.run_id), 1)
         self.RunID.SetValue(str(self.run_id))
 
-
-    def UpdateComment(self,e):
-        # writes combined auto-comment and manual comment when
-        # auto-generated comment is re-built
-        self.autocomstr = e.str # store a copy of automtically-generated comment
+    def UpdateComment(self, e):
+        '''
+        Writes combined auto-comment and manual comment when
+        auto-generated comment is re-built.
+        '''
+        self.autocomstr = e.str  # store a copy of auto-generated comment
         self.Comment.SetValue(e.str+self.manstr)
 
-    def OnComment(self,e):
-        # Called when comment emits EVT_TEXT (i.e. whenever it's changed)
-        # Make sure comment field (with extra manually-entered notes) isn't overwritten
-        self.fullstr = self.Comment.GetValue() # store a copy of full comment
+    def OnComment(self, e):
+        '''
+        Called when comment emits EVT_TEXT (i.e. whenever it's changed)
+        Make sure comment field (with extra manually-entered notes) isn't
+        overwritten.
+        '''
+        self.fullstr = self.Comment.GetValue()  # store a copy of full comment
         # Extract last part of comment (the manually-inserted bit)
         # - assume we manually added extra notes to END
         self.manstr = self.fullstr[len(self.autocomstr):]
 
-    def UpdateData(self,e):
-        # Triggered by an 'update data' event
-        # event params:(t,Vm,Vsd,r,P,flag['1','2','d' or 'E'])
-        if e.flag in 'EF':# finished
+    def UpdateData(self, e):
+        '''
+        Triggered by an 'update data' event
+        event params:(t,Vm,Vsd,r,P,flag['1','2','d' or 'E'])
+        '''
+        if e.flag in 'EF':  # finished
             self.RunThread = None
             self.StartBtn.Enable(True)
         else:
@@ -906,26 +946,34 @@ class RunPage(wx.Panel):
             self.Row.SetValue(str(e.r))
             self.Progress.SetValue(e.P)
 
-    def UpdateDels(self,e):
-        # Triggered by an 'update delays' event
+    def UpdateDels(self, e):
+        '''
+        Triggered by an 'update delays' event
+        '''
         self.StartDel.SetValue(str(e.s))
         self.NSamples.SetValue(str(e.n))
         self.AZERO1Del.SetValue(str(e.AZ1))
         self.RangeDel.SetValue(str(e.r))
 
-    def UpdateStartRow(self,e):
-        # Triggered by an 'update startrow' event
+    def UpdateStartRow(self, e):
+        '''
+        Triggered by an 'update startrow' event
+        '''
         self.StartRow.SetValue(str(e.row))
 
-    def UpdateStopRow(self,e):
-        # Triggered by an 'update stoprow' event
+    def UpdateStopRow(self, e):
+        '''
+        Triggered by an 'update stoprow' event
+        '''
         self.StopRow.SetValue(str(e.row))
 
-    def OnV1Set(self,e):
-        # Called by change in value (manually OR by software!)
+    def OnV1Set(self, e):
+        '''
+        Called by change in value (manually OR by software!)
+        '''
         V1 = e.GetValue()
         src1 = devices.ROLES_INSTR['SRC1']
-        src1.SetV(V1) #'M+0R0='
+        src1.SetV(V1)
         time.sleep(0.5)
         if V1 == 0:
             src1.Stby()
@@ -933,9 +981,10 @@ class RunPage(wx.Panel):
             src1.Oper()
         time.sleep(0.5)
 
-
-    def OnV2Set(self,e):
-        # Called by change in value (manually OR by software!)
+    def OnV2Set(self, e):
+        '''
+        Called by change in value (manually OR by software!)
+        '''
         V2 = e.GetValue()
         src2 = devices.ROLES_INSTR['SRC2']
         src2.SetV(V2)
@@ -946,55 +995,57 @@ class RunPage(wx.Panel):
             src2.Oper()
         time.sleep(0.5)
 
-    def OnZeroVolts(self,e):
+    def OnZeroVolts(self, e):
         # V1:
         src1 = devices.ROLES_INSTR['SRC1']
         if self.V1Setting.GetValue() == 0:
-            print'RunPage.OnZeroVolts(): Zero/Stby directly (not via V1 display)'
+            print'RunPage.OnZeroVolts(): \
+            Zero/Stby directly (not via V1 display)'
             src1.SetV(0)
             src1.Stby()
         else:
-            self.V1Setting.SetValue('0') # Calls OnV1Set() ONLY IF VALUE CHANGES
+            self.V1Setting.SetValue('0')  # Calls OnV1Set() ONLY IF VAL CHANGES
             print'RunPage.OnZeroVolts():  Zero/Stby via V1 display'
 
         # V2:
         src2 = devices.ROLES_INSTR['SRC2']
         if self.V2Setting.GetValue() == 0:
-            print'RunPage.OnZeroVolts(): Zero/Stby directly (not via V2 display)'
+            print'RunPage.OnZeroVolts(): \
+            Zero/Stby directly (not via V2 display)'
             src2.SetV(0)
             src2.Stby()
         else:
-            self.V2Setting.SetValue('0') # Calls OnV2Set() ONLY IF VALUE CHANGES
+            self.V2Setting.SetValue('0')  # Calls OnV2Set() ONLY IF VAL CHANGES
             print'RunPage.OnZeroVolts():  Zero/Stby via V2 display'
 
-    def OnStart(self,e):
+    def OnStart(self, e):
         self.Progress.SetValue(0)
         self.RunThread = None
-        self.status.SetStatusText('',1)
-        self.status.SetStatusText('Starting run',0)
+        self.status.SetStatusText('', 1)
+        self.status.SetStatusText('Starting run', 0)
         if self.RunThread is None:
-            self.StopBtn.Enable(True) # Enable Stop button
-            self.StartBtn.Enable(False) # Disable Start button
+            self.StopBtn.Enable(True)  # Enable Stop button
+            self.StartBtn.Enable(False)  # Disable Start button
             # start acquisition thread here
             self.RunThread = acq.AqnThread(self)
 
-    def OnAbort(self,e):
+    def OnAbort(self, e):
         if self.RunThread:
             self.StartBtn.Enable(True)
-            self.StopBtn.Enable(False) # Disable Stop button
+            self.StopBtn.Enable(False)  # Disable Stop button
             self.RunThread.abort()
         elif self.RLinkThread:
-            self.RLinkBtn.Enable(True) # Enable Start button
-            self.StopBtn.Enable(False) # Disable Stop button
+            self.RLinkBtn.Enable(True)  # Enable Start button
+            self.StopBtn.Enable(False)  # Disable Stop button
             self.RLinkThread.abort()
 
-    def OnRLink(self,e):
+    def OnRLink(self, e):
         self.Progress.SetValue(0)
         self.RLinkThread = None
-        self.status.SetStatusText('',1)
-        self.status.SetStatusText('Starting R-link measurement',0)
+        self.status.SetStatusText('', 1)
+        self.status.SetStatusText('Starting R-link measurement', 0)
         if self.RLinkThread is None:
-            self.StopBtn.Enable(True) # Enable Stop button
+            self.StopBtn.Enable(True)  # Enable Stop button
             self.RLinkBtn.Enable(False)
             self.RLinkThread = rl.RLThread(self)
 
@@ -1008,37 +1059,43 @@ __________________________________________
 # Plot Page definition:
 -----------------------
 '''
+
+
 class PlotPage(wx.Panel):
     def __init__(self, parent):
         wx.Panel.__init__(self, parent)
 
-        self.Bind(evts.EVT_PLOT,self.UpdatePlot)
-        self.Bind(evts.EVT_CLEARPLOT,self.ClearPlot)
+        self.Bind(evts.EVT_PLOT, self.UpdatePlot)
+        self.Bind(evts.EVT_CLEARPLOT, self.ClearPlot)
 
         self.figure = Figure()
 
-        self.figure.subplots_adjust(hspace = 0.3) # 0.3" height space between subplots
-        
-        self.Vdax = self.figure.add_subplot(3,1,3) # 3high x 1wide, 3rd plot down 
-        self.Vdax.ticklabel_format(style='sci', useOffset=False, axis='y', scilimits=(2,-2)) # Auto offset to centre on data
-        self.Vdax.yaxis.set_major_formatter(mtick.ScalarFormatter(useMathText=True, useOffset=False)) # Scientific notation .
-        self.Vdax.autoscale(enable=True, axis='y', tight=False) # Autoscale with 'buffer' around data extents
+        self.figure.subplots_adjust(hspace=0.3)  # 0.3" between subplots
+
+        self.Vdax = self.figure.add_subplot(3, 1, 3)  # 3h x 1w, 3rd plot down
+        self.Vdax.ticklabel_format(style='sci', useOffset=False, axis='y',
+                                   scilimits=(2, -2))  # Auto-centre on data
+        self.Vdax.yaxis.set_major_formatter(mtick.ScalarFormatter(
+                                            useMathText=True,
+                                            useOffset=False))  # Sci notation.
+        self.Vdax.autoscale(enable=True, axis='y',
+                            tight=False)  # Autoscale with 'buffer' around data
         self.Vdax.set_xlabel('time')
         self.Vdax.set_ylabel('Vd')
 
-        self.V1ax = self.figure.add_subplot(3,1,1, sharex=self.Vdax) # 3high x 1wide, 1st plot down 
-        self.V1ax.ticklabel_format(useOffset=False, axis='y') # Auto offset to centre on data
-        self.V1ax.autoscale(enable=True, axis='y', tight=False) # Autoscale with 'buffer' around data extents
-        plt.setp(self.V1ax.get_xticklabels(), visible=False) # Hide x-axis labels
+        self.V1ax = self.figure.add_subplot(3, 1, 1, sharex=self.Vdax)
+        self.V1ax.ticklabel_format(useOffset=False, axis='y')
+        self.V1ax.autoscale(enable=True, axis='y', tight=False)
+        plt.setp(self.V1ax.get_xticklabels(), visible=False)  # Hide x labels
         self.V1ax.set_ylabel('V1')
         self.V1ax.set_ylim(auto=True)
         V1_y_ost = self.V1ax.get_xaxis().get_offset_text()
         V1_y_ost.set_visible(False)
 
-        self.V2ax = self.figure.add_subplot(3,1,2, sharex=self.Vdax) # 3high x 1wide, 2nd plot down 
-        self.V2ax.ticklabel_format(useOffset=False, axis='y') # Auto offset to centre on data
-        self.V2ax.autoscale(enable=True, axis='y', tight=False) # Autoscale with 'buffer' around data extents
-        plt.setp(self.V2ax.get_xticklabels(), visible=False) # Hide x-axis labels
+        self.V2ax = self.figure.add_subplot(3, 1, 2, sharex=self.Vdax)
+        self.V2ax.ticklabel_format(useOffset=False, axis='y')
+        self.V2ax.autoscale(enable=True, axis='y', tight=False)
+        plt.setp(self.V2ax.get_xticklabels(), visible=False)
         self.V2ax.set_ylabel('V2')
         self.V2ax.set_ylim(auto=True)
         V2_y_ost = self.V2ax.get_xaxis().get_offset_text()
@@ -1049,14 +1106,15 @@ class PlotPage(wx.Panel):
         self.sizer.Add(self.canvas, 1, wx.LEFT | wx.TOP | wx.GROW)
         self.SetSizerAndFit(self.sizer)
 
-
     def UpdatePlot(self, e):
-        # six event attributes: td, t1, t2 (list of n times),
-        # and Vd, V1, V2 (list of n voltages) plus clear_plot flag
+        '''
+        6 event attributes: td, t1, t2 (list of n times),
+        and Vd, V1, V2 (list of n voltages) plus clear_plot flag
+        '''
         self.V1ax.plot_date(e.t1, e.V1, 'bo')
         self.V2ax.plot_date(e.t2, e.V2, 'go')
         self.Vdax.plot_date(e.td, e.Vd, 'ro')
-        self.figure.autofmt_xdate() # default settings
+        self.figure.autofmt_xdate()  # default settings
         self.Vdax.fmt_xdata = mdates.DateFormatter('%d-%m-%Y, %H:%M:%S')
         self.canvas.draw()
         self.canvas.Refresh()
