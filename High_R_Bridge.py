@@ -31,12 +31,11 @@ VERSION = "1.0"
 
 print 'HRBC', VERSION
 
-"""
-MainFrame Definition: holds the MainPanel in which the appliction runs
-"""
-
 
 class MainFrame(wx.Frame):
+    '''
+    MainFrame Definition: holds the MainPanel in which the appliction runs
+    '''
     def __init__(self, *args, **kwargs):
         wx.Frame.__init__(self, size=(900, 500), *args, **kwargs)
         self.version = VERSION
