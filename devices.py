@@ -369,35 +369,38 @@ class instrument(device):
 
     def Init(self):
         # Send initiation string
-        if self.demo == True:
-            print 'devices.instrument.Init():',self.Descr,'in demo mode - no initiation necessary'
+        if self.demo is True:
+            print 'devices.instrument.Init():', self.Descr,
+            print 'in demo mode - no initiation necessary'
             return 1
         else:
             reply = 1
             for s in self.InitStr:
-                if s != '': # instrument has an initiation string
+                if s != '':  # instrument has an initiation string
                     try:
                         self.instr.write(s)
                     except visa.VisaIOError:
-                        print'Failed to write "%s" to %s'%(s,self.Descr)
+                        print'Failed to write "%s" to %s' % (s, self.Descr)
                         reply = -1
                         return reply
-            print 'devices.instrument.Init():',self.Descr,'initiated with cmd:',s
+            print 'devices.instrument.Init():', self.Descr,
+            print 'initiated with cmd:', s
         return reply
 
-
-    def SetV(self,V):
+    def SetV(self, V):
         # set output voltage (SRC) or input range (DVM)
-        if self.demo == True:
-		return 1
+        if self.demo is True:
+            return 1
         elif 'SRC:' in self.Descr:
             # Set voltage-source to V
             s = str(V).join(self.VStr)
-            print'devices.instrument.SetV():',self.Descr,'s=',s
+            print'devices.instrument.SetV():', self.Descr, 's=', s
             try:
                 self.instr.write(s)
             except visa.VisaIOError:
-                print'Failed to write "%s" to %s,via handle %s'%(s,self.Descr,self.instr.session)
+                m = 'Failed to write "%s" to %s,via handle %s'
+                print m % (s, self.Descr, self.instr.session)
+
                 return -1
             return 1
         elif 'DVM:' in self.Descr:
@@ -405,30 +408,28 @@ class instrument(device):
             s = str(V).join(self.VStr)
             self.instr.write(s)
             return 1
-        else : # 'none' in self.Descr, (or something odd has happened)
+        else:  # 'none' in self.Descr, (or something odd has happened)
             print 'Invalid function for instrument', self.Descr
             return -1
 
-
     def SetFn(self):
         # Set DVM function
-        if self.demo == True:
+        if self.demo is True:
             return 1
         if 'DVM' in self.Descr:
             s = self.SetFnStr
             if s != '':
                 self.instr.write(s)
-            print'devices.instrument.SetFn():',self.Descr,'- OK.'
+            print'devices.instrument.SetFn():', self.Descr, '- OK.'
             return 1
         else:
-            print'devices.instrument.SetFn(): Invalid function for',self.Descr
+            print'devices.instrument.SetFn(): Invalid function for', self.Descr
             return -1
-
 
     def Oper(self):
         # Enable O/P terminals
         # For V-source instruments only
-        if self.demo == True:
+        if self.demo is True:
             return 1
         if 'SRC' in self.Descr:
             s = self.OperStr
@@ -436,77 +437,81 @@ class instrument(device):
                 try:
                     self.instr.write(s)
                 except visa.VisaIOError:
-                    print'Failed to write "%s" to %s'%(s,self.Descr)
+                    print'Failed to write "%s" to %s' % (s, self.Descr)
                     return -1
-            print'devices.instrument.Oper():',self.Descr,'output ENABLED.'
+            print'devices.instrument.Oper():', self.Descr, 'output ENABLED.'
             return 1
         else:
-            print'devices.instrument.Oper(): Invalid function for',self.Descr
+            print'devices.instrument.Oper(): Invalid function for', self.Descr
             return -1
-
 
     def Stby(self):
         # Disable O/P terminals
         # For V-source instruments only
-        if self.demo == True:
+        if self.demo is True:
             return 1
         if 'SRC' in self.Descr:
             s = self.StbyStr
             if s != '':
-                self.instr.write(s) # was: query(s)
-            print'devices.instrument.Stby():',self.Descr,'output DISABLED.'
+                self.instr.write(s)  # was: query(s)
+            print'devices.instrument.Stby():', self.Descr, 'output DISABLED.'
             return 1
         else:
-            print'devices.instrument.Stby(): Invalid function for',self.Descr
+            print'devices.instrument.Stby(): Invalid function for', self.Descr
             return -1
-
 
     def CheckErr(self):
         # Get last error string and clear error queue
         # For V-source instruments only (F5520A)
-        if self.demo == True:
+        if self.demo is True:
             return 1
         if 'F5520A' in self.Descr:
             s = self.ChkErrStr
             if s != ('',):
-                reply = self.instr.query(s[0]) # read error message
-                self.instr.write(s[1]) # clear registers
+                reply = self.instr.query(s[0])  # read error message
+                self.instr.write(s[1])  # clear registers
             return reply
         else:
-            print'devices.instrument.CheckErr(): Invalid function for',self.Descr
+            print'devices.instrument.CheckErr(): Invalid function for',
+            print self.Descr
             return -1
 
-
-    def SendCmd(self,s):
+    def SendCmd(self, s):
         demo_reply = 'SendCmd(): DEMO resp. to '+s
         reply = 1
-        if self.role == 'switchbox': # update icb
-            pass # may need an event here...
-        if self.demo == True:
-            print 'devices.instrument.SendCmd(): returning',demo_reply
+        '''
+        Switchbox combobox doesn't update when programatically changed
+        (i.e. during acquisition thread) - needs fixing eventually:
+        '''
+#        if self.role == 'switchbox':  # update icb
+#            pass  # may need an event here...
+        if self.demo is True:
+            print 'devices.instrument.SendCmd(): returning', demo_reply
             return demo_reply
         # Check if s contains '?' or 'X' or is an empty string
         # ... in which case a response is expected
         if any(x in s for x in'?X'):
-            print'devices.instrument.SendCmd(): Query(%s) to %s'%(s,self.Descr)
+            print'devices.instrument.SendCmd(): Query(%s) to %s' % (s,
+                                                                    self.Descr)
             reply = self.instr.query(s)
             return reply
         elif s == '':
             reply = self.instr.read()
-            print'devices.instrument.SendCmd(): Read()',reply,'from',self.Descr
+            print'devices.instrument.SendCmd(): Read()', reply,
+            print'from', self.Descr
             return reply
         else:
-            print'devices.instrument.SendCmd(): Write(%s) to %s'%(s,self.Descr)
+            print'devices.instrument.SendCmd(): Write(%s) to %s' % (s,
+                                                                    self.Descr)
             self.instr.write(s)
             return reply
 
-
     def Read(self):
         reply = 0
-        if self.demo == True:
+        if self.demo is True:
             return reply
         if 'DVM' in self.Descr:
-            print'devices.instrument.Read(): from',self.Descr
+            print'devices.instrument.Read(): from', self.Descr
             if '3458A' in self.Descr:
                 reply = self.instr.read()
                 return reply
@@ -514,11 +519,10 @@ class instrument(device):
                 reply = self.instr.query('READ?')
                 return reply
         else:
-            print 'devices.instrument.Read(): Invalid function for',self.Descr
+            print 'devices.instrument.Read(): Invalid function for', self.Descr
             return reply
-        
 
-    def Test(self,s):
+    def Test(self, s):
         """ Used to test that the instrument is functioning. """
         return self.SendCmd(s)
-#__________________________________________
+# _________________________________________
