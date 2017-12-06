@@ -488,54 +488,71 @@ class AqnThread(Thread):
         wx.PostEvent(self.TopLevel, stat_ev)
 
         self.ws['P'+str(row)] = str(dt.datetime.fromtimestamp(np.mean(self.V1Times)).strftime("%d/%m/%Y %H:%M:%S"))
-        print >>self.log, 'WriteDataThisRow(): cell', 'P'+str(row), ':', str(dt.datetime.fromtimestamp(np.mean(self.V1Times)).strftime("%d/%m/%Y %H:%M:%S"))
+        print >>self.log, 'WriteDataThisRow(): cell', 'P'+str(row), ':',
+        print >>self.log, str(dt.datetime.fromtimestamp(np.mean(self.V1Times)).strftime("%d/%m/%Y %H:%M:%S"))
         self.ws['Q'+str(row)] = np.mean(self.V1Data)
         print >>self.log, 'WriteDataThisRow(): cell', 'Q'+str(row), ':', np.mean(self.V1Data)
         self.ws['R'+str(row)] = np.std(self.V1Data, ddof=1)
         print >>self.log, 'WriteDataThisRow(): cell', 'R'+str(row), np.std(self.V1Data, ddof=1)
         self.ws['G'+str(row)] = str(dt.datetime.fromtimestamp(np.mean(self.V2Times)).strftime("%d/%m/%Y %H:%M:%S"))
-        print >>self.log, 'WriteDataThisRow(): cell', 'G'+str(row), ':', str(dt.datetime.fromtimestamp(np.mean(self.V2Times)).strftime("%d/%m/%Y %H:%M:%S"))
+        print >>self.log, 'WriteDataThisRow(): cell', 'G'+str(row), ':',
+        print >>self.log, str(dt.datetime.fromtimestamp(np.mean(self.V2Times)).strftime("%d/%m/%Y %H:%M:%S"))
         self.ws['H'+str(row)] = np.mean(self.V2Data)
-        print >>self.log, 'WriteDataThisRow(): cell', 'H'+str(row), ':', np.mean(self.V2Data)
+        print >>self.log, 'WriteDataThisRow(): cell', 'H'+str(row), ':',
+        print >>self.log, np.mean(self.V2Data)
         self.ws['I'+str(row)] = np.std(self.V2Data, ddof=1)
-        print >>self.log, 'WriteDataThisRow(): cell', 'I'+str(row), ':', np.std(self.V2Data, ddof=1)
+        print >>self.log, 'WriteDataThisRow(): cell', 'I'+str(row), ':',
+        print >>self.log, np.std(self.V2Data, ddof=1)
         self.ws['M'+str(row)] = str(dt.datetime.fromtimestamp(np.mean(self.VdTimes)).strftime("%d/%m/%Y %H:%M:%S"))
-        print >>self.log, 'WriteDataThisRow(): cell', 'M'+str(row), ':', str(dt.datetime.fromtimestamp(np.mean(self.VdTimes)).strftime("%d/%m/%Y %H:%M:%S"))
+        print >>self.log, 'WriteDataThisRow(): cell', 'M'+str(row), ':',
+        print >>self.log, str(dt.datetime.fromtimestamp(np.mean(self.VdTimes)).strftime("%d/%m/%Y %H:%M:%S"))
         self.ws['N'+str(row)] = np.mean(self.VdData)
-        print >>self.log, 'WriteDataThisRow(): cell', 'N'+str(row), ':', np.mean(self.VdData)
+        print >>self.log, 'WriteDataThisRow(): cell', 'N'+str(row), ':',
+        print >>self.log, np.mean(self.VdData)
         self.ws['O'+str(row)] = np.std(self.VdData, ddof=1)
-        print >>self.log, 'WriteDataThisRow(): cell', 'O'+str(row), ':', np.std(self.VdData, ddof=1)
+        print >>self.log, 'WriteDataThisRow(): cell', 'O'+str(row), ':',
+        print >>self.log, np.std(self.VdData, ddof=1)
 
         if devices.ROLES_INSTR['DVMT1'].demo is True:
             T1dvmOP = np.random.normal(108.0, 1.0e-2)
             self.ws['S'+str(row)] = T1dvmOP
-            print >>self.log, 'WriteDataThisRow(): cell', 'S'+str(row), ':', T1dvmOP
+            print >>self.log, 'WriteDataThisRow(): cell', 'S'+str(row), ':',
+            print >>self.log, T1dvmOP
         else:
             T1dvmOP = devices.ROLES_INSTR['DVMT1'].SendCmd('READ?')
             self.ws['S'+str(row)] = float(filter(self.filt, T1dvmOP))
-            print >>self.log, 'WriteDataThisRow(): cell', 'S'+str(row), ':', float(filter(self.filt, T1dvmOP))
+            print >>self.log, 'WriteDataThisRow(): cell', 'S'+str(row), ':',
+            print >>self.log, float(filter(self.filt, T1dvmOP))
 
         if devices.ROLES_INSTR['DVMT2'].demo is True:
             T2dvmOP = np.random.normal(108.0, 1.0e-2)
             self.ws['T'+str(row)] = T2dvmOP
-            print >>self.log, 'WriteDataThisRow(): cell', 'T'+str(row), ':', T2dvmOP
+            print >>self.log, 'WriteDataThisRow(): cell', 'T'+str(row), ':',
+            print >>self.log, T2dvmOP
         else:
             T2dvmOP = devices.ROLES_INSTR['DVMT2'].SendCmd('READ?')
             self.ws['T'+str(row)] = float(filter(self.filt, T2dvmOP))
-            print >>self.log, 'WriteDataThisRow(): cell', 'T'+str(row), ':', float(filter(self.filt, T2dvmOP))
+            print >>self.log, 'WriteDataThisRow(): cell', 'T'+str(row), ':',
+            print >>self.log, float(filter(self.filt, T2dvmOP))
 
         self.ws['U'+str(row)] = self.T1
-        print >>self.log, 'WriteDataThisRow(): cell', 'U'+str(row), ':', self.T1
+        print >>self.log, 'WriteDataThisRow(): cell', 'U'+str(row), ':',
+        print >>self.log, self.T1
         self.ws['V'+str(row)] = self.T2
-        print >>self.log, 'WriteDataThisRow(): cell', 'V'+str(row), ':', self.T2
+        print >>self.log, 'WriteDataThisRow(): cell', 'V'+str(row), ':',
+        print >>self.log, self.T2
         self.ws['W'+str(row)] = self.Troom
-        print >>self.log, 'WriteDataThisRow(): cell', 'W'+str(row), ':', self.Troom
+        print >>self.log, 'WriteDataThisRow(): cell', 'W'+str(row), ':',
+        print >>self.log, self.Troom
         self.ws['X'+str(row)] = self.Proom
-        print >>self.log, 'WriteDataThisRow(): cell', 'X'+str(row), ':', self.Proom
+        print >>self.log, 'WriteDataThisRow(): cell', 'X'+str(row), ':',
+        print >>self.log, self.Proom
         self.ws['Y'+str(row)] = self.RHroom
-        print >>self.log, 'WriteDataThisRow(): cell', 'Y'+str(row), ':', self.RHroom
+        print >>self.log, 'WriteDataThisRow(): cell', 'Y'+str(row), ':',
+        print >>self.log, self.RHroom
         self.ws['Z'+str(row)] = self.Comment
-        print >>self.log, 'WriteDataThisRow(): cell', 'Z'+str(row), ':', self.Comment
+        print >>self.log, 'WriteDataThisRow(): cell', 'Z'+str(row), ':',
+        print >>self.log, self.Comment
 
         # Save after every row
         self.wb_io.save(self.xlfilename)
@@ -544,7 +561,7 @@ class AqnThread(Thread):
         # prematurely end run, prompted by regular checks of _want_abort flag
         self.Standby()  # Set sources to 0V and leave system safe
 
-        stop_ev = evts.DataEvent(t='-', Vm='-', Vsd='-', P=0, r='-',flag='E')
+        stop_ev = evts.DataEvent(t='-', Vm='-', Vsd='-', P=0, r='-', flag='E')
         wx.PostEvent(self.RunPage, stop_ev)
 
         self.RunPage.StartBtn.Enable(True)
