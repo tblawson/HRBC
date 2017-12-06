@@ -1019,6 +1019,9 @@ class RunPage(wx.Panel):
             print'RunPage.OnZeroVolts():  Zero/Stby via V2 display'
 
     def OnStart(self, e):
+        '''
+        Once a run is started, only the abort button should be available.
+        '''
         self.Progress.SetValue(0)
         self.RunThread = None
         self.status.SetStatusText('', 1)
@@ -1026,6 +1029,7 @@ class RunPage(wx.Panel):
         if self.RunThread is None:
             self.StopBtn.Enable(True)  # Enable Stop button
             self.StartBtn.Enable(False)  # Disable Start button
+            self.RLinkBtn.Enable(False)  # Disable RLink button
             # start acquisition thread here
             self.RunThread = acq.AqnThread(self)
 
@@ -1035,17 +1039,21 @@ class RunPage(wx.Panel):
             self.StopBtn.Enable(False)  # Disable Stop button
             self.RunThread.abort()
         elif self.RLinkThread:
-            self.RLinkBtn.Enable(True)  # Enable Start button
+            self.RLinkBtn.Enable(True)
             self.StopBtn.Enable(False)  # Disable Stop button
             self.RLinkThread.abort()
 
     def OnRLink(self, e):
+        '''
+        Once a run is started, only the abort button should be available.
+        '''
         self.Progress.SetValue(0)
         self.RLinkThread = None
         self.status.SetStatusText('', 1)
         self.status.SetStatusText('Starting R-link measurement', 0)
         if self.RLinkThread is None:
             self.StopBtn.Enable(True)  # Enable Stop button
+            self.StartBtn.Enable(False)  # Disable Start button
             self.RLinkBtn.Enable(False)
             self.RLinkThread = rl.RLThread(self)
 
