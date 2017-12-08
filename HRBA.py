@@ -52,6 +52,7 @@ VERSION = 1.3
 
 ZERO = GTC.ureal(0, 0)
 PPM_TOLERANCE = {'R2': 1e-4, 'G': 0.01, 'R1': 1e-3}
+RLINK_MAX = 0.1  # max rlink resistance
 
 datadir = raw_input('Path to data directory:')
 xlname = raw_input('Excel filename:')
@@ -84,10 +85,10 @@ role_descr = {}
 for row in range(Data_start_row, Data_start_row + N_ROLES):
     # Read {role:description}
     temp_dict = {ws_Data['AC'+str(row)].value: ws_Data['AD'+str(row)].value}
-    assert temp_dict.keys()[-1] is not None, 'Instrument assignment: \
-    Missing role!'
-    assert temp_dict.values()[-1] is not None, 'Instrument assignment: \
-    Missing description!'
+    assert temp_dict.keys()[-1] is not None, ('Instrument assignment:',
+                                              'Missing role!')
+    assert temp_dict.values()[-1] is not None, ('Instrument assignment:',
+                                                'Missing description!')
     role_descr.update(temp_dict)
     if ws_Data['AC'+str(row)].value == u'DVM12':
         range_mode = ws_Data['AE'+str(row)].value
@@ -309,7 +310,7 @@ av_dV.label = 'Rd_dV' + Run_Id
 
 # Finally, calculate Rd
 Rd = GTC.ar.result(av_dV/I, label='Rlink '+Run_Id)
-assert Rd.x < 0.01, 'High link resistance!'
+assert Rd.x < RLINK_MAX, 'High link resistance ({%} Ohm)!' % Rd.x
 log.write('\nRlink = ' + str(GTC.summary(Rd)))
 
 # ##__________End of Rd section___________## #
@@ -477,14 +478,14 @@ while Data_row <= Data_stop_row:
     times_av_str = R_info.av_t_strin(times, 'str')  # mean time(as time string)
     times_av_fl = R_info.av_t_strin(times, 'fl')  # mean time(as a float)
 
-    """
-    TO DO: Incorporate ambient T, P, %RH readings into final reported results.
-    """
-    assert len(RHs) > 1, 'Not enough RH values to average!'
-    # Digitization could be 2 or 3 decimal places, depending on RH probe:
-    RH_av = GTC.ar.result(GTC.ta.estimate_digitized(RHs,
-                                                    R_info.GetDigi(RHs)),
-                          label='RH_av')
+#    """
+#    TO DO: Incorporate ambient T, P, %RH readings into final reported results.
+#    """
+#    assert len(RHs) > 1, 'Not enough RH values to average!'
+#    # Digitization could be 2 or 3 decimal places, depending on RH probe:
+#    RH_av = GTC.ar.result(GTC.ta.estimate_digitized(RHs,
+#                                                    R_info.GetDigi(RHs)),
+#                          label='RH_av')
 
     """
     ... (and same for T, P) ...
@@ -599,13 +600,14 @@ while Data_row <= Data_stop_row:
     dV2 = abs(abs(V2av) - R2VRef)
 
     R2 = R2_0*(1+R2alpha*dT2 + R2beta*dT2**2 + R2gamma*dV2) + Rd
-    assert (abs(R2.x-nom_R2)/nom_R2 < PPM_TOLERANCE['R2'],
-            'R2 > 100 ppm from nominal! R2 = {0}'.format(R2.x))
+    assert abs(R2.x-nom_R2)/nom_R2 < PPM_TOLERANCE['R2'], ('R2 > 100 ppm from \
+                                                            nominal! R2 = {0}'.
+                                                            format(R2.x))
 
     # calculate R1
     R1 = R2*vrc*V1av*delta_Vd/(Vdav*delta_V2 - V2av*delta_Vd)
-    assert (abs(R1.x-nom_R1)/nom_R1 < PPM_TOLERANCE['R1'],
-            'R1 > 1000 ppm from nominal!')
+    assert abs(R1.x-nom_R1)/nom_R1 < PPM_TOLERANCE['R1'], ('R1 > 1000 ppm from\
+                                                          nominal!')
 
     T1 = T1_av + T_def1
     print R1, 'at temperature', T1
