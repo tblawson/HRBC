@@ -747,7 +747,7 @@ class RunPage(wx.Panel):
         ZeroVoltsBtn = wx.Button(self, id=wx.ID_ANY, label='Set zero volts')
         ZeroVoltsBtn.Bind(wx.EVT_BUTTON, self.OnZeroVolts)
 
-        self.RangeTBtn = wx.ToggleButton(self, id=wx.ID_ANY,
+        self.RangeTBtn = wx.ToggleButton(self, id=wx.ID_ANY, val=True,
                                          label='DVM12 Range mode')
         self.RangeTBtn.Bind(wx.EVT_TOGGLEBUTTON, self.OnRangeMode)
 
