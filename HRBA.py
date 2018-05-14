@@ -51,8 +51,8 @@ VERSION = 1.3
 # DVM, GMH Correction factors, etc.
 
 ZERO = GTC.ureal(0, 0)
-PPM_TOLERANCE = {'R2': 1e-4, 'G': 0.01, 'R1': 1e-3}
-RLINK_MAX = 0.1  # max rlink resistance
+PPM_TOLERANCE = {'R2': 2e-4, 'G': 0.02, 'R1': 2e-3}
+RLINK_MAX = 2  # max rlink resistance
 
 datadir = raw_input('Path to data directory:')
 xlname = raw_input('Excel filename:')
@@ -310,7 +310,7 @@ av_dV.label = 'Rd_dV' + Run_Id
 
 # Finally, calculate Rd
 Rd = GTC.ar.result(av_dV/I, label='Rlink '+Run_Id)
-assert Rd.x < RLINK_MAX, 'High link resistance ({%} Ohm)!' % Rd.x
+assert Rd.x < RLINK_MAX, 'High link resistance (%.4f Ohm)!' % Rd.x
 log.write('\nRlink = ' + str(GTC.summary(Rd)))
 
 # ##__________End of Rd section___________## #
@@ -419,10 +419,9 @@ while Data_row <= Data_stop_row:
 
     # Process times, RH and temperature data in this 4-row block:
     for r in range(Data_row, Data_row+4):  # Build list of 4 gmh / T-dvm reads
-        assert ws_Data['U'+str(r)].value is not None, 'No R1 GMH temperature \
-        data!'
-        assert ws_Data['V'+str(r)].value is not None, 'No R2 GMH temperature \
-        data!'
+        assert ws_Data['U'+str(r)].value is not None, 'No R1 GMH temperature data!'
+        assert ws_Data['V'+str(r)].value is not None, 'No R2 GMH temperature data!'
+
         raw_gmh1.append(ws_Data['U'+str(r)].value)
         raw_gmh2.append(ws_Data['V'+str(r)].value)
 
@@ -600,9 +599,7 @@ while Data_row <= Data_stop_row:
     dV2 = abs(abs(V2av) - R2VRef)
 
     R2 = R2_0*(1+R2alpha*dT2 + R2beta*dT2**2 + R2gamma*dV2) + Rd
-    assert abs(R2.x-nom_R2)/nom_R2 < PPM_TOLERANCE['R2'], ('R2 > 100 ppm from \
-                                                            nominal! R2 = {0}'.
-                                                            format(R2.x))
+    assert abs(R2.x-nom_R2)/nom_R2 < PPM_TOLERANCE['R2'], ('R2 > 100 ppm from nominal! R2 = {0}'.format(R2.x))
 
     # calculate R1
     R1 = R2*vrc*V1av*delta_Vd/(Vdav*delta_V2 - V2av*delta_Vd)
