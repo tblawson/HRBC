@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """ nbpages.py - Defines individual notebook pages as panel-like objects
 
-DEVELOPMENT VERSION
+WORKING VERSION
 
 Created on Tue Jun 30 10:10:16 2015
 

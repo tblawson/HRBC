@@ -1,7 +1,7 @@
 #!python
 # -*- coding: utf-8 -*-
 """
-DEVELOPMENT VERSION
+WORKING VERSION
 
 Created on Mon Jun 29 11:36:13 2015
 
@@ -34,7 +34,7 @@ import nbpages as page
 import HighRes_events as evts
 import devices
 
-VERSION = "1.0"
+VERSION = "1.1"
 
 print 'HRBC',VERSION
 
