@@ -207,6 +207,7 @@ elif V1set_b < V1set_a:
     HV = V1set_a
 else:  # 'HV' and 'LV' equal
     LV = HV = V1set_a
+print 'LV =',LV,'; HV =',HV
 
 # Set up reading of Data sheet
 Data_row = Data_start_row
@@ -307,7 +308,8 @@ av_dV.label = 'Rd_dV' + Run_Id
 
 # Finally, calculate Rd
 Rd = GTC.ar.result(av_dV/I, label='Rlink ' + Run_Id)
-assert Rd.x < 0.01, 'High link resistance!'
+print'\nRlink = ' + str(GTC.summary(Rd))
+assert Rd.x < 0.05, 'High link resistance! ' + Rd.x + ' Ohm'
 #assert Rd.x > Rd.u, 'Link resistance uncertainty > value!'  # (TEMPORARY RELAXATION OF TEST!)
 log.write('\nRlink = ' + str(GTC.summary(Rd)))
 
@@ -590,11 +592,13 @@ while Data_row <= Data_stop_row:
     dV2 = abs(abs(V2av) - R2VRef)
 
     R2 = R2_0*(1 + R2alpha * dT2 + R2beta * dT2 ** 2 + R2gamma * dV2) + Rd
-    assert abs(R2.x-nom_R2)/nom_R2 < PPM_TOLERANCE['R2'], 'R2 > 100 ppm from nominal! R2 = {0}'.format(R2.x)
+    print 'R2 =',GTC.summary(R2)
+    assert abs(R2.x-R2val)/R2val < PPM_TOLERANCE['R2'], 'R2 > 100 ppm from nominal! R2 = {0}'.format(R2.x)
 
     # calculate R1
     R1 = R2*vrc*V1av*delta_Vd/(Vdav*delta_V2 - V2av*delta_Vd)
-    assert abs(R1.x-nom_R1)/nom_R1 < PPM_TOLERANCE['R1'], 'R1 > 1000 ppm from nominal!'
+    print 'R1 =',GTC.summary(R1)
+    assert abs(R1.x-R1val)/R1val < PPM_TOLERANCE['R1'], 'R1 > 1000 ppm from nominal!'
 
     T1 = T1_av + T_def1
     print R1, 'at temperature', T1
