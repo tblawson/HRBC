@@ -437,8 +437,8 @@ class SetupPage(wx.Panel):
 
         # Read parameters sheet - gather instrument info:
         # Need cell VALUE, not FORMULA, so set data_only = True
-        self.ws_params = self.wb.get_sheet_by_name('Parameters')
         self.wb = load_workbook(self.XLFile.GetValue(), data_only=True)
+        self.ws_params = self.wb.get_sheet_by_name('Parameters')        
 
         headings = (None, u'description', u'Instrument Info:', u'parameter',
                     u'value', u'uncert', u'dof', u'label')
