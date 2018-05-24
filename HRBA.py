@@ -54,7 +54,7 @@ VERSION = 1.3
 # DVM, GMH Correction factors, etc.
 
 ZERO = GTC.ureal(0, 0)
-PPM_TOLERANCE = {'R2': 1e-4, 'G': 0.01, 'R1': 1e-3}
+PPM_TOLERANCE = {'R2': 2e-4, 'G': 0.01, 'R1': 1e-3}
 
 datadir = raw_input('Path to data directory:')
 xlname = raw_input('Excel filename:')
@@ -309,8 +309,8 @@ av_dV.label = 'Rd_dV' + Run_Id
 # Finally, calculate Rd
 Rd = GTC.ar.result(av_dV/I, label='Rlink ' + Run_Id)
 print'\nRlink = ' + str(GTC.summary(Rd))
-assert Rd.x < 0.05, 'High link resistance! ' + Rd.x + ' Ohm'
-#assert Rd.x > Rd.u, 'Link resistance uncertainty > value!'  # (TEMPORARY RELAXATION OF TEST!)
+assert Rd.x < 0.1, 'High link resistance! ' + str(Rd.x) + ' Ohm'
+# assert Rd.x > Rd.u, 'Link resistance uncertainty > value!'
 log.write('\nRlink = ' + str(GTC.summary(Rd)))
 
 # ##__________End of Rd section___________## #
