@@ -373,7 +373,7 @@ class SetupPage(wx.Panel):
                                                'tbtn': self.S2Test}})
         devices.ROLES_WIDGETS.update({'DVM': {'icb': self.VDvms,
                                               'acb': self.VDvmAddr,
-                                              'tbtn': self.DVMTest}})
+                                              'tbtn': self.VDVMTest}})
 #        devices.ROLES_WIDGETS.update({'DVMd': {'icb': self.VdDvms,
 #                                               'acb': self.VdDvmAddr,
 #                                               'tbtn': self.DdTest}})
@@ -671,7 +671,8 @@ class RunPage(wx.Panel):
         self.RLinkThread = None
 
         # Comment widgets
-        CommentLbl = wx.StaticText(self, id=wx.ID_ANY, label='Comment:')
+        CommentLbl = wx.StaticText(self, id=wx.ID_ANY, style=wx.ALIGN_RIGHT,
+                                   label='Comment:')
         self.Comment = wx.TextCtrl(self, id=wx.ID_ANY, size=(600, 20))
         self.Comment.Bind(wx.EVT_TEXT, self.OnComment)
         comtip_a = 'This is auto-generated from data on the Setup page.'
@@ -702,7 +703,7 @@ class RunPage(wx.Panel):
         ZeroVoltsBtn.Bind(wx.EVT_BUTTON, self.OnZeroVolts)
 
         self.RangeTBtn = wx.ToggleButton(self, id=wx.ID_ANY,
-                                         label='DVM12 Range mode')
+                                         label='DVM Range mode')
         self.RangeTBtn.Bind(wx.EVT_TOGGLEBUTTON, self.OnRangeMode)
 
         # Delay widgets
@@ -795,9 +796,9 @@ class RunPage(wx.Panel):
                     flag=wx.ALL | wx.EXPAND, border=5)
         gbSizer.Add(self.RangeDel, pos=(4, 3), span=(1, 1),
                     flag=wx.ALL | wx.EXPAND, border=5)
-        gbSizer.Add(RelayDelLbl, pos=(3, 5), span=(1, 1),
+        gbSizer.Add(RelayDelLbl, pos=(3, 4), span=(1, 1),
                     flag=wx.ALL | wx.EXPAND, border=5)
-        gbSizer.Add(self.RelayDel, pos=(4, 5), span=(1, 1),
+        gbSizer.Add(self.RelayDel, pos=(4, 4), span=(1, 1),
                     flag=wx.ALL | wx.EXPAND, border=5)
         gbSizer.Add(NSamplesLbl, pos=(3, 5), span=(1, 1),
                     flag=wx.ALL, border=5)
