@@ -51,7 +51,7 @@ class SetupPage(wx.Panel):
 
         self.SRC_COMBO_CHOICE = ['none']
         self.DVM_COMBO_CHOICE = ['none']
-        self.GMH_COMBO_CHOICE = ['none']  # devices.GMH_DESCR # ('GMH s/n628', 'GMH s/n627')
+        self.GMH_COMBO_CHOICE = ['none']  # devices.GMH_DESCR
         self.SB_COMBO_CHOICE = devices.SWITCH_CONFIGS.keys()
         self.T_SENSOR_CHOICE = devices.T_Sensors
         self.cbox_addr_COM = []
@@ -67,7 +67,7 @@ class SetupPage(wx.Panel):
         self.ResourceList = []
         self.ComList = []
         self.GPIBList = []
-        self.GPIBAddressList = ['addresses', 'GPIB0::0']  # Initial dummy vals 
+        self.GPIBAddressList = ['addresses', 'GPIB0::0']  # Initial dummy vals
         self.COMAddressList = ['addresses', 'COM0']  # Initial dummy vals
 
         self.test_btns = []  # list of test buttons
@@ -85,19 +85,19 @@ class SetupPage(wx.Panel):
                                      style=wx.CB_DROPDOWN)
         self.V2Sources.Bind(wx.EVT_COMBOBOX, self.UpdateInstr)
         self.cbox_instr_SRC.append(self.V2Sources)
-        DVM_V1V2Lbl = wx.StaticText(self, label='V1,V2 DVM (DVM12):',
-                                    id=wx.ID_ANY)
-        self.V1V2Dvms = wx.ComboBox(self, wx.ID_ANY,
-                                    choices=self.DVM_COMBO_CHOICE,
-                                    style=wx.CB_DROPDOWN)
-        self.V1V2Dvms.Bind(wx.EVT_COMBOBOX, self.UpdateInstr)
-        self.cbox_instr_DVM.append(self.V1V2Dvms)
-        DVM_VdLbl = wx.StaticText(self, label='Vd DVM (DVMd):', id=wx.ID_ANY)
-        self.VdDvms = wx.ComboBox(self, wx.ID_ANY,
-                                  choices=self.DVM_COMBO_CHOICE,
-                                  style=wx.CB_DROPDOWN)
-        self.VdDvms.Bind(wx.EVT_COMBOBOX, self.UpdateInstr)
-        self.cbox_instr_DVM.append(self.VdDvms)
+        DVMLbl = wx.StaticText(self, label='DVM (DVM):',
+                               id=wx.ID_ANY)
+        self.VDvms = wx.ComboBox(self, wx.ID_ANY,
+                                 choices=self.DVM_COMBO_CHOICE,
+                                 style=wx.CB_DROPDOWN)
+        self.VDvms.Bind(wx.EVT_COMBOBOX, self.UpdateInstr)
+        self.cbox_instr_DVM.append(self.VDvms)
+#        DVM_VdLbl = wx.StaticText(self, label='Vd DVM (DVMd):', id=wx.ID_ANY)
+#        self.VdDvms = wx.ComboBox(self, wx.ID_ANY,
+#                                  choices=self.DVM_COMBO_CHOICE,
+#                                  style=wx.CB_DROPDOWN)
+#        self.VdDvms.Bind(wx.EVT_COMBOBOX, self.UpdateInstr)
+#        self.cbox_instr_DVM.append(self.VdDvms)
         T1DvmLbl = wx.StaticText(self, label='R1 T-probe DVM (DVMT1):',
                                  id=wx.ID_ANY)
         self.T1Dvms = wx.ComboBox(self, wx.ID_ANY,
@@ -155,16 +155,16 @@ class SetupPage(wx.Panel):
                                      style=wx.CB_DROPDOWN)
         self.cbox_addr_GPIB.append(self.V2SrcAddr)
         self.V2SrcAddr.Bind(wx.EVT_COMBOBOX, self.UpdateAddr)
-        self.V1V2DvmAddr = wx.ComboBox(self, wx.ID_ANY,
-                                       choices=self.GPIBAddressList,
-                                       style=wx.CB_DROPDOWN)
-        self.cbox_addr_GPIB.append(self.V1V2DvmAddr)
-        self.V1V2DvmAddr.Bind(wx.EVT_COMBOBOX, self.UpdateAddr)
-        self.VdDvmAddr = wx.ComboBox(self, wx.ID_ANY,
-                                     choices=self.GPIBAddressList,
-                                     style=wx.CB_DROPDOWN)
-        self.cbox_addr_GPIB.append(self.VdDvmAddr)
-        self.VdDvmAddr.Bind(wx.EVT_COMBOBOX, self.UpdateAddr)
+        self.VDvmAddr = wx.ComboBox(self, wx.ID_ANY,
+                                    choices=self.GPIBAddressList,
+                                    style=wx.CB_DROPDOWN)
+        self.cbox_addr_GPIB.append(self.VDvmAddr)
+        self.VDvmAddr.Bind(wx.EVT_COMBOBOX, self.UpdateAddr)
+#        self.VdDvmAddr = wx.ComboBox(self, wx.ID_ANY,
+#                                     choices=self.GPIBAddressList,
+#                                     style=wx.CB_DROPDOWN)
+#        self.cbox_addr_GPIB.append(self.VdDvmAddr)
+#        self.VdDvmAddr.Bind(wx.EVT_COMBOBOX, self.UpdateAddr)
         self.T1DvmAddr = wx.ComboBox(self, wx.ID_ANY,
                                      choices=self.GPIBAddressList,
                                      style=wx.CB_DROPDOWN)
@@ -225,10 +225,10 @@ class SetupPage(wx.Panel):
         self.S1Test.Bind(wx.EVT_BUTTON, self.OnTest)
         self.S2Test = wx.Button(self, id=wx.ID_ANY, label='Test')
         self.S2Test.Bind(wx.EVT_BUTTON, self.OnTest)
-        self.D12Test = wx.Button(self, id=wx.ID_ANY, label='Test')
-        self.D12Test.Bind(wx.EVT_BUTTON, self.OnTest)
-        self.DdTest = wx.Button(self, id=wx.ID_ANY, label='Test')
-        self.DdTest.Bind(wx.EVT_BUTTON, self.OnTest)
+        self.VDVMTest = wx.Button(self, id=wx.ID_ANY, label='Test')
+        self.VDVMTest.Bind(wx.EVT_BUTTON, self.OnTest)
+#        self.DdTest = wx.Button(self, id=wx.ID_ANY, label='Test')
+#        self.DdTest.Bind(wx.EVT_BUTTON, self.OnTest)
         self.DT1Test = wx.Button(self, id=wx.ID_ANY, label='Test')
         self.DT1Test.Bind(wx.EVT_BUTTON, self.OnTest)
         self.DT2Test = wx.Button(self, id=wx.ID_ANY, label='Test')
@@ -250,9 +250,6 @@ class SetupPage(wx.Panel):
         self.Response = wx.TextCtrl(self, id=wx.ID_ANY, value='',
                                     style=wx.TE_READONLY)
 
-#        self.TR1 = wx.TextCtrl(self, id = wx.ID_ANY, value = 'T(R1)', style = wx.TE_READONLY)
-#        self.TR2 = wx.TextCtrl(self, id = wx.ID_ANY, value = 'T(R2)', style = wx.TE_READONLY)
-
         gbSizer = wx.GridBagSizer()
 
         # Instruments
@@ -264,14 +261,14 @@ class SetupPage(wx.Panel):
                     border=5)
         gbSizer.Add(self.V2Sources, pos=(1, 1), span=(1, 1),
                     flag=wx.ALL | wx.EXPAND, border=5)
-        gbSizer.Add(DVM_V1V2Lbl, pos=(2, 0), span=(1, 1),
+        gbSizer.Add(DVMLbl, pos=(2, 0), span=(1, 1),
                     flag=wx.ALL | wx.EXPAND, border=5)
-        gbSizer.Add(self.V1V2Dvms, pos=(2, 1), span=(1, 1),
+        gbSizer.Add(self.VDvms, pos=(2, 1), span=(1, 1),
                     flag=wx.ALL | wx.EXPAND, border=5)
-        gbSizer.Add(DVM_VdLbl, pos=(3, 0), span=(1, 1),
-                    flag=wx.ALL | wx.EXPAND, border=5)
-        gbSizer.Add(self.VdDvms, pos=(3, 1), span=(1, 1),
-                    flag=wx.ALL | wx.EXPAND, border=5)
+#        gbSizer.Add(DVM_VdLbl, pos=(3, 0), span=(1, 1),
+#                    flag=wx.ALL | wx.EXPAND, border=5)
+#        gbSizer.Add(self.VdDvms, pos=(3, 1), span=(1, 1),
+#                    flag=wx.ALL | wx.EXPAND, border=5)
         gbSizer.Add(T1DvmLbl, pos=(4, 0), span=(1, 1),
                     flag=wx.ALL | wx.EXPAND, border=5)
         gbSizer.Add(self.T1Dvms, pos=(4, 1), span=(1, 1),
@@ -301,10 +298,10 @@ class SetupPage(wx.Panel):
                     flag=wx.ALL | wx.EXPAND, border=5)
         gbSizer.Add(self.V2SrcAddr, pos=(1, 2), span=(1, 1),
                     flag=wx.ALL | wx.EXPAND, border=5)
-        gbSizer.Add(self.V1V2DvmAddr, pos=(2, 2), span=(1, 1),
+        gbSizer.Add(self.VDvmAddr, pos=(2, 2), span=(1, 1),
                     flag=wx.ALL | wx.EXPAND, border=5)
-        gbSizer.Add(self.VdDvmAddr, pos=(3, 2), span=(1, 1),
-                    flag=wx.ALL | wx.EXPAND, border=5)
+#        gbSizer.Add(self.VdDvmAddr, pos=(3, 2), span=(1, 1),
+#                    flag=wx.ALL | wx.EXPAND, border=5)
         gbSizer.Add(self.T1DvmAddr, pos=(4, 2), span=(1, 1),
                     flag=wx.ALL | wx.EXPAND, border=5)
         gbSizer.Add(self.T2DvmAddr, pos=(5, 2), span=(1, 1),
@@ -334,10 +331,10 @@ class SetupPage(wx.Panel):
                     flag=wx.ALL | wx.EXPAND, border=5)
         gbSizer.Add(self.S2Test, pos=(1, 3), span=(1, 1),
                     flag=wx.ALL | wx.EXPAND, border=5)
-        gbSizer.Add(self.D12Test, pos=(2, 3), span=(1, 1),
+        gbSizer.Add(self.VDVMTest, pos=(2, 3), span=(1, 1),
                     flag=wx.ALL | wx.EXPAND, border=5)
-        gbSizer.Add(self.DdTest, pos=(3, 3), span=(1, 1),
-                    flag=wx.ALL | wx.EXPAND, border=5)
+#        gbSizer.Add(self.DdTest, pos=(3, 3), span=(1, 1),
+#                    flag=wx.ALL | wx.EXPAND, border=5)
         gbSizer.Add(self.DT1Test, pos=(4, 3), span=(1, 1),
                     flag=wx.ALL | wx.EXPAND, border=5)
         gbSizer.Add(self.DT2Test, pos=(5, 3), span=(1, 1),
