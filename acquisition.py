@@ -444,10 +444,12 @@ class AqnThread(Thread):
         self.n_readings = self.ws.cell(row=row, column=3).value
         self.AZ1_del = self.ws.cell(row=row, column=5).value
         self.range_del = self.ws.cell(row=row, column=6).value
+        self.relay_del = self.ws.cell(row=row, column=7).value
         del_ev = evts.DelaysEvent(n=self.n_readings,
                                   s=self.start_del,
                                   AZ1=self.AZ1_del,
-                                  r=self.range_del)
+                                  r=self.range_del,
+                                  rel=self.relay_del)
         wx.PostEvent(self.RunPage, del_ev)
 
         del self.V1Data[:]

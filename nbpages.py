@@ -473,14 +473,15 @@ class SetupPage(wx.Panel):
 
                 if param == u'test':  # last parameter for this description
                     devices.DESCR.append(descr)  # build description list
-                    devices.sublist.append(dict(zip(params,values)))  # adds parameter dictionary to sublist
+                    # Add parameter dictionary to sublist:
+                    devices.sublist.append(dict(zip(params, values)))
                     del params[:]
                     del values[:]
 
-        print '----END OF PARAMETER LIST----' 
+        print '----END OF PARAMETER LIST----'
         print >>self.log, '----END OF PARAMETER LIST----'
 
-        # Compile into a dictionary that lives in devices.py...  
+        # Compile into a dictionary that lives in devices.py...
         devices.INSTR_DATA = dict(zip(devices.DESCR, devices.sublist))
         self.BuildComboChoices()
 
@@ -540,10 +541,13 @@ class SetupPage(wx.Panel):
         as necessary.
         """
 #        print 'nbpages.SetupPage.SetInstr():',d,'assigned to role',r,'demo mode:',devices.ROLES_INSTR[r].demo
-        assert devices.INSTR_DATA.has_key(d), 'Unknown instrument: %s - check Excel file is loaded.' % d
-        assert devices.INSTR_DATA[d].has_key('role'), 'Unknown instrument parameter - check Excel Parameters sheet is populated.'
+        assert d in devices.INSTR_DATA,\
+            'Unknown instrument: %s - check Excel file is loaded.' % d
+        assert 'role' in devices.INSTR_DATA[d],\
+            'Unknown instrument parameter ' +\
+            '- check Excel Parameters sheet is populated.'
         devices.INSTR_DATA[d]['role'] = r  # update default role
-        
+
         # Set the address cb to correct value (according to devices.INSTR_DATA)
         a_cb = devices.ROLES_WIDGETS[r]['acb']
         a_cb.SetValue((devices.INSTR_DATA[d]['str_addr']))
@@ -563,7 +567,8 @@ class SetupPage(wx.Panel):
                 d = devices.ROLES_WIDGETS[r]['icb'].GetValue()
                 break  # stop looking when right instrument descr is found
         a = e.GetString()  # address string, eg 'COM5' or 'GPIB0::23'
-        if (a not in self.GPIBAddressList) or (a not in self.COMAddressList):  # Ignore dummy values, like 'NO_ADDRESS'
+        # Ignore dummy values, like 'NO_ADDRESS':
+        if (a not in self.GPIBAddressList) or (a not in self.COMAddressList):
             devices.INSTR_DATA[d]['str_addr'] = a
             devices.ROLES_INSTR[r].str_addr = a
             addr = a.lstrip('COMGPIB0:')  # leave only numeric part of address string
@@ -578,8 +583,9 @@ class SetupPage(wx.Panel):
             if devices.ROLES_WIDGETS[r]['tbtn'] == e.GetEventObject():
                 d = devices.ROLES_WIDGETS[r]['icb'].GetValue()
                 break  # stop looking when find the right instrument descr
-        print'\nnbpages.SetupPage.OnTest():',d
-        assert 'test' in devices.INSTR_DATA[d], 'No test exists for this device.'
+        print'\nnbpages.SetupPage.OnTest():', d
+        assert 'test' in devices.INSTR_DATA[d],\
+               'No test exists for this device.'
         test = devices.INSTR_DATA[d]['test']  # test string
         print '\tTest string:', test
         self.Response.SetValue(str(devices.ROLES_INSTR[r].Test(test)))
@@ -605,10 +611,13 @@ class SetupPage(wx.Panel):
             # Update our knowledge of role <-> instr. descr. association
             self.CreateInstr(d, r)
         RunPage = self.GetParent().GetPage(1)
-        params={'R1': self.R1Name.GetValue(), 'TR1': self.GMH1Probes.GetValue(),
-                'R2': self.R2Name.GetValue(), 'TR2': self.GMH2Probes.GetValue()}
+        params = {'R1': self.R1Name.GetValue(),
+                  'TR1': self.GMH1Probes.GetValue(),
+                  'R2': self.R2Name.GetValue(),
+                  'TR2': self.GMH2Probes.GetValue()}
         joinstr = ' monitored by '
-        commstr = 'R1: ' + params['R1'] + joinstr + params['TR1'] + '. R2: ' + params['R2'] + joinstr + params['TR2']
+        commstr = 'R1: ' + params['R1'] + joinstr + params['TR1'] + '. R2: ' +\
+                  params['R2'] + joinstr + params['TR2']
         evt = evts.UpdateCommentEvent(str=commstr)
         wx.PostEvent(RunPage, evt)
 
@@ -909,14 +918,15 @@ class RunPage(wx.Panel):
         self.NSamples.SetValue(str(e.n))
         self.AZERO1Del.SetValue(str(e.AZ1))
         self.RangeDel.SetValue(str(e.r))
+        self.RelayDel.SetValue(str(e.rel))
 
     def UpdateStartRow(self, e):
         # Triggered by an 'update startrow' event
         self.StartRow.SetValue(str(e.row))
 
-    def UpdateStopRow(self, e):
-        # Triggered by an 'update stoprow' event
-        self.StopRow.SetValue(str(e.row))
+#    def UpdateStopRow(self, e):
+#        # Triggered by an 'update stoprow' event
+#        self.StopRow.SetValue(str(e.row))
 
     def OnV1Set(self, e):
         # Called by change in value (manually OR by software!)
@@ -1018,27 +1028,40 @@ class PlotPage(wx.Panel):
         # 0.3" height space between subplots:
         self.figure.subplots_adjust(hspace=0.3)
 
-        self.Vdax = self.figure.add_subplot(3, 1, 3)  # 3high x 1wide, 3rd plot down 
+        # 3high x 1wide, 3rd plot down
+        self.Vdax = self.figure.add_subplot(3, 1, 3)
         self.Vdax.ticklabel_format(style='sci', useOffset=False, axis='y',
                                    scilimits=(2, -2))  # Auto-centre on data
-        self.Vdax.yaxis.set_major_formatter(mtick.ScalarFormatter(useMathText=True, useOffset=False))  # Scientific notation .
-        self.Vdax.autoscale(enable=True, axis='y', tight=False)  # Autoscale with 'buffer' around data extents
+        self.Vdax.yaxis.set_major_formatter(mtick.ScalarFormatter
+                                            (useMathText=True,
+                                             useOffset=False))  # Sci notation
+        self.Vdax.autoscale(enable=True, axis='y',
+                            tight=False)  # Autoscale with 'buffer' around data
         self.Vdax.set_xlabel('time')
-        self.Vdax.set_ylabel('Vd')
+        self.Vdax.set_ylabel('Vnull (Vd)')
 
-        self.V1ax = self.figure.add_subplot(3, 1, 1, sharex=self.Vdax)  # 3high x 1wide, 1st plot down 
-        self.V1ax.ticklabel_format(useOffset=False, axis='y')  # Auto offset to centre on data
-        self.V1ax.autoscale(enable=True, axis='y', tight=False)  # Autoscale with 'buffer' around data extents
-        plt.setp(self.V1ax.get_xticklabels(), visible=False)  # Hide x-axis labels
+        # 3high x 1wide, 1st plot down
+        self.V1ax = self.figure.add_subplot(3, 1, 1, sharex=self.Vdax)
+        self.V1ax.ticklabel_format(useOffset=False,
+                                   axis='y')  # Auto offset to centre on data
+        self.V1ax.autoscale(enable=True,
+                            axis='y',
+                            tight=False)  # Autoscale with 'buffer' around data
+        plt.setp(self.V1ax.get_xticklabels(),
+                 visible=False)  # Hide x-axis labels
         self.V1ax.set_ylabel('V1')
         self.V1ax.set_ylim(auto=True)
         V1_y_ost = self.V1ax.get_xaxis().get_offset_text()
         V1_y_ost.set_visible(False)
 
-        self.V2ax = self.figure.add_subplot(3, 1, 2, sharex=self.Vdax)  # 3high x 1wide, 2nd plot down 
-        self.V2ax.ticklabel_format(useOffset=False, axis='y') # Auto offset to centre on data
-        self.V2ax.autoscale(enable=True, axis='y', tight=False)  # Autoscale with 'buffer' around data extents
-        plt.setp(self.V2ax.get_xticklabels(), visible=False)  # Hide x-axis labels
+        # 3high x 1wide, 2nd plot down
+        self.V2ax = self.figure.add_subplot(3, 1, 2, sharex=self.Vdax)
+        self.V2ax.ticklabel_format(useOffset=False,
+                                   axis='y')  # Auto offset to centre on data
+        self.V2ax.autoscale(enable=True, axis='y',
+                            tight=False)  # Autoscale with 'buffer' around data
+        plt.setp(self.V2ax.get_xticklabels(),
+                 visible=False)  # Hide x-axis labels
         self.V2ax.set_ylabel('V2')
         self.V2ax.set_ylim(auto=True)
         V2_y_ost = self.V2ax.get_xaxis().get_offset_text()
@@ -1064,7 +1087,7 @@ class PlotPage(wx.Panel):
         self.V1ax.cla()
         self.V2ax.cla()
         self.Vdax.cla()
-        self.Vdax.set_ylabel('Vd')
+        self.Vdax.set_ylabel('Vnull (Vd)')
         self.V1ax.set_ylabel('V1')
         self.V2ax.set_ylabel('V2')
         self.canvas.draw()
