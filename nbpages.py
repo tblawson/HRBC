@@ -719,6 +719,8 @@ class RunPage(wx.Panel):
         NSamplesLbl = wx.StaticText(self, id=wx.ID_ANY,
                                     label='Number of samples:')
         self.NSamples = wx.TextCtrl(self, id=wx.ID_ANY, style=wx.TE_READONLY)
+        RelayDelLbl = wx.StaticText(self, id=wx.ID_ANY, label='Relay delay:')
+        self.RelayDel = wx.TextCtrl(self, id=wx.ID_ANY, style=wx.TE_READONLY)
 
         #  Run control and progress widgets
         self.StartRow = wx.TextCtrl(self, id=wx.ID_ANY, style=wx.TE_READONLY)
@@ -742,8 +744,8 @@ class RunPage(wx.Panel):
         self.StopBtn = wx.Button(self, id=wx.ID_ANY, label='Abort run')
         self.StopBtn.Bind(wx.EVT_BUTTON, self.OnAbort)
         self.StopBtn.Enable(False)
-        self.RLinkBtn = wx.Button(self, id=wx.ID_ANY, label='Measure R-link')
-        self.RLinkBtn.Bind(wx.EVT_BUTTON, self.OnRLink)
+#        self.RLinkBtn = wx.Button(self, id=wx.ID_ANY, label='Measure R-link')
+#        self.RLinkBtn.Bind(wx.EVT_BUTTON, self.OnRLink)
 
         ProgressLbl = wx.StaticText(self, id=wx.ID_ANY, style=wx.ALIGN_RIGHT,
                                     label='Run progress:')
@@ -793,12 +795,14 @@ class RunPage(wx.Panel):
                     flag=wx.ALL | wx.EXPAND, border=5)
         gbSizer.Add(self.RangeDel, pos=(4, 3), span=(1, 1),
                     flag=wx.ALL | wx.EXPAND, border=5)
-
-        gbSizer.Add(NSamplesLbl, pos=(3, 4), span=(1, 1),
+        gbSizer.Add(RelayDelLbl, pos=(3, 5), span=(1, 1),
+                    flag=wx.ALL | wx.EXPAND, border=5)
+        gbSizer.Add(self.RelayDel, pos=(4, 5), span=(1, 1),
+                    flag=wx.ALL | wx.EXPAND, border=5)
+        gbSizer.Add(NSamplesLbl, pos=(3, 5), span=(1, 1),
                     flag=wx.ALL, border=5)
-        gbSizer.Add(self.NSamples, pos=(4, 4), span=(1, 1),
+        gbSizer.Add(self.NSamples, pos=(4, 5), span=(1, 1),
                     flag=wx.ALL, border=5)
-        #gbSizer.Add(self.h_sep3, pos=(7,0), span=(1,5), flag=wx.ALL|wx.EXPAND, border=5)
 
         #  Run control and progress widgets
         gbSizer.Add(StartRowLbl, pos=(5, 0), span=(1, 1),
@@ -826,15 +830,15 @@ class RunPage(wx.Panel):
         gbSizer.Add(self.Vsd, pos=(6, 6), span=(1, 1),
                     flag=wx.ALL | wx.EXPAND, border=5)
 
-        gbSizer.Add(self.RLinkBtn, pos=(7, 0), span=(1, 1),
+#        gbSizer.Add(self.RLinkBtn, pos=(7, 0), span=(1, 1),
+#                    flag=wx.ALL | wx.EXPAND, border=5)
+        gbSizer.Add(self.StartBtn, pos=(7, 0), span=(1, 1),
                     flag=wx.ALL | wx.EXPAND, border=5)
-        gbSizer.Add(self.StartBtn, pos=(7, 1), span=(1, 1),
+        gbSizer.Add(self.StopBtn, pos=(7, 1), span=(1, 1),
                     flag=wx.ALL | wx.EXPAND, border=5)
-        gbSizer.Add(self.StopBtn, pos=(7, 2), span=(1, 1),
+        gbSizer.Add(ProgressLbl, pos=(7, 2), span=(1, 1),
                     flag=wx.ALL | wx.EXPAND, border=5)
-        gbSizer.Add(ProgressLbl, pos=(7, 3), span=(1, 1),
-                    flag=wx.ALL | wx.EXPAND, border=5)
-        gbSizer.Add(self.Progress, pos=(7, 4), span=(1, 3),
+        gbSizer.Add(self.Progress, pos=(7, 3), span=(1, 4),
                     flag=wx.ALL | wx.EXPAND, border=5)
 
         self.SetSizerAndFit(gbSizer)
@@ -846,9 +850,9 @@ class RunPage(wx.Panel):
         state = e.GetEventObject().GetValue()
         print 'OnRangeMode(): Range toggle button value =', state
         if state is True:
-            e.GetEventObject().SetLabel("AUTO-range DVM12")
+            e.GetEventObject().SetLabel("AUTO-range DVM")
         else:
-            e.GetEventObject().SetLabel("FIXED-range DVM12")
+            e.GetEventObject().SetLabel("FIXED-range DVM")
 
     def OnNewRunID(self, e):
         start = self.fullstr.find('R1: ')
@@ -865,23 +869,29 @@ class RunPage(wx.Panel):
         self.RunID.SetValue(str(self.run_id))
 
     def UpdateComment(self, e):
-        # writes combined auto-comment and manual comment when
-        # auto-generated comment is re-built
+        '''
+         Writes combined auto-comment and manual comment
+         when auto-generated comment is re-built
+        '''
         self.autocomstr = e.str  # store a copy of auto-generated comment
         self.Comment.SetValue(e.str+self.manstr)
 
     def OnComment(self, e):
-        # Called when comment emits EVT_TEXT (i.e. whenever it's changed)
-        # Make sure comment field (with extra manually-entered notes)
-        # isn't overwritten
+        '''
+         Called when comment emits EVT_TEXT (i.e. whenever it's changed).
+         Makes sure comment field (with extra manually-entered notes)
+         isn't overwritten.
+        '''
         self.fullstr = self.Comment.GetValue()  # store a copy of full comment
         # Extract last part of comment (the manually-inserted bit)
-        # - assume we manually added extra notes to END
+        # - assume we manually added extra notes to END.
         self.manstr = self.fullstr[len(self.autocomstr):]
 
     def UpdateData(self, e):
-        # Triggered by an 'update data' event
-        # event params:(t,Vm,Vsd,r,P,flag['1','2','d' or 'E'])
+        '''
+         Triggered by an 'update data' event
+         event params:(t,Vm,Vsd,r,P,flag['1','2','d','E' or 'F'])
+        '''
         if e.flag in 'EF':  # finished
             self.RunThread = None
             self.StartBtn.Enable(True)
@@ -973,15 +983,15 @@ class RunPage(wx.Panel):
             self.StopBtn.Enable(False)  # Disable Stop button
             self.RLinkThread.abort()
 
-    def OnRLink(self, e):
-        self.Progress.SetValue(0)
-        self.RLinkThread = None
-        self.status.SetStatusText('', 1)
-        self.status.SetStatusText('Starting R-link measurement', 0)
-        if self.RLinkThread is None:
-            self.StopBtn.Enable(True)  # Enable Stop button
-            self.RLinkBtn.Enable(False)
-            self.RLinkThread = rl.RLThread(self)
+#    def OnRLink(self, e):
+#        self.Progress.SetValue(0)
+#        self.RLinkThread = None
+#        self.status.SetStatusText('', 1)
+#        self.status.SetStatusText('Starting R-link measurement', 0)
+#        if self.RLinkThread is None:
+#            self.StopBtn.Enable(True)  # Enable Stop button
+#            self.RLinkBtn.Enable(False)
+#            self.RLinkThread = rl.RLThread(self)
 
 '''
 __________________________________________
