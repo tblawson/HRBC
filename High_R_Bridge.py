@@ -107,15 +107,15 @@ class MainFrame(wx.Frame):
         # A message dialog with 'OK' button. wx.OK is a standard wxWidgets ID.
         dlg_description = "HRBC v"+VERSION+": A Python'd version of the TestPoint High Resistance Bridge program."
         dlg_title = "About HighResBridge"
-        dlg=wx.MessageDialog(self, dlg_description, dlg_title, wx.OK)
+        dlg = wx.MessageDialog(self, dlg_description, dlg_title, wx.OK)
         dlg.ShowModal()  # Show dialog.
         dlg.Destroy()  # Destroy when done.
 
     def OnSave(self, event=None):
-        # WEDNESDAY
-        print 'Saving', self.page1.XLFile.GetValue(), '...'
-        if self.ExcelPath is not None:
-            self.page1.wb.save(self.page1.XLFile.GetValue())
+        XLfilename = self.page1.XLFile.GetValue()
+        if XLfilename:  # Not [Empty string or None]
+            print 'Saving', XLfilename, '...'
+            self.page1.wb.save(XLfilename)
             self.page1.log.close()
 
     def OnOpen(self, event=None):
@@ -142,7 +142,6 @@ class MainFrame(wx.Frame):
         self.CloseInstrSessions()
         self.OnSave()
         self.Close()
-
 
 """_______________________________________________"""
 class MainApp(wx.App):
