@@ -34,7 +34,7 @@ import nbpages as page
 import HighRes_events as evts
 import devices
 
-VERSION = "1.1"
+VERSION = "2.0"
 
 print 'HRBC', VERSION
 
