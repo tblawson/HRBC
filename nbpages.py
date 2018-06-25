@@ -352,8 +352,7 @@ class SetupPage(wx.Panel):
                     flag=wx.ALL | wx.EXPAND, border=5)
         gbSizer.Add(self.Response, pos=(4, 4), span=(1, 3),
                     flag=wx.ALL | wx.EXPAND, border=5)
-#        gbSizer.Add(self.TR1, pos=(6,4), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
-#        gbSizer.Add(self.TR2, pos=(7,4), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
+
         gbSizer.Add(self.VisaList, pos=(0, 5), span=(1, 1),
                     flag=wx.ALL | wx.EXPAND, border=5)
         gbSizer.Add(self.ResList, pos=(0, 4), span=(3, 1),
@@ -372,12 +371,12 @@ class SetupPage(wx.Panel):
         devices.ROLES_WIDGETS.update({'SRC2': {'icb': self.V2Sources,
                                                'acb': self.V2SrcAddr,
                                                'tbtn': self.S2Test}})
-        devices.ROLES_WIDGETS.update({'DVM12': {'icb': self.V1V2Dvms,
-                                                'acb': self.V1V2DvmAddr,
-                                                'tbtn': self.D12Test}})
-        devices.ROLES_WIDGETS.update({'DVMd': {'icb': self.VdDvms,
-                                               'acb': self.VdDvmAddr,
-                                               'tbtn': self.DdTest}})
+        devices.ROLES_WIDGETS.update({'DVM': {'icb': self.VDvms,
+                                              'acb': self.VDvmAddr,
+                                              'tbtn': self.DVMTest}})
+#        devices.ROLES_WIDGETS.update({'DVMd': {'icb': self.VdDvms,
+#                                               'acb': self.VdDvmAddr,
+#                                               'tbtn': self.DdTest}})
         devices.ROLES_WIDGETS.update({'DVMT1': {'icb': self.T1Dvms,
                                                 'acb': self.T1DvmAddr,
                                                 'tbtn': self.DT1Test}})
@@ -440,7 +439,7 @@ class SetupPage(wx.Panel):
         headings = (None, u'description', u'Instrument Info:', u'parameter',
                     u'value', u'uncert', u'dof', u'label')
 
-        # Determine colummn indices from column letters:
+        # Determine instrument colummn indices from column letters:
         col_I = cell.cell.column_index_from_string('I') - 1
         col_J = cell.cell.column_index_from_string('J') - 1
         col_K = cell.cell.column_index_from_string('K') - 1
@@ -493,8 +492,7 @@ class SetupPage(wx.Panel):
         '''
         self.instrument_choice = {'SRC1': 'SRC: D4808',
                                   'SRC2': 'SRC: F5520A',
-                                  'DVM12': 'DVM: HP3458A, s/n452',
-                                  'DVMd': 'DVM: HP3458A, s/n230',
+                                  'DVM': 'DVM: HP3458A, s/n382',
                                   'DVMT1': 'none',  # 'DVM: HP34401A, s/n976'
                                   'DVMT2': 'none',  # 'DVM: HP34420A, s/n130'
                                   'GMH1': 'GMH: s/n627',
@@ -516,7 +514,7 @@ class SetupPage(wx.Panel):
         d = e.GetString()
         for r in devices.ROLES_WIDGETS.keys():  # Cycle through roles
             if devices.ROLES_WIDGETS[r]['icb'] == e.GetEventObject():
-                break  # stop looking when find the right instrument & role
+                break  # stop looking when right instrument & role are found
         self.CreateInstr(d, r)
 
     def CreateInstr(self, d, r):
@@ -524,17 +522,16 @@ class SetupPage(wx.Panel):
         # Create each instrument in software & open visa session (for GPIB)
         # For GMH instruments, use GMH dll not visa
 
-        if 'GMH' in r:  # Changed from d to r
-            # create and open a GMH instrument instance
+        if 'GMH' in r:
+            # create a GMH instrument instance
             print'\nnbpages.SetupPage.CreateInstr(): Creating GMH device (%s -> %s).' % (d, r)
             devices.ROLES_INSTR.update({r: devices.GMH_Sensor(d)})
         else:
-            # create a visa instrument instance
+            # create and open a visa instrument instance
             print'\nnbpages.SetupPage.CreateInstr(): Creating VISA device (%s -> %s).' % (d, r)
             devices.ROLES_INSTR.update({r: devices.instrument(d)})
             devices.ROLES_INSTR[r].Open()
         self.SetInstr(d, r)
-
 
     def SetInstr(self, d, r):
         """
@@ -564,7 +561,7 @@ class SetupPage(wx.Panel):
         for r in devices.ROLES_WIDGETS.keys():
             if devices.ROLES_WIDGETS[r]['acb'] == acb:
                 d = devices.ROLES_WIDGETS[r]['icb'].GetValue()
-                break  # stop looking when find the right instrument descr
+                break  # stop looking when right instrument descr is found
         a = e.GetString()  # address string, eg 'COM5' or 'GPIB0::23'
         if (a not in self.GPIBAddressList) or (a not in self.COMAddressList):  # Ignore dummy values, like 'NO_ADDRESS'
             devices.INSTR_DATA[d]['str_addr'] = a
@@ -734,11 +731,9 @@ class RunPage(wx.Panel):
         self.Time = wx.TextCtrl(self, id=wx.ID_ANY, style=wx.TE_READONLY)
 
         VavLbl = wx.StaticText(self, id=wx.ID_ANY, label='Mean voltage(V):')
-        # self.Vav = wx.TextCtrl(self, id = wx.ID_ANY, style = wx.TE_READONLY)
         self.Vav = NumCtrl(self, id=wx.ID_ANY, integerWidth=3, fractionWidth=9,
                            groupDigits=True)
         VsdLbl = wx.StaticText(self, id=wx.ID_ANY, label='Stdev(voltage):')
-        # self.Vsd = wx.TextCtrl(self, id = wx.ID_ANY, style = wx.TE_READONLY)
         self.Vsd = NumCtrl(self, id=wx.ID_ANY, integerWidth=3, fractionWidth=9,
                            groupDigits=True)
 
@@ -758,7 +753,7 @@ class RunPage(wx.Panel):
         gbSizer = wx.GridBagSizer()
 
         # Comment widgets
-        gbSizer.Add(CommentLbl,pos=(0, 0), span=(1, 1),
+        gbSizer.Add(CommentLbl, pos=(0, 0), span=(1, 1),
                     flag=wx.ALL | wx.EXPAND, border=5)
         gbSizer.Add(self.Comment, pos=(0, 1), span=(1, 6),
                     flag=wx.ALL | wx.EXPAND, border=5)
@@ -766,7 +761,6 @@ class RunPage(wx.Panel):
                     flag=wx.ALL | wx.EXPAND, border=5)
         gbSizer.Add(self.RunID, pos=(1, 1), span=(1, 6),
                     flag=wx.ALL | wx.EXPAND, border=5)
-        # gbSizer.Add(self.h_sep1, pos=(2,0), span=(1,5), flag=wx.ALL|wx.EXPAND, border=5)
 
         # Voltage source widgets
         gbSizer.Add(ZeroVoltsBtn, pos=(2, 0), span=(1, 1),
