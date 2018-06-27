@@ -229,7 +229,7 @@ class GMH_Sensor(device):
         return len(self.info)
 
 
-    def Measure(self, meas):
+    def Measure(self, meas='T'):
         """
         Measure either temperature, pressure or humidity, based on parameter meas
         Returns a float.
