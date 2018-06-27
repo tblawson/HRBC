@@ -719,7 +719,7 @@ class RunPage(wx.Panel):
         SettleDelLbl = wx.StaticText(self, id=wx.ID_ANY, label='Settle delay:')
         self.SettleDel = wx.SpinCtrl(self, id=wx.ID_ANY, value='0',
                                      min=0, max=600)
-        StartDelLbl = wx.StaticText(self, id=wx.ID_ANY, label='Start delay:')
+        StartDelLbl = wx.StaticText(self, id=wx.ID_ANY, label='Start-row delay:')
         self.StartDel = wx.TextCtrl(self, id=wx.ID_ANY, style=wx.TE_READONLY)
         AZERO1DelLbl = wx.StaticText(self, id=wx.ID_ANY,
                                      label='AZERO_ONCE delay:')
@@ -924,9 +924,9 @@ class RunPage(wx.Panel):
         # Triggered by an 'update startrow' event
         self.StartRow.SetValue(str(e.row))
 
-#    def UpdateStopRow(self, e):
-#        # Triggered by an 'update stoprow' event
-#        self.StopRow.SetValue(str(e.row))
+    def UpdateStopRow(self, e):
+        # Triggered by an 'update stoprow' event
+        self.StopRow.SetValue(str(e.row))
 
     def OnV1Set(self, e):
         # Called by change in value (manually OR by software!)
@@ -989,10 +989,10 @@ class RunPage(wx.Panel):
             self.StartBtn.Enable(True)
             self.StopBtn.Enable(False)  # Disable Stop button
             self.RunThread.abort()
-        elif self.RLinkThread:
-            self.RLinkBtn.Enable(True)  # Enable Start button
-            self.StopBtn.Enable(False)  # Disable Stop button
-            self.RLinkThread.abort()
+#        elif self.RLinkThread:
+#            self.RLinkBtn.Enable(True)  # Enable Start button
+#            self.StopBtn.Enable(False)  # Disable Stop button
+#            self.RLinkThread.abort()
 
 #    def OnRLink(self, e):
 #        self.Progress.SetValue(0)
@@ -1023,7 +1023,7 @@ class PlotPage(wx.Panel):
         self.Bind(evts.EVT_PLOT, self.UpdatePlot)
         self.Bind(evts.EVT_CLEARPLOT, self.ClearPlot)
 
-        self.figure = Figure()
+        self.figure = Figure()  # plt.figure()
 
         # 0.3" height space between subplots:
         self.figure.subplots_adjust(hspace=0.3)
@@ -1042,7 +1042,7 @@ class PlotPage(wx.Panel):
 
         # 3high x 1wide, 1st plot down
         self.V1ax = self.figure.add_subplot(3, 1, 1, sharex=self.Vdax)
-        self.V1ax.ticklabel_format(useOffset=False,
+        self.V1ax.ticklabel_format(useOffset=False,  # True
                                    axis='y')  # Auto offset to centre on data
         self.V1ax.autoscale(enable=True,
                             axis='y',
