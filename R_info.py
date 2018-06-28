@@ -35,32 +35,30 @@ def Make_Log_Name(v):
 
 
 # Extract resistor names from comment
-"""
-Parse first part of comment for resistor names.
-Names must appear immediately after the strings 'R1: ' and 'R2: ' and
-immediately before the string ' monitored by GMH'.
-"""
-
-
 def ExtractNames(comment):
+    """
+    Parse first part of comment for resistor names.
+    Names must appear immediately after the strings 'R1: ' and 'R2: ' and
+    immediately before the string ' monitored by GMH'.
+    """
     assert comment.find('R1: ') >= 0, 'R1 name not found in comment!'
     assert comment.find('R2: ') >= 0, 'R2 name not found in comment!'
-    R1_name = comment[comment.find('R1: ') + 4:comment.find(' monitored by GMH')]
-    R2_name = comment[comment.find('R2: ') + 4:comment.rfind(' monitored by GMH')]
+    R1_name = comment[comment.find('R1: ') +
+                      4:comment.find(' monitored by GMH')]
+    R2_name = comment[comment.find('R2: ') +
+                      4:comment.rfind(' monitored by GMH')]
     return (R1_name, R2_name)
 
 
 # Extract nominal resistor value from name
-"""
-Parse the resistor name for the nominal value.Resistor names MUST be of the form
-'xxx nnp', where 'xxx ' is a one-word description ending with a SINGLE SPACE,
-'nn' is an integer (usually a decade value) and the last character 'p' is a letter
-indicating a decade multiplier.
-
-"""
-
-
 def GetRval(name):
+    """
+    Parse the resistor name for the nominal value.
+    Resistor names MUST be of the form 'xxx nm', where 'xxx ' is a one-word
+    description ending with a SINGLE SPACE, 'n' is an integer (usually a
+    decade value) and the last character 'm' is a letter indicating a decade
+    multiplier.
+    """
     prefixes = {'r': 1, 'R': 1, 'k': 1000, 'M': 1e6, 'G': 1e9}
 
     if name[-1] in prefixes:
@@ -73,21 +71,21 @@ def GetRval(name):
     return(mult*int(string.strip(string.split(name)[-1], string.letters)))
 
 
-def GetRLstartrow(sheet, Id, jump, log):
-    search_row = 1
-    while search_row < RL_SEARCH_LIMIT:  # Don't search forever.
-        result = sheet['A'+str(search_row)].value  # scan down column A
-        if result == 'Run Id:':
-            RL_Id = sheet['B'+str(search_row)].value  # Find a run Id
-            if RL_Id == Id:  # Found the right data, so we're done.
-                RL_start = search_row + 1  # 1st line of Rlink data's header (excl Id)
-                return RL_start
-            else:  # Jump to just before start of next data-block
-                search_row += jump
-        search_row += 1
-    print 'No matching Rlink data!'
-    log.write('GetRLstartrow():No matching Rlink data!\n')
-    return -1
+# def GetRLstartrow(sheet, Id, jump, log):
+#    search_row = 1
+#    while search_row < RL_SEARCH_LIMIT:  # Don't search forever.
+#        result = sheet['A'+str(search_row)].value  # scan down column A
+#        if result == 'Run Id:':
+#            RL_Id = sheet['B'+str(search_row)].value  # Find a run Id
+#            if RL_Id == Id:  # Found the right data, so we're done.
+#                RL_start = search_row + 1  # 1st line of Rlink data's header
+#                return RL_start
+#            else:  # Jump to just before start of next data-block
+#                search_row += jump
+#        search_row += 1
+#    print 'No matching Rlink data!'
+#    log.write('GetRLstartrow():No matching Rlink data!\n')
+#    return -1
 
 
 # Convert list of data to ureal, where possible
@@ -148,9 +146,9 @@ def av_t_strin(t_list, switch):
 def WriteHeadings(sheet, row, version):
     now = dt.datetime.now()
     sheet['A'+str(row-1)].font = Font(b=True)
-    sheet['A'+str(row-1)] = 'Processed with HRBA v'+str(version)+' on '+now.strftime("%A, %d. %B %Y %I:%M%p")
+    sheet['A' + str(row-1)] = 'Processed with HRBA v' + str(version) +\
+                              ' on ' + now.strftime("%A, %d. %B %Y %I:%M%p")
     sheet['J'+str(row)] = 'Uncertainty Budget'
-
     sheet['R'+str(row)] = 'R1(T)'
     sheet['U'+str(row)] = 'exp. U(95%)'
     sheet['V'+str(row)] = 'av T'
@@ -179,7 +177,7 @@ def WriteHeadings(sheet, row, version):
     return row
 
 
-# Write measurement summary   
+# Write measurement summary
 def WriteThisResult(sheet, row, result):
     sheet['A'+str(row)].font = Font(color=colors.YELLOW)
     sheet['A'+str(row)].fill = PatternFill(patternType='solid',
@@ -239,7 +237,7 @@ def write_R1_T_fit(results, sheet, row, log):
     y = [R for R in [result['R'] for result in results]]  # All R values
     # u_y = [R.u for R in [result['R'] for result in results]] # All R uncerts
 
-    if len(set(T_data)) <= 1: # No temperature variation recorded, so can't fit to T
+    if len(set(T_data)) <= 1:  # No temperature variation, so can't fit to T
         R1 = GTC.fn.mean(y)
         print 'R1_LV (av, not fit):', R1
         log.write('\nR1_LV (av, not fit): ' + str(R1))
@@ -247,8 +245,10 @@ def write_R1_T_fit(results, sheet, row, log):
         # a_ta,b_ta = GTC.ta.line_fit_wls(T_rel,y,u_y).a_b
         # Assume uncert of individual measurements dominate uncert of fit
         R1, alpha = GTC.fn.line_fit_wls(T_rel, y).a_b
-        print 'Fit params:\t intercept=', GTC.summary(R1), 'Slope=', GTC.summary(alpha)
-        log.write('\nFit params:\t intercept= ' + str(GTC.summary(R1)) + ' Slope= ' + str(GTC.summary(alpha)))
+        print 'Fit params:\t intercept=', GTC.summary(R1),\
+            'Slope=', GTC.summary(alpha)
+        log.write('\nFit params:\t intercept= ' + str(GTC.summary(R1)) +
+                  ' Slope= ' + str(GTC.summary(alpha)))
 
     sheet['R'+str(row)] = R1.x
     sheet['S'+str(row)] = R1.u
@@ -269,7 +269,8 @@ def write_R1_T_fit(results, sheet, row, log):
     t = [result['time_fl'] for result in results]  # x data (time,s from epoch)
     t_av = GTC.ta.estimate(t)
     time_av = dt.datetime.fromtimestamp(t_av.x)  # A Python datetime object
-    sheet['Y'+str(row)] = time_av.strftime('%d/%m/%Y %H:%M:%S')  # string-formatted for display
+    # String-formatted for display:
+    sheet['Y'+str(row)] = time_av.strftime('%d/%m/%Y %H:%M:%S')
 
     V1 = [V for V in [result['V'] for result in results]]
     V_av = GTC.fn.mean(V1)
