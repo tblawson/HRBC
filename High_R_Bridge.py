@@ -24,12 +24,8 @@ are output to.
 """
 
 import os
-
-#os.environ['GMHPATH'] = 'C:\Users\\t.lawson\Documents\Python Scripts\High_Res_Bridge\GMHdll'
-#os.environ['XLPATH'] = 'C:\Users\\t.lawson\Documents\Python Scripts\High_Res_Bridge'
-
 import wx
-#import wx.lib.inspection
+# import wx.lib.inspection
 import nbpages as page
 import HighRes_events as evts
 import devices

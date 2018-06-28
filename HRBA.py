@@ -70,7 +70,7 @@ log.write(now_fmt + '\n' + xlfile + '\n')
 
 # open existing workbook
 print str(xlfile)
-wb_io = load_workbook(xlfile, data_only=True)  # data-only option added for validation
+wb_io = load_workbook(xlfile, data_only=True)  # (data_only for validation)
 ws_Data = wb_io.get_sheet_by_name('Data')
 ws_Rlink = wb_io.get_sheet_by_name('Rlink')
 ws_Summary = wb_io.get_sheet_by_name('Results')
@@ -86,9 +86,12 @@ N_ROLES = 10  # 10 roles in total
 role_descr = {}
 for row in range(Data_start_row, Data_start_row + N_ROLES):
     # Read {role:description}
-    temp_dict = {ws_Data['AC' + str(row)].value: ws_Data['AD' + str(row)].value}
-    assert temp_dict.keys()[-1] is not None, 'Instrument assignment: Missing role!'
-    assert temp_dict.values()[-1] is not None, 'Instrument assignment: Missing description!'
+    temp_dict = {ws_Data['AC' + str(row)].value:
+                 ws_Data['AD' + str(row)].value}
+    assert temp_dict.keys()[-1] is not None,\
+        'Instrument assignment: Missing role!'
+    assert temp_dict.values()[-1] is not None,\
+        'Instrument assignment: Missing description!'
     role_descr.update(temp_dict)
     if ws_Data['AC'+str(row)].value == u'DVM12':
         range_mode = ws_Data['AE'+str(row)].value
@@ -155,22 +158,25 @@ for r in ws_Params.rows:  # a tuple of row objects
         last_I_row = r[col_I].row
         I_params.append(I_row_items[1])
         I_values.append(R_info.Uncertainize(I_row_items))
-        if I_row_items[1] == u'test':  # last parameter for this description
-            I_DESCR.append(I_row_items[0])  # build description list
-            I_sublist.append(dict(zip(I_params,I_values)))  # add parameter dictionary to sublist
+        if I_row_items[1] == u'test':  # Last parameter for this description
+            I_DESCR.append(I_row_items[0])  # Build description list
+            # Add parameter dictionary to sublist:
+            I_sublist.append(dict(zip(I_params, I_values)))
             del I_params[:]
             del I_values[:]
 
         # Now attend to resistor parameters...
         if R_end == 0:  # Check we're not at the end of resistor data-block
-            last_R_row = r[col_A].row  # Need to know this if we write more data, post-analysis
+            # Need to know this if we write more data, post-analysis:
+            last_R_row = r[col_A].row
             R_params.append(R_row_items[1])
             R_values.append(R_info.Uncertainize(R_row_items))
-            if R_row_items[1] == u'T_sensor':  # last parameter for this description
-                R_DESCR.append(R_row_items[0])  # build description list
-                R_sublist.append(dict(zip(R_params, R_values)))  # add parameter dictionary to sublist
+            if R_row_items[1] == u'T_sensor':  # Last parameter for this descr
+                R_DESCR.append(R_row_items[0])  # Build description list
+                # Add parameter dictionary to sublist:
+                R_sublist.append(dict(zip(R_params, R_values)))
                 del R_params[:]
-                del R_values[:] 
+                del R_values[:]
 
 # Compile into dictionaries
 """
@@ -207,7 +213,7 @@ elif V1set_b < V1set_a:
     HV = V1set_a
 else:  # 'HV' and 'LV' equal
     LV = HV = V1set_a
-print 'LV =',LV,'; HV =',HV
+print 'LV =', LV, '; HV =', HV
 
 # Set up reading of Data sheet
 Data_row = Data_start_row
@@ -268,16 +274,16 @@ Assume all 'nominal' values have 100 ppm std.uncert. with 8 dof.
 """
 val1 = ws_Rlink['C'+str(RL_start_row+2)].value
 assert val1 is not None, 'Missing nominal R1 value!'
-nom_R1 = GTC.ureal(val1, val1/1e4, 8, label='nom_R1')  # don't know uncertainty of nominal values
+nom_R1 = GTC.ureal(val1, val1/1e4, 8, label='nom_R1')  # Don't know u(nom.vals)
 val2 = ws_Rlink['C'+str(RL_start_row+3)].value
 assert val2 is not None, 'Missing nominal R2 value!'
-nom_R2 = GTC.ureal(val2, val2/1e4, 8, label='nom_R2')  # don't know uncertainty of nominal values
-val1 =ws_Rlink['D'+str(RL_start_row+2)].value
+nom_R2 = GTC.ureal(val2, val2/1e4, 8, label='nom_R2')  # Don't know u(nom.vals)
+val1 = ws_Rlink['D'+str(RL_start_row+2)].value
 assert val1 is not None, 'Missing nominal V1 value!'
-abs_V1 = GTC.ureal(val1, val1/1e4, 8, label='abs_V1')  # don't know uncertainty of nominal values
+abs_V1 = GTC.ureal(val1, val1/1e4, 8, label='abs_V1')  # Don't know u(nom.vals)
 val2 = ws_Rlink['D'+str(RL_start_row+3)].value
 assert val2 is not None, 'Missing nominal V2 value!'
-abs_V2 = GTC.ureal(val2, val2/1e4, 8, label='abs_V2')  # don't know uncertainty of nominal values
+abs_V2 = GTC.ureal(val2, val2/1e4, 8, label='abs_V2')  # Don't know u(nom.vals)
 
 # Calculate I
 I = (abs_V1 + abs_V2) / (nom_R1 + nom_R2)
@@ -329,7 +335,8 @@ Ts = []
 ##############################
 # ___Loop over data rows ___ #
 print '\nLooping over data rows', Data_start_row, 'to', Data_stop_row, '...'
-log.write('\nLooping over data rows ' + str(Data_start_row) + ' to ' + str(Data_stop_row) + '\n')
+log.write('\nLooping over data rows ' + str(Data_start_row) +
+          ' to ' + str(Data_stop_row) + '\n')
 while Data_row <= Data_stop_row:
     # R2 parameters:
     V2set = ws_Data['B'+str(Data_row)].value  # Changed from Data_start_row!
@@ -353,7 +360,6 @@ while Data_row <= Data_stop_row:
         R2TRef = R_INFO[R2_name]['TRef_LV']
         R2VRef = R_INFO[R2_name]['VRef_LV']
 
-
     # Select appropriate value of VRC, etc.
     """
     #################################################################
@@ -364,8 +370,6 @@ while Data_row <= Data_stop_row:
     voltage ratios]).
     #################################################################
     """
-#    G1_code = R_info.Vgain_codes_auto[round(V1set,1)]
-#    G1 = I_INFO[role_descr['DVM12']][G1_code]
 
     if 'AUTO' in range_mode:
         G2_code = R_info.Vgain_codes_auto[round(abs(V2set), 1)]
@@ -383,8 +387,8 @@ while Data_row <= Data_stop_row:
 
     vrc = GTC.ar.result(G2/G1, label='vrc ' + Run_Id)
 
-    Vlin_pert = I_INFO[role_descr['DVMd']]['linearity_pert']  # linearity used in G calculation
-    Vlin_Vdav = I_INFO[role_descr['DVMd']]['linearity_Vdav']  # linearity used in Vd calculation
+    Vlin_pert = I_INFO[role_descr['DVMd']]['linearity_pert']  # Used in G calc
+    Vlin_Vdav = I_INFO[role_descr['DVMd']]['linearity_Vdav']  # Used in Vd calc
 
     # Start list of influence variables
     influencies = [Rd, G1, G2, Vlin_pert,
@@ -418,9 +422,11 @@ while Data_row <= Data_stop_row:
     del Ts[:]  # list for 4 room Temp values
 
     # Process times, RH and temperature data in this 4-row block:
-    for r in range(Data_row, Data_row+4): # build list of 4 gmh / T-probe dvm readings
-        assert ws_Data['U'+str(r)].value is not None, 'No R1 GMH temperature data!'
-        assert ws_Data['V'+str(r)].value is not None, 'No R2 GMH temperature data!'
+    for r in range(Data_row, Data_row+4):  # build list of 4 gmh / dvm readings
+        assert ws_Data['U'+str(r)].value is not None,\
+            'No R1 GMH temperature data!'
+        assert ws_Data['V'+str(r)].value is not None,\
+            'No R2 GMH temperature data!'
         raw_gmh1.append(ws_Data['U'+str(r)].value)
         raw_gmh2.append(ws_Data['V'+str(r)].value)
 
@@ -431,10 +437,12 @@ while Data_row <= Data_stop_row:
         times.append(ws_Data['M'+str(r)].value)
         times.append(ws_Data['P'+str(r)].value)
 
-        assert ws_Data['S'+str(r)].value is not None, 'No R1 raw DVM (temperature) data!'
+        assert ws_Data['S'+str(r)].value is not None,\
+            'No R1 raw DVM (temperature) data!'
         raw_dvm1 = ws_Data['S'+str(r)].value
 
-        assert ws_Data['T'+str(r)].value is not None, 'No R2 raw DVM (temperature) data!'
+        assert ws_Data['T'+str(r)].value is not None,\
+            'No R2 raw DVM (temperature) data!'
         raw_dvm2 = ws_Data['T'+str(r)].value
 
         # Check corrections for range-dependant values...
@@ -461,31 +469,32 @@ while Data_row <= Data_stop_row:
     # Data are plain numbers (with digitization rounding),
     # so use ta.estimate_digitized() to return a ureal.
     assert len(raw_gmh1) > 1, 'Not enough GMH1 temperatures to average!'
-    T1_av_gmh = GTC.ar.result(GTC.ta.estimate_digitized(raw_gmh1, 0.01) + GMH1_cor,
-                              label='T1_av_gmh ' + Run_Id)
+    T1_av_gmh = GTC.ar.result(GTC.ta.estimate_digitized(raw_gmh1, 0.01) +
+                              GMH1_cor, label='T1_av_gmh ' + Run_Id)
 
     assert len(raw_gmh2) > 1, 'Not enough GMH2 temperatures to average!'
-    T2_av_gmh = GTC.ar.result(GTC.ta.estimate_digitized(raw_gmh2, 0.01) + GMH2_cor,
-                              label='T2_av_gmh ' + Run_Id) 
+    T2_av_gmh = GTC.ar.result(GTC.ta.estimate_digitized(raw_gmh2, 0.01) +
+                              GMH2_cor, label='T2_av_gmh ' + Run_Id)
 
     assert len(times) > 1, 'Not enough timestamps to average!'
-    times_av_str = R_info.av_t_strin(times, 'str')  # mean time(as a time string)
-    times_av_fl = R_info.av_t_strin(times, 'fl')  # mean time(as a float)
+    times_av_str = R_info.av_t_strin(times, 'str')  # Mean time(as a time-str)
+    times_av_fl = R_info.av_t_strin(times, 'fl')  # Mean time(as a float)
 
     """
-    TO DO: Incorporate ambient T, P, %RH readings into final reported results...
-    
+    TO DO: Incorporate ambient T, P, %RH readings into final reported results..
+
     assert len(RHs) > 1,'Not enough RH values to average!'
     # Digitization could be 2 or 3 decimal places, depending on RH probe:
-    RH_av = GTC.ar.result(GTC.ta.estimate_digitized(RHs,R_info.GetDigi(RHs)),label = 'RH_av')
-    
+    RH_av = GTC.ar.result(GTC.ta.estimate_digitized(RHs,R_info.GetDigi(RHs)),
+                                                    label = 'RH_av')
+
     ... (and same for T, P) ...
 
     """
 
     # Build lists of 4 temperatures (calculated from T-probe dvm readings)...
     # ... and calculate mean temperatures
-    if (R1Tsensor in ('none', 'any')):  # no or unknown T-sensor (Tinsleys or T-sensor itelf)
+    if (R1Tsensor in ('none', 'any')):  # No or unknown T-sensor
         T_dvm1 = [ZERO, ZERO, ZERO, ZERO]
     else:
         assert len(R_dvm1) > 1, 'Not enough R_dvm1 values to average!'
@@ -513,31 +522,28 @@ while Data_row <= Data_stop_row:
                               label='T2_av_dvm' + Run_Id)
 
     # Mean temperatures and temperature definitions
-#    if role_descr['DVMT1']=='none':  # No aux. T sensor or DVM not associated with R1 (just GMH)
     T1_av = T1_av_gmh
     T1_av_dvm = GTC.ureal(0, 0)  # ignore any dvm data
     Diff_T1 = GTC.ureal(0, 0)  # No temperature disparity (GMH only)
-#    else:
-#        T1_av = GTC.ar.result(GTC.fn.mean((T1_av_dvm,T1_av_gmh)),label='T1_av'+ Run_Id)
-#        Diff_T1 = GTC.magnitude(T1_av_dvm-T1_av_gmh)
 
-#    if role_descr['DVMT2']=='none':  # No aux. T sensor or DVM not associated with R2 (just GMH)
     T2_av = T2_av_gmh
     T2_av_dvm = GTC.ureal(0, 0)  # ignore any dvm data
     Diff_T2 = GTC.ureal(0, 0)  # No temperature disparity (GMH only)
     influencies.append(T2_av_gmh)  # R2 dependancy
-#    else:
-#        T2_av = GTC.ar.result( GTC.fn.mean((T2_av_dvm,T2_av_gmh)),label='T2_av' + Run_Id)
-#        Diff_T2 = GTC.ar.result(GTC.magnitude(T2_av_dvm-T2_av_gmh),label='Diff_T2' + Run_Id)
-#        influencies.append(T2_av_dvm,T2_av_gmh) # R2 dependancy
 
-    # Default T definition arises from imperfect positioning of sensors wrt resistor:
+    '''
+    DEFAULT T definition arises from imperfect positioning of sensors
+    wrt resistor:
+    '''
     T_def = GTC.ureal(0, GTC.type_b.distribution['gaussian'](0.01), 3,
                       label='T_def ' + Run_Id)
 
-    # T-definition arises from imperfect positioning of both probes AND their disagreement:
+    '''
+    T-definition arises from imperfect positioning of BOTH probes
+    AND their disagreement:
+    '''
     T_def1 = GTC.ar.result(GTC.ureal(0, Diff_T1.u/2, 7) + T_def,
-                           label='T_def1 ' + Run_Id)    
+                           label='T_def1 ' + Run_Id)
     T_def2 = GTC.ar.result(GTC.ureal(0, Diff_T2.u/2, 7) + T_def,
                            label='T_def2 ' + Run_Id)
     influencies.append(T_def2)  # R2 dependancy
@@ -592,18 +598,23 @@ while Data_row <= Data_stop_row:
     dV2 = abs(abs(V2av) - R2VRef)
 
     R2 = R2_0*(1 + R2alpha * dT2 + R2beta * dT2 ** 2 + R2gamma * dV2) + Rd
-    print 'R2 =',GTC.summary(R2)
-    assert abs(R2.x-R2val)/R2val < PPM_TOLERANCE['R2'], 'R2 > 100 ppm from nominal! R2 = {0}'.format(R2.x)
+    print 'R2 =', GTC.summary(R2)
+    assert abs(R2.x-R2val)/R2val < PPM_TOLERANCE['R2'],\
+        'R2 > 100 ppm from nominal! R2 = {0}'.format(R2.x)
 
     # calculate R1
     R1 = R2*vrc*V1av*delta_Vd/(Vdav*delta_V2 - V2av*delta_Vd)
-    print 'R1 =',GTC.summary(R1)
-    assert abs(R1.x-R1val)/R1val < PPM_TOLERANCE['R1'], 'R1 > 1000 ppm from nominal!'
+    print 'R1 =', GTC.summary(R1)
+    assert abs(R1.x-R1val)/R1val < PPM_TOLERANCE['R1'],\
+        'R1 > 1000 ppm from nominal!'
 
     T1 = T1_av + T_def1
     print R1, 'at temperature', T1
 
-    # Combine data for this measurement: name,time,R,T,V and write to Summary sheet:
+    '''
+    Combine data for this measurement: name,time,R,T,V and write to
+    Summary sheet:
+    '''
     this_result = {'name': R1_name, 'time_str': times_av_str,
                    'time_fl': times_av_fl, 'V': V1av, 'R': R1, 'T': T1,
                    'R_expU': R1.u*GTC.rp.k_factor(R1.df, quick=False)}
@@ -611,10 +622,10 @@ while Data_row <= Data_stop_row:
     R_info.WriteThisResult(ws_Summary, summary_row, this_result)
 
     # build uncertainty budget table
-    budget_table =[]
+    budget_table = []
     for i in influencies:  # rp.u_component(R1_gmh,i) gives + or - values
         if i.u > 0:
-            sensitivity = GTC.rp.u_component(R1, i)/i.u  # GTC.rp.sensitivity() deprecated
+            sensitivity = GTC.rp.u_component(R1, i)/i.u
         else:
             sensitivity = 0
         budget_table.append([i.label, i.x, i.u, i.df, sensitivity,
@@ -626,7 +637,7 @@ while Data_row <= Data_stop_row:
     # write budget to Summary sheet
     summary_row = R_info.WriteBudget(ws_Summary, summary_row,
                                      budget_table_sorted)
-    summary_row += 1  # Add a blank line between each measurement for ease of reading
+    summary_row += 1  # Add blank line between each measurement for clarity
 
     # Separate results by voltage (V1av) if different
     if HV == LV:
