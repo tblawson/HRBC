@@ -27,12 +27,12 @@ from openpyxl import load_workbook, cell
 
 import HighRes_events as evts
 import acquisition as acq
-import RLink as rl
+#import RLink as rl
 import devices
 
 matplotlib.rc('lines', linewidth=1, color='blue')
 
-#os.environ['XLPATH'] = 'C:\Documents and Settings\\t.lawson\My Documents\Python Scripts\High_Res_Bridge'
+
 '''
 ------------------------
 # Setup Page definition:
@@ -394,7 +394,8 @@ class SetupPage(wx.Panel):
                                                   'tbtn': self.GMHroomTest}})
         devices.ROLES_WIDGETS.update({'switchbox': {'icb': self.Switchbox,
                                                     'acb': self.SwitchboxAddr,
-                                                    'tbtn': self.SwitchboxTest}})
+                                                    'tbtn':
+                                                    self.SwitchboxTest}})
 
     def BuildComboChoices(self):
         for d in devices.INSTR_DATA.keys():
@@ -469,7 +470,8 @@ class SetupPage(wx.Panel):
                         del v_u_d_l[-1]  # v_u_d_l.pop()
                     values.append(v_u_d_l)  # append value-list as next item
                     print descr, ' : ', param, ' = ', v_u_d_l
-                    print >>self.log, descr, ' : ', param, ' = ', v_u_d_l  # self.log.write(logline)
+                    print >>self.log, descr, ' : ', param, ' = ',\
+                        v_u_d_l  # self.log.write(logline)
 
                 if param == u'test':  # last parameter for this description
                     devices.DESCR.append(descr)  # build description list
@@ -525,11 +527,13 @@ class SetupPage(wx.Panel):
 
         if 'GMH' in r:
             # create a GMH instrument instance
-            print'\nnbpages.SetupPage.CreateInstr(): Creating GMH device (%s -> %s).' % (d, r)
+            print'\nnbpages.SetupPage.CreateInstr(): ' +\
+                'Creating GMH device (%s -> %s).' % (d, r)
             devices.ROLES_INSTR.update({r: devices.GMH_Sensor(d)})
         else:
             # create and open a visa instrument instance
-            print'\nnbpages.SetupPage.CreateInstr(): Creating VISA device (%s -> %s).' % (d, r)
+            print'\nnbpages.SetupPage.CreateInstr(): ' +\
+                'Creating VISA device (%s -> %s).' % (d, r)
             devices.ROLES_INSTR.update({r: devices.instrument(d)})
             devices.ROLES_INSTR[r].Open()
         self.SetInstr(d, r)
@@ -540,7 +544,7 @@ class SetupPage(wx.Panel):
         Updates internal info (INSTR_DATA) and Enables/disables testbuttons
         as necessary.
         """
-#        print 'nbpages.SetupPage.SetInstr():',d,'assigned to role',r,'demo mode:',devices.ROLES_INSTR[r].demo
+
         assert d in devices.INSTR_DATA,\
             'Unknown instrument: %s - check Excel file is loaded.' % d
         assert 'role' in devices.INSTR_DATA[d],\
@@ -571,7 +575,7 @@ class SetupPage(wx.Panel):
         if (a not in self.GPIBAddressList) or (a not in self.COMAddressList):
             devices.INSTR_DATA[d]['str_addr'] = a
             devices.ROLES_INSTR[r].str_addr = a
-            addr = a.lstrip('COMGPIB0:')  # leave only numeric part of address string
+            addr = a.lstrip('COMGPIB0:')  # Leave only numeric part
             devices.INSTR_DATA[d]['addr'] = int(addr)
             devices.ROLES_INSTR[r].addr = int(addr)
         print'UpdateAddr():', r, 'using', d, 'set to addr', addr, '(', a, ')'
@@ -598,7 +602,8 @@ class SetupPage(wx.Panel):
             instr = devices.RM.open_resource(resource)
             instr.write(config)
         except devices.visa.VisaIOError:
-            self.Response.SetValue('Couldn\'t open visa resource for switchbox!')
+            self.Response.SetValue('Couldn\'t open ' +
+                                   'visa resource for switchbox!')
 
     def BuildCommStr(self, e):
         # Called by a change in GMH probe selection, or resistor name
@@ -719,7 +724,8 @@ class RunPage(wx.Panel):
         SettleDelLbl = wx.StaticText(self, id=wx.ID_ANY, label='Settle delay:')
         self.SettleDel = wx.SpinCtrl(self, id=wx.ID_ANY, value='0',
                                      min=0, max=600)
-        StartDelLbl = wx.StaticText(self, id=wx.ID_ANY, label='Start-row delay:')
+        StartDelLbl = wx.StaticText(self, id=wx.ID_ANY,
+                                    label='Start-row delay:')
         self.StartDel = wx.TextCtrl(self, id=wx.ID_ANY, style=wx.TE_READONLY)
         AZERO1DelLbl = wx.StaticText(self, id=wx.ID_ANY,
                                      label='AZERO_ONCE delay:')
@@ -956,21 +962,25 @@ class RunPage(wx.Panel):
         # V1:
         src1 = devices.ROLES_INSTR['SRC1']
         if self.V1Setting.GetValue() == 0:
-            print'RunPage.OnZeroVolts(): Zero/Stby directly (not via V1 display)'
+            print'RunPage.OnZeroVolts(): ' +\
+                'Zero/Stby directly (not via V1 display)'
             src1.SetV(0)
             src1.Stby()
         else:
-            self.V1Setting.SetValue('0')  # Calls OnV1Set() ONLY IF VALUE CHANGES
+            # Call OnV1Set() ONLY IF VALUE CHANGES:
+            self.V1Setting.SetValue('0')
             print'RunPage.OnZeroVolts():  Zero/Stby via V1 display'
 
         # V2:
         src2 = devices.ROLES_INSTR['SRC2']
         if self.V2Setting.GetValue() == 0:
-            print'RunPage.OnZeroVolts(): Zero/Stby directly (not via V2 display)'
+            print'RunPage.OnZeroVolts(): ' +\
+                'Zero/Stby directly (not via V2 display)'
             src2.SetV(0)
             src2.Stby()
         else:
-            self.V2Setting.SetValue('0')  # Calls OnV2Set() ONLY IF VALUE CHANGES
+            # Call OnV2Set() ONLY IF VALUE CHANGES:
+            self.V2Setting.SetValue('0')
             print'RunPage.OnZeroVolts():  Zero/Stby via V2 display'
 
     def OnStart(self, e):
