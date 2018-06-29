@@ -36,20 +36,18 @@ Created on Fri Sep 18 14:01:18 2015
 
 import os
 import sys
-sys.path.append("C:\Python27\Lib\site-packages\GTC")
-
 import datetime as dt
 import math
 
 from openpyxl import load_workbook, cell
-#from openpyxl.cell import get_column_letter #column_index_from_string
 from openpyxl.utils import get_column_letter
 
+sys.path.append("C:\Python27\Lib\site-packages\GTC")
 import GTC
 
 import R_info  # useful functions
 
-VERSION = 1.3
+VERSION = 2.0
 
 # DVM, GMH Correction factors, etc.
 
@@ -70,10 +68,11 @@ log.write(now_fmt + '\n' + xlfile + '\n')
 
 # open existing workbook
 print str(xlfile)
-wb_io = load_workbook(xlfile, data_only=True)  # (data_only for validation)
+# Open in NON-data-only mode, to preserve any fomulas when saving...
+wb_io = load_workbook(xlfile, data_only=False)
 ws_Data = wb_io.get_sheet_by_name('Data')
 ws_Rlink = wb_io.get_sheet_by_name('Rlink')
-ws_Summary = wb_io.get_sheet_by_name('Results')
+ws_Results = wb_io.get_sheet_by_name('Results')
 ws_Params = wb_io.get_sheet_by_name('Parameters')
 
 # Get local parameters
@@ -82,7 +81,7 @@ Data_stop_row = ws_Data['B2'].value
 assert Data_start_row <= Data_stop_row, 'Stop row must follow start row!'
 
 # Get instrument assignments
-N_ROLES = 10  # 10 roles in total
+N_ROLES = 9  # 9 roles in total
 role_descr = {}
 for row in range(Data_start_row, Data_start_row + N_ROLES):
     # Read {role:description}
@@ -93,7 +92,7 @@ for row in range(Data_start_row, Data_start_row + N_ROLES):
     assert temp_dict.values()[-1] is not None,\
         'Instrument assignment: Missing description!'
     role_descr.update(temp_dict)
-    if ws_Data['AC'+str(row)].value == u'DVM12':
+    if ws_Data['AC'+str(row)].value == u'DVM':
         range_mode = ws_Data['AE'+str(row)].value
         print 'Range mode:', range_mode
 
@@ -202,7 +201,7 @@ log.write('\n'+str(len(R_INFO))+' resistors ('+str(last_R_row)+') rows')
 # Determine the meanings of 'LV' and 'HV'
 V1set_a = abs(ws_Data['A'+str(Data_start_row)].value)
 assert V1set_a is not None, 'Missing initial V1 value!'
-V1set_b = abs(ws_Data['A'+str(Data_start_row+4)].value)
+V1set_b = abs(ws_Data['A'+str(Data_start_row+6)].value)
 assert V1set_b is not None, 'Missing second V1 value!'
 
 if V1set_a < V1set_b:
@@ -218,19 +217,19 @@ print 'LV =', LV, '; HV =', HV
 # Set up reading of Data sheet
 Data_row = Data_start_row
 
-# Get start_row on Summary sheet
-summary_start_row = ws_Summary['B1'].value
-assert summary_start_row is not None, 'Missing start row on Results sheet!'
+# Get start_row on Results sheet
+results_start_row = ws_Results['B1'].value
+assert results_start_row is not None, 'Missing start row on Results sheet!'
 
 # Get run identifier and copy to Results sheet
-Run_Id = ws_Data['B'+str(Data_start_row-1)].value
+Run_Id = ws_Data['B'+str(Data_start_row-2)].value
 assert Run_Id is not None, 'Missing Run Id!'
 
-ws_Summary['C'+str(summary_start_row)] = 'Run Id:'
-ws_Summary['D'+str(summary_start_row)] = str(Run_Id)
+ws_Results['C'+str(results_start_row)] = 'Run Id:'
+ws_Results['D'+str(results_start_row)] = str(Run_Id)
 
 # Get run comment and extract R names & R values
-Data_comment = ws_Data['Z'+str(Data_row)].value
+Data_comment = ws_Data['AB'+str(Data_row)].value
 assert Data_comment is not None, 'Missing Comment!'
 
 print Data_comment
@@ -239,9 +238,9 @@ print 'Run Id:', Run_Id
 log.write('\nRun Id: ' + Run_Id)
 
 # Write headings
-summary_row = R_info.WriteHeadings(ws_Summary, summary_start_row, VERSION)
+results_row = R_info.WriteHeadings(ws_Results, results_start_row, VERSION)
 
-# Lists of dictionaries (with name,time,R,T,V entries)
+# Lists of dictionaries (with name,time,R0,R1,Rd,RL,T,V entries)
 results_HV = []  # High voltage measurements
 results_LV = []  # Low voltage measurements
 
@@ -253,73 +252,6 @@ R2val = R_info.GetRval(R2_name)
 # Check for knowledge of R2:
 if R2_name not in R_INFO:
     sys.exit('ERROR - Unknown Rs: '+R2_name)
-
-
-# ## __________Get Rd value__________## #
-# 1st, detetermine data format
-N_revs = ws_Rlink['B2'].value  # Number of reversals = number of columns
-assert N_revs is not None and N_revs > 0, 'Missing or no reversals!'
-N_reads = ws_Rlink['B3'].value  # Number of readings = number of rows
-assert N_reads is not None and N_reads > 0, 'Missing or no reads!'
-head_height = 6  # Rows of header before each block of data
-jump = head_height + N_reads  # rows to jump between starts of each header
-
-# Find correct RLink data-header
-RL_start_row = R_info.GetRLstartrow(ws_Rlink, Run_Id, jump, log)
-assert RL_start_row > 1, 'Unable to find matching Rlink data!'
-
-# Next, define nom_R,abs_V quantities
-"""
-Assume all 'nominal' values have 100 ppm std.uncert. with 8 dof.
-"""
-val1 = ws_Rlink['C'+str(RL_start_row+2)].value
-assert val1 is not None, 'Missing nominal R1 value!'
-nom_R1 = GTC.ureal(val1, val1/1e4, 8, label='nom_R1')  # Don't know u(nom.vals)
-val2 = ws_Rlink['C'+str(RL_start_row+3)].value
-assert val2 is not None, 'Missing nominal R2 value!'
-nom_R2 = GTC.ureal(val2, val2/1e4, 8, label='nom_R2')  # Don't know u(nom.vals)
-val1 = ws_Rlink['D'+str(RL_start_row+2)].value
-assert val1 is not None, 'Missing nominal V1 value!'
-abs_V1 = GTC.ureal(val1, val1/1e4, 8, label='abs_V1')  # Don't know u(nom.vals)
-val2 = ws_Rlink['D'+str(RL_start_row+3)].value
-assert val2 is not None, 'Missing nominal V2 value!'
-abs_V2 = GTC.ureal(val2, val2/1e4, 8, label='abs_V2')  # Don't know u(nom.vals)
-
-# Calculate I
-I = (abs_V1 + abs_V2) / (nom_R1 + nom_R2)
-I.label = 'Rd_I' + Run_Id
-
-# Average all +Vs and -Vs
-Vp = []
-Vn = []
-
-for Vrow in range(RL_start_row+5, RL_start_row+5+N_reads):
-
-    col = 1
-    while col <= N_revs:  # cycle through cols 1 to N_revs
-        Vp.append(ws_Rlink[get_column_letter(col)+str(Vrow)].value)
-        assert Vp[-1] is not None, 'Missing Vp value!'
-        col += 1
-
-        Vn.append(ws_Rlink[get_column_letter(col)+str(Vrow)].value)
-        assert Vn[-1] is not None, 'Missing Vn value!'
-        col += 1
-
-av_dV_p = GTC.ta.estimate(Vp)
-av_dV_p.label = 'av_dV_p' + Run_Id
-av_dV_n = GTC.ta.estimate(Vn)
-av_dV_n.label = 'av_dV_n' + Run_Id
-av_dV = 0.5*GTC.magnitude(av_dV_p - av_dV_n)
-av_dV.label = 'Rd_dV' + Run_Id
-
-# Finally, calculate Rd
-Rd = GTC.ar.result(av_dV/I, label='Rlink ' + Run_Id)
-print'\nRlink = ' + str(GTC.summary(Rd))
-assert Rd.x < 0.1, 'High link resistance! ' + str(Rd.x) + ' Ohm'
-# assert Rd.x > Rd.u, 'Link resistance uncertainty > value!'
-log.write('\nRlink = ' + str(GTC.summary(Rd)))
-
-# ##__________End of Rd section___________## #
 
 raw_gmh1 = []
 raw_gmh2 = []
@@ -391,7 +323,7 @@ while Data_row <= Data_stop_row:
     Vlin_Vdav = I_INFO[role_descr['DVMd']]['linearity_Vdav']  # Used in Vd calc
 
     # Start list of influence variables
-    influencies = [Rd, G1, G2, Vlin_pert,
+    influencies = [G1, G2, Vlin_pert,
                    Vlin_Vdav, R2TRef, R2VRef]  # R2 dependancies
 
     R2alpha = R_INFO[R2_name]['alpha']
@@ -619,7 +551,7 @@ while Data_row <= Data_stop_row:
                    'time_fl': times_av_fl, 'V': V1av, 'R': R1, 'T': T1,
                    'R_expU': R1.u*GTC.rp.k_factor(R1.df, quick=False)}
 
-    R_info.WriteThisResult(ws_Summary, summary_row, this_result)
+    R_info.WriteThisResult(ws_Results, results_row, this_result)
 
     # build uncertainty budget table
     budget_table = []
@@ -635,9 +567,9 @@ while Data_row <= Data_stop_row:
                                  reverse=True)
 
     # write budget to Summary sheet
-    summary_row = R_info.WriteBudget(ws_Summary, summary_row,
+    results_row = R_info.WriteBudget(ws_Results, results_row,
                                      budget_table_sorted)
-    summary_row += 1  # Add blank line between each measurement for clarity
+    results_row += 1  # Add blank line between each measurement for clarity
 
     # Separate results by voltage (V1av) if different
     if HV == LV:
@@ -657,10 +589,10 @@ while Data_row <= Data_stop_row:
 
 # At this point the summary row has reached its maximum for this analysis run
 # ...so make a note of it, for use as the next run's starting row:
-ws_Summary['B1'] = summary_row + 1  # Add extra row between runs
+ws_Results['B1'] = results_row + 1  # Add extra row between runs
 
 # Go back to the top of summary block, ready for writing run results
-summary_row = summary_start_row + 1
+results_row = results_start_row + 1
 
 ########################################################################
 
@@ -676,18 +608,18 @@ also reported.
 print '\nLV:'
 log.write('\nLV:')
 R1_LV, Ohm_per_C_LV, T_LV, V_LV, date = R_info.write_R1_T_fit(results_LV,
-                                                              ws_Summary,
-                                                              summary_row, log)
+                                                              ws_Results,
+                                                              results_row, log)
 alpha_LV = Ohm_per_C_LV/R1_LV
 
-summary_row += 1
+results_row += 1
 
 # Weighted total least-squares fit (R1-T), HV
 print '\nHV:'
 log.write('\nHV:')
 R1_HV, Ohm_per_C_HV, T_HV, V_HV, date = R_info.write_R1_T_fit(results_HV,
-                                                              ws_Summary,
-                                                              summary_row, log)
+                                                              ws_Results,
+                                                              results_row, log)
 alpha_HV = Ohm_per_C_HV/R1_HV
 
 alpha = GTC.fn.mean([alpha_LV, alpha_HV])
@@ -698,31 +630,31 @@ if HV == LV:  # Can't estimate gamma
 else:
     gamma = ((R1_HV-R1_LV)/(V_HV-V_LV))/R1_LV
 
-summary_row += 2
+results_row += 2
 
-ws_Summary['R'+str(summary_row)] = 'alpha (/C)'
-ws_Summary['V'+str(summary_row)] = 'gamma (/V)'
+ws_Results['R'+str(results_row)] = 'alpha (/C)'
+ws_Results['V'+str(results_row)] = 'gamma (/V)'
 
-summary_row += 1
+results_row += 1
 
-ws_Summary['R'+str(summary_row)] = alpha.x
-ws_Summary['S'+str(summary_row)] = alpha.u
+ws_Results['R'+str(results_row)] = alpha.x
+ws_Results['S'+str(results_row)] = alpha.u
 
 if math.isinf(alpha.df):
     # print'alpha.df is',alpha.df
-    ws_Summary['T'+str(summary_row)] = str(alpha.df)
+    ws_Results['T'+str(results_row)] = str(alpha.df)
 else:
     # print'alpha.df =',alpha.df
-    ws_Summary['T'+str(summary_row)] = round(alpha.df)
+    ws_Results['T'+str(results_row)] = round(alpha.df)
 
-ws_Summary['V'+str(summary_row)] = gamma.x
-ws_Summary['W'+str(summary_row)] = gamma.u
+ws_Results['V'+str(results_row)] = gamma.x
+ws_Results['W'+str(results_row)] = gamma.u
 if math.isinf(gamma.df):
     # print'gamma.df is',gamma.df
-    ws_Summary['X'+str(summary_row)] = str(gamma.df)
+    ws_Results['X'+str(results_row)] = str(gamma.df)
 else:
     # print'gamma.df =',gamma.df
-    ws_Summary['X'+str(summary_row)] = round(gamma.df)
+    ws_Results['X'+str(results_row)] = round(gamma.df)
 
 #######################################################################
 
