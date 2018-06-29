@@ -142,17 +142,17 @@ def av_t_strin(t_list, switch):
         return t_av_fl.strftime('%d/%m/%Y %H:%M:%S')  # av. time as string
 
 
-# Write headings on Summary sheet
+# Write headings on Results sheet
 def WriteHeadings(sheet, row, version):
     now = dt.datetime.now()
     sheet['A'+str(row-1)].font = Font(b=True)
     sheet['A' + str(row-1)] = 'Processed with HRBA v' + str(version) +\
                               ' on ' + now.strftime("%A, %d. %B %Y %I:%M%p")
     sheet['J'+str(row)] = 'Uncertainty Budget'
-    sheet['R'+str(row)] = 'R1(T)'
-    sheet['U'+str(row)] = 'exp. U(95%)'
-    sheet['V'+str(row)] = 'av T'
-    sheet['Y'+str(row)] = 'av date/time'
+    sheet['R'+str(row)] = 'av date/time'
+    sheet['S'+str(row)] = 'R1(T,V)'
+    sheet['V'+str(row)] = 'exp. U(95%)'
+    sheet['W'+str(row)] = 'av T'
     sheet['Z'+str(row)] = 'av V'
     row += 1
     sheet['A'+str(row)] = 'Name'
@@ -173,6 +173,18 @@ def WriteHeadings(sheet, row, version):
     sheet['Q'+str(row)] = 'LV'
     row += 1
     sheet['Q'+str(row)] = 'HV'
+
+    sheet['E'+str(row+2)] = 'R0'
+    sheet['F'+str(row+2)] = 'std u.'
+    sheet['G'+str(row+2)] = 'dof'
+
+    sheet['E'+str(row+5)] = 'Rd'
+    sheet['F'+str(row+5)] = 'std u.'
+    sheet['G'+str(row+5)] = 'dof'
+
+    sheet['E'+str(row+8)] = 'RLeak'
+    sheet['F'+str(row+8)] = 'std u.'
+    sheet['G'+str(row+8)] = 'dof'
 
     return row
 
