@@ -264,16 +264,17 @@ RHs = []
 Ps = []
 Ts = []
 
-##############################
+# _____________________________________________________________________________
+
 # ___Loop over data rows ___ #
 print '\nLooping over data rows', Data_start_row, 'to', Data_stop_row, '...'
 log.write('\nLooping over data rows ' + str(Data_start_row) +
           ' to ' + str(Data_stop_row) + '\n')
 while Data_row <= Data_stop_row:
     # R2 parameters:
-    V2set = ws_Data['B'+str(Data_row)].value  # Changed from Data_start_row!
+    V2set = ws_Data['B'+str(Data_row)].value
     assert V2set is not None, 'Missing V2 setting!'
-    V1set = ws_Data['A'+str(Data_row)].value  # Changed from Data_start_row!
+    V1set = ws_Data['A'+str(Data_row)].value
     assert V1set is not None, 'Missing V1 setting!'
 
     # Select R2 info based on applied voltage ('LV' or 'HV')
@@ -314,17 +315,21 @@ while Data_row <= Data_stop_row:
             G2_code = R_info.Vgain_codes_auto[round(abs(V2set), 1)]
             G1_code = R_info.Vgain_codes_fixed[round(V1set, 1)]
 
-    G1 = I_INFO[role_descr['DVM12']][G1_code]
-    G2 = I_INFO[role_descr['DVM12']][G2_code]
+    G1 = I_INFO[role_descr['DVM']][G1_code]
+    G2 = I_INFO[role_descr['DVM']][G2_code]
 
-    vrc = GTC.ar.result(G2/G1, label='vrc ' + Run_Id)
+    '''
+    Instead of defining vrc, apply individual gain corrections to each
+    measurement:
+    '''
+#    vrc = GTC.ar.result(G2/G1, label='vrc ' + Run_Id)
 
-    Vlin_pert = I_INFO[role_descr['DVMd']]['linearity_pert']  # Used in G calc
-    Vlin_Vdav = I_INFO[role_descr['DVMd']]['linearity_Vdav']  # Used in Vd calc
+    Vlin_pert = I_INFO[role_descr['DVM']]['linearity_pert']  # G calc
+    Vlin_Vnullav = I_INFO[role_descr['DVM']]['linearity_Vdav']  # Vnull calcs
 
     # Start list of influence variables
     influencies = [G1, G2, Vlin_pert,
-                   Vlin_Vdav, R2TRef, R2VRef]  # R2 dependancies
+                   Vlin_Vnullav, R2TRef, R2VRef]  # R2 dependancies
 
     R2alpha = R_INFO[R2_name]['alpha']
     R2beta = R_INFO[R2_name]['beta']
@@ -480,44 +485,72 @@ while Data_row <= Data_stop_row:
                            label='T_def2 ' + Run_Id)
     influencies.append(T_def2)  # R2 dependancy
 
-    # Raw voltage measurements: V: [Vp,Vm,Vpp,Vppp]
+    # Raw voltage measurements: V: [Vp,Vm,Vpp; Vp',Vm',Vpp'], etc
     # All readings are precise enough not to worry about digitization error...
-    V1 = []
-    V2 = []
-    Vd = []
-    for line in range(4):
+    V1 = []  # 6 normal readings
+    V2 = []  # 3 normal, 3 perturbed
+    Va = []  # 3 normal, 3 perturbed
+    Vb = []  # 3 normal, 3 perturbed
+    Vc = []  # 3 normal, 3 perturbed
+    Vd = []  # 3 normal, 3 perturbed
+    for line in range(6):
 
-        V1.append(GTC.ureal(ws_Data['Q'+str(Data_row+line)].value,
-                            ws_Data['R'+str(Data_row+line)].value,
-                            ws_Data['C'+str(Data_row+line)].value-1,
-                            label='V1_'+str(line) + ' ' + Run_Id))
-        V2.append(GTC.ureal(ws_Data['H'+str(Data_row+line)].value,
+        V1.append(GTC.ureal(ws_Data['H'+str(Data_row+line)].value,
                             ws_Data['I'+str(Data_row+line)].value,
                             ws_Data['C'+str(Data_row+line)].value-1,
+                            label='V1_'+str(line) + ' ' + Run_Id))
+        V2.append(GTC.ureal(ws_Data['J'+str(Data_row+line)].value,
+                            ws_Data['K'+str(Data_row+line)].value,
+                            ws_Data['C'+str(Data_row+line)].value-1,
                             label='V2_'+str(line) + ' ' + Run_Id))
-        Vd.append(GTC.ureal(ws_Data['N'+str(Data_row+line)].value,
+        Va.append(GTC.ureal(ws_Data['L'+str(Data_row+line)].value,
+                            ws_Data['M'+str(Data_row+line)].value,
+                            ws_Data['C'+str(Data_row+line)].value-1,
+                            label='Va_'+str(line) + ' ' + Run_Id))
+        Vb.append(GTC.ureal(ws_Data['N'+str(Data_row+line)].value,
                             ws_Data['O'+str(Data_row+line)].value,
+                            ws_Data['C'+str(Data_row+line)].value-1,
+                            label='Vb_'+str(line) + ' ' + Run_Id))
+        Vc.append(GTC.ureal(ws_Data['P'+str(Data_row+line)].value,
+                            ws_Data['Q'+str(Data_row+line)].value,
+                            ws_Data['C'+str(Data_row+line)].value-1,
+                            label='Vc_'+str(line) + ' ' + Run_Id))
+        Vd.append(GTC.ureal(ws_Data['R'+str(Data_row+line)].value,
+                            ws_Data['S'+str(Data_row+line)].value,
                             ws_Data['C'+str(Data_row+line)].value-1,
                             label='Vd_'+str(line) + ' ' + Run_Id))
         assert V1[-1] is not None, 'Missing V1 data!'
         assert V2[-1] is not None, 'Missing V2 data!'
+        assert Va[-1] is not None, 'Missing Va data!'
+        assert Vb[-1] is not None, 'Missing Vb data!'
+        assert Vc[-1] is not None, 'Missing Vc data!'
         assert Vd[-1] is not None, 'Missing Vd data!'
-    influencies.extend(V1+V2+Vd)  # R2 dependancies - raw measurements
+    influencies.extend(V1+V2+Va+Vb+Vc+Vd)  # R2 dependancies - raw measurements
 
     # Define drift
+
     uncert = abs(Vd[2]-(Vd[0]+((Vd[3]-Vd[2])/(V2[3]-V2[2]))*(V2[2]-V2[0])))/4
     Vdrift1 = GTC.ureal(0, GTC.tb.distribution['gaussian'](uncert), 8,
                         label='Vdrift_pert ' + Run_Id)
     Vdrift2 = GTC.ureal(0, GTC.tb.distribution['gaussian'](uncert), 8,
-                        label='Vdrift_Vdav ' + Run_Id)
+                        label='Vdrift_Vnullav ' + Run_Id)
 
-    Vdrift = {'pert': Vdrift1, 'Vdav': Vdrift2}
-    influencies.extend([Vdrift['pert'], Vdrift['Vdav']])  # R2 dependancies
+    Vdrift = {'pert': Vdrift1, 'Vnullav': Vdrift2}
+    influencies.extend([Vdrift['pert'], Vdrift['Vnullav']])  # R2 dependancies
 
     # Mean voltages
-    V1av = (V1[0]-2*V1[1]+V1[2])/4
+    V1av = (V1[0]-2*V1[1]+V1[2]+V1[3]-2*V1[4]+V1[5])/8
     V2av = (V2[0]-2*V2[1]+V2[2])/4
-    Vdav = (Vd[0]-2*Vd[1]+Vd[2])/4 + Vlin_Vdav + Vdrift['Vdav']
+    V2pav = (V2[3]-2*V2[4]+V2[5])/4
+    Vav = (Va[0]-2*Va[1]+Va[2])/4
+    Vapav = (Va[3]-2*Va[4]+Va[5])/4
+    Vbav = (Vb[0]-2*Vb[1]+Vb[2])/4
+    Vbpav = (Vb[3]-2*Vb[4]+Vb[5])/4
+    Vcav = (Vc[0]-2*Vc[1]+Vc[2])/4
+    Vcpav = (Vc[3]-2*Vc[4]+Vc[5])/4
+    Vdav = (Vd[0]-2*Vd[1]+Vd[2])/4
+    Vdpav = (Vd[3]-2*Vd[4]+Vd[5])/4
+    Vnullav = (Vd[0]-2*Vd[1]+Vd[2])/4 + Vlin_Vnullav + Vdrift['Vnullav']
 
     # Effect of v2 perturbation
     delta_Vd = Vd[3] - Vd[2] + Vlin_pert + Vdrift['pert']
@@ -529,13 +562,13 @@ while Data_row <= Data_stop_row:
     # NOTE: NEED TWO abs() TO ENSURE NON-NEGATIVE DIFFERENCE:
     dV2 = abs(abs(V2av) - R2VRef)
 
-    R2 = R2_0*(1 + R2alpha * dT2 + R2beta * dT2 ** 2 + R2gamma * dV2) + Rd
+    R2 = R2_0*(1 + R2alpha * dT2 + R2beta * dT2 ** 2 + R2gamma * dV2)
     print 'R2 =', GTC.summary(R2)
     assert abs(R2.x-R2val)/R2val < PPM_TOLERANCE['R2'],\
         'R2 > 100 ppm from nominal! R2 = {0}'.format(R2.x)
 
     # calculate R1
-    R1 = R2*vrc*V1av*delta_Vd/(Vdav*delta_V2 - V2av*delta_Vd)
+    R1 = R2*vrc*V1av*delta_Vd/(Vnullav*delta_V2 - V2av*delta_Vd)
     print 'R1 =', GTC.summary(R1)
     assert abs(R1.x-R1val)/R1val < PPM_TOLERANCE['R1'],\
         'R1 > 1000 ppm from nominal!'
