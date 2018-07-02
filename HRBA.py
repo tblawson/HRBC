@@ -52,7 +52,7 @@ VERSION = 2.0
 # DVM, GMH Correction factors, etc.
 
 ZERO = GTC.ureal(0, 0)
-PPM_TOLERANCE = {'R2': 2e-4, 'G': 0.01, 'R1': 1e-3}
+PPM_TOLERANCE = {'R2': 2e-4, 'R1': 1e-3}
 
 datadir = raw_input('Path to data directory:')
 xlname = raw_input('Excel filename:')
@@ -315,6 +315,7 @@ while Data_row <= Data_stop_row:
             G2_code = R_info.Vgain_codes_auto[round(abs(V2set), 1)]
             G1_code = R_info.Vgain_codes_fixed[round(V1set, 1)]
 
+    # Gain corrections for V1, v2:
     G1 = I_INFO[role_descr['DVM']][G1_code]
     G2 = I_INFO[role_descr['DVM']][G2_code]
 
@@ -328,14 +329,13 @@ while Data_row <= Data_stop_row:
     Vlin_Vnull = I_INFO[role_descr['DVM']]['linearity_Vdav']  # Vnull calcs
 
     # Start list of influence variables
-    influencies = [G1, G2, Vlin_pert,
-                   Vlin_Vnull, R2TRef, R2VRef]  # R2 dependancies
+    influencies = [G1, G2, Vlin_Vnull, R2_0, R2TRef, R2VRef]  # R2 dependancies
 
     R2alpha = R_INFO[R2_name]['alpha']
     R2beta = R_INFO[R2_name]['beta']
     R2gamma = R_INFO[R2_name]['gamma']
     R2Tsensor = R_INFO[R2_name]['T_sensor']
-    influencies.extend([R2_0, R2alpha, R2beta, R2gamma])  # R2 dependancies
+    influencies.extend([R2alpha, R2beta, R2gamma])  # R2 dependancies
 
     if R1_name not in R_INFO:
         R1Tsensor = 'Pt 100r'  # assume a Pt sensor in unknown resistor
@@ -466,6 +466,8 @@ while Data_row <= Data_stop_row:
     T2_av = T2_av_gmh
     T2_av_dvm = GTC.ureal(0, 0)  # ignore any dvm data
     Diff_T2 = GTC.ureal(0, 0)  # No temperature disparity (GMH only)
+
+    # Default to using GMH probes for R2 temperature (not Pt)
     influencies.append(T2_av_gmh)  # R2 dependancy
 
     '''
@@ -529,16 +531,16 @@ while Data_row <= Data_stop_row:
 
     influencies.extend(V1+V2+Va+Vb+Vc+Vd)  # R2 dependancies - raw measurements
 
-    # Effect of V2 perturbation
+    # V2 perturbation
     delta_V2 = V2[3] - V2[2]
     drift_V2_1 = V2[3] - V2[0]
     drift_V2_2 = V2[5] - V2[3]
     av_drift_V2 = GTC.fn.mean(drift_V2_1, drift_V2_2)
 
-    # Define drift
+    # Define drift in nulls:
     Vdrift_vals = []
     for V in (Va, Vb, Vc, Vd):
-        delta_V = V[3] - V[2]
+        delta_V = V[3] - V[2]  # Effect of V2 perturbation
         drift_1 = V[2] - V[0]
         drift_2 = V[5] - V[3]
         av_drift = GTC.ta.estimate(drift_1, drift_2)
@@ -548,15 +550,14 @@ while Data_row <= Data_stop_row:
                                      GTC.tb.distribution['gaussian'](drift_u),
                                      8))
 
-    influencies.extend(Vdrift_vals)  # R2 dependancies
-
     # Pack drift values into a dictionary and add labels:
     keys = ['Va', 'Vb', 'Vc', 'Vd']
     Vdrift = dict(zip(keys, Vdrift_vals))
     for key, val in Vdrift:
         val.label = 'Vdrift_' + key + ' ' + Run_Id
+        influencies.append(Vdrift[key])  # R2 dependancies
 
-    # Mean voltages (offset correction)
+    # Mean voltages (offset correction):
     V1_av = (V1[0]-2*V1[1]+V1[2]+V1[3]-2*V1[4]+V1[5])/8
     V2_av = (V2[0]-2*V2[1]+V2[2])/4
     V2p_av = (V2[3]-2*V2[4]+V2[5])/4
@@ -569,7 +570,7 @@ while Data_row <= Data_stop_row:
     Vd_av = (Vd[0]-2*Vd[1]+Vd[2])/4 + Vlin_Vnull + Vdrift['Vd']
     Vdp_av = (Vd[3]-2*Vd[4]+Vd[5])/4 + Vlin_Vnull + Vdrift['Vd']
 
-    # Voltage perturbations
+    # Voltage perturbations:
     deltaV2 = V2p_av-V2_av
     deltaVa = Vap_av-Va_av
     deltaVb = Vbp_av-Vb_av
@@ -588,11 +589,9 @@ while Data_row <= Data_stop_row:
         'R2 > 100 ppm from nominal! R2 = {0}'.format(R2.x)
 
     # Calculate R1
-#    R1 = R2*vrc*V1av*delta_Vd/(Vnullav*delta_V2 - V2av*delta_Vd)
-
     R1_num = (deltaVb)*R2*V1_av*(V1_av*(deltaV2 - deltaVc) +
                                  Vcp_av*V2_av - V2p_av*Vc_av)
-    R1_denom = (Vcp_av*V2_av - V2p_av*Vc_av)*(V1*(deltaVb - deltaV2) +
+    R1_denom = (Vcp_av*V2_av - V2p_av*Vc_av)*(V1_av*(deltaVb - deltaV2) +
                                               V2p_av*Vb_av -
                                               Vbp_av*V2_av)
     R1 = R1_num/R1_denom
@@ -604,6 +603,7 @@ while Data_row <= Data_stop_row:
     R0 = deltaVb*R2*V1_av/(V1_av*(deltaVb - deltaV2) + V2p_av*Vb_av -
                            Vbp_av*V2_av)
     print 'R0 =', GTC.summary(R0)
+    assert R0.x > 1e7, 'DVM input-Z <= 10 MOhm!'
 
     # Calculate Rd
     Rd_num = deltaV2*R2*(V1_av*(deltaVa - deltaVb) - Vap_av*Vb_av +
@@ -612,6 +612,7 @@ while Data_row <= Data_stop_row:
                         Vbp_av*V2_av)
     Rd = Rd_num/Rd_denom
     print 'Rd =', GTC.summary(Rd)
+    assert Rd.x < 0.05, 'High link resistance (> 50 mOhm)!'
 
     # Calculate RL
     RL_num = deltaVb*R2*(V1_av*(deltaVd - deltaV2) - Vdp_av*V2_av +
@@ -620,6 +621,7 @@ while Data_row <= Data_stop_row:
                         Vbp_av*Vd_av)
     RL = RL_num/RL_denom
     print 'RL =', GTC.summary(RL)
+    assert RL.x > 1e9, 'Low leak resistance (<= 1 GOhm)!'
 
     T1 = T1_av + T_def1
     print R1, 'at temperature', T1
@@ -629,15 +631,16 @@ while Data_row <= Data_stop_row:
     Summary sheet:
     '''
     this_result = {'name': R1_name, 'time_str': times_av_str,
-                   'time_fl': times_av_fl, 'V': V1av, 'R': R1, 'T': T1,
+                   'time_fl': times_av_fl, 'V': V1_av, 'R': R1, 'R0': R0,
+                   'Rd': Rd, 'RL': RL, 'T': T1,
                    'R_expU': R1.u*GTC.rp.k_factor(R1.df, quick=False)}
 
     R_info.WriteThisResult(ws_Results, results_row, this_result)
 
     # build uncertainty budget table
-    budget_table = []
+    budget_table = []  # A list of lists
     for i in influencies:  # rp.u_component(R1_gmh,i) gives + or - values
-        if i.u > 0:
+        if i.u >= 0:
             sensitivity = GTC.rp.u_component(R1, i)/i.u
         else:
             sensitivity = 0
@@ -652,17 +655,17 @@ while Data_row <= Data_stop_row:
                                      budget_table_sorted)
     results_row += 1  # Add blank line between each measurement for clarity
 
-    # Separate results by voltage (V1av) if different
+    # Separate results by voltage (V1_av) if different
     if HV == LV:
         results_LV.append(this_result)
         results_HV.append(this_result)
-    elif abs(V1av.x - LV) < 1:
+    elif abs(V1_av.x - LV) < 1:
         results_LV.append(this_result)
     else:
         results_HV.append(this_result)
 
     del influencies[:]
-    Data_row += 4  # Move to next measurement
+    Data_row += 6  # Move to next measurement
 
 # ----- End of data-row loop ---- #
 # ############################### #
