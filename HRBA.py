@@ -324,12 +324,12 @@ while Data_row <= Data_stop_row:
     '''
 #    vrc = GTC.ar.result(G2/G1, label='vrc ' + Run_Id)
 
-    Vlin_pert = I_INFO[role_descr['DVM']]['linearity_pert']  # G calc
-    Vlin_Vnullav = I_INFO[role_descr['DVM']]['linearity_Vdav']  # Vnull calcs
+#    Vlin_pert = I_INFO[role_descr['DVM']]['linearity_pert']  # G calc
+    Vlin_Vnull = I_INFO[role_descr['DVM']]['linearity_Vdav']  # Vnull calcs
 
     # Start list of influence variables
     influencies = [G1, G2, Vlin_pert,
-                   Vlin_Vnullav, R2TRef, R2VRef]  # R2 dependancies
+                   Vlin_Vnull, R2TRef, R2VRef]  # R2 dependancies
 
     R2alpha = R_INFO[R2_name]['alpha']
     R2beta = R_INFO[R2_name]['beta']
@@ -493,6 +493,7 @@ while Data_row <= Data_stop_row:
     Vb = []  # 3 normal, 3 perturbed
     Vc = []  # 3 normal, 3 perturbed
     Vd = []  # 3 normal, 3 perturbed
+
     for line in range(6):
 
         V1.append(GTC.ureal(ws_Data['H'+str(Data_row+line)].value,
@@ -525,53 +526,100 @@ while Data_row <= Data_stop_row:
         assert Vb[-1] is not None, 'Missing Vb data!'
         assert Vc[-1] is not None, 'Missing Vc data!'
         assert Vd[-1] is not None, 'Missing Vd data!'
+
     influencies.extend(V1+V2+Va+Vb+Vc+Vd)  # R2 dependancies - raw measurements
 
-    # Define drift
-
-    uncert = abs(Vd[2]-(Vd[0]+((Vd[3]-Vd[2])/(V2[3]-V2[2]))*(V2[2]-V2[0])))/4
-    Vdrift1 = GTC.ureal(0, GTC.tb.distribution['gaussian'](uncert), 8,
-                        label='Vdrift_pert ' + Run_Id)
-    Vdrift2 = GTC.ureal(0, GTC.tb.distribution['gaussian'](uncert), 8,
-                        label='Vdrift_Vnullav ' + Run_Id)
-
-    Vdrift = {'pert': Vdrift1, 'Vnullav': Vdrift2}
-    influencies.extend([Vdrift['pert'], Vdrift['Vnullav']])  # R2 dependancies
-
-    # Mean voltages
-    V1av = (V1[0]-2*V1[1]+V1[2]+V1[3]-2*V1[4]+V1[5])/8
-    V2av = (V2[0]-2*V2[1]+V2[2])/4
-    V2pav = (V2[3]-2*V2[4]+V2[5])/4
-    Vav = (Va[0]-2*Va[1]+Va[2])/4
-    Vapav = (Va[3]-2*Va[4]+Va[5])/4
-    Vbav = (Vb[0]-2*Vb[1]+Vb[2])/4
-    Vbpav = (Vb[3]-2*Vb[4]+Vb[5])/4
-    Vcav = (Vc[0]-2*Vc[1]+Vc[2])/4
-    Vcpav = (Vc[3]-2*Vc[4]+Vc[5])/4
-    Vdav = (Vd[0]-2*Vd[1]+Vd[2])/4
-    Vdpav = (Vd[3]-2*Vd[4]+Vd[5])/4
-    Vnullav = (Vd[0]-2*Vd[1]+Vd[2])/4 + Vlin_Vnullav + Vdrift['Vnullav']
-
-    # Effect of v2 perturbation
-    delta_Vd = Vd[3] - Vd[2] + Vlin_pert + Vdrift['pert']
+    # Effect of V2 perturbation
     delta_V2 = V2[3] - V2[2]
+    drift_V2_1 = V2[3] - V2[0]
+    drift_V2_2 = V2[5] - V2[3]
+    av_drift_V2 = GTC.fn.mean(drift_V2_1, drift_V2_2)
+
+    # Define drift
+    Vdrift_vals = []
+    for V in (Va, Vb, Vc, Vd):
+        delta_V = V[3] - V[2]
+        drift_1 = V[2] - V[0]
+        drift_2 = V[5] - V[3]
+        av_drift = GTC.ta.estimate(drift_1, drift_2)
+        drift_u = GTC.magnitude(av_drift.x - (delta_V.x/delta_V2.x) *
+                                av_drift_V2.x)/4
+        Vdrift_vals.append(GTC.ureal(0,
+                                     GTC.tb.distribution['gaussian'](drift_u),
+                                     8))
+
+    influencies.extend(Vdrift_vals)  # R2 dependancies
+
+    # Pack drift values into a dictionary and add labels:
+    keys = ['Va', 'Vb', 'Vc', 'Vd']
+    Vdrift = dict(zip(keys, Vdrift_vals))
+    for key, val in Vdrift:
+        val.label = 'Vdrift_' + key + ' ' + Run_Id
+
+    # Mean voltages (offset correction)
+    V1_av = (V1[0]-2*V1[1]+V1[2]+V1[3]-2*V1[4]+V1[5])/8
+    V2_av = (V2[0]-2*V2[1]+V2[2])/4
+    V2p_av = (V2[3]-2*V2[4]+V2[5])/4
+    Va_av = (Va[0]-2*Va[1]+Va[2])/4 + Vlin_Vnull + Vdrift['Va']
+    Vap_av = (Va[3]-2*Va[4]+Va[5])/4 + Vlin_Vnull + Vdrift['Va']
+    Vb_av = (Vb[0]-2*Vb[1]+Vb[2])/4 + Vlin_Vnull + Vdrift['Vb']
+    Vbp_av = (Vb[3]-2*Vb[4]+Vb[5])/4 + Vlin_Vnull + Vdrift['Vb']
+    Vc_av = (Vc[0]-2*Vc[1]+Vc[2])/4 + Vlin_Vnull + Vdrift['Vc']
+    Vcp_av = (Vc[3]-2*Vc[4]+Vc[5])/4 + Vlin_Vnull + Vdrift['Vc']
+    Vd_av = (Vd[0]-2*Vd[1]+Vd[2])/4 + Vlin_Vnull + Vdrift['Vd']
+    Vdp_av = (Vd[3]-2*Vd[4]+Vd[5])/4 + Vlin_Vnull + Vdrift['Vd']
+
+    # Voltage perturbations
+    deltaV2 = V2p_av-V2_av
+    deltaVa = Vap_av-Va_av
+    deltaVb = Vbp_av-Vb_av
+    deltaVc = Vcp_av-Vc_av
+    deltaVd = Vdp_av-Vd_av
 
     # Calculate R2 (corrected for T and V)
     dT2 = T2_av - R2TRef + T_def2
 
     # NOTE: NEED TWO abs() TO ENSURE NON-NEGATIVE DIFFERENCE:
-    dV2 = abs(abs(V2av) - R2VRef)
+    dV2 = abs(abs(V2_av) - R2VRef)
 
     R2 = R2_0*(1 + R2alpha * dT2 + R2beta * dT2 ** 2 + R2gamma * dV2)
     print 'R2 =', GTC.summary(R2)
     assert abs(R2.x-R2val)/R2val < PPM_TOLERANCE['R2'],\
         'R2 > 100 ppm from nominal! R2 = {0}'.format(R2.x)
 
-    # calculate R1
-    R1 = R2*vrc*V1av*delta_Vd/(Vnullav*delta_V2 - V2av*delta_Vd)
+    # Calculate R1
+#    R1 = R2*vrc*V1av*delta_Vd/(Vnullav*delta_V2 - V2av*delta_Vd)
+
+    R1_num = (deltaVb)*R2*V1_av*(V1_av*(deltaV2 - deltaVc) +
+                                 Vcp_av*V2_av - V2p_av*Vc_av)
+    R1_denom = (Vcp_av*V2_av - V2p_av*Vc_av)*(V1*(deltaVb - deltaV2) +
+                                              V2p_av*Vb_av -
+                                              Vbp_av*V2_av)
+    R1 = R1_num/R1_denom
     print 'R1 =', GTC.summary(R1)
     assert abs(R1.x-R1val)/R1val < PPM_TOLERANCE['R1'],\
         'R1 > 1000 ppm from nominal!'
+
+    # Calculate R0
+    R0 = deltaVb*R2*V1_av/(V1_av*(deltaVb - deltaV2) + V2p_av*Vb_av -
+                           Vbp_av*V2_av)
+    print 'R0 =', GTC.summary(R0)
+
+    # Calculate Rd
+    Rd_num = deltaV2*R2*(V1_av*(deltaVa - deltaVb) - Vap_av*Vb_av +
+                         Vbp_av*Va_av)
+    Rd_denom = deltaVa*(V1_av*(deltaVb - deltaV2) + V2p_av*Vb_av -
+                        Vbp_av*V2_av)
+    Rd = Rd_num/Rd_denom
+    print 'Rd =', GTC.summary(Rd)
+
+    # Calculate RL
+    RL_num = deltaVb*R2*(V1_av*(deltaVd - deltaV2) - Vdp_av*V2_av +
+                         V2p_av*Vd_av)
+    RL_denom = deltaV2*(V1_av*(deltaVb - deltaVd) + Vdp_av*Vb_av -
+                        Vbp_av*Vd_av)
+    RL = RL_num/RL_denom
+    print 'RL =', GTC.summary(RL)
 
     T1 = T1_av + T_def1
     print R1, 'at temperature', T1
