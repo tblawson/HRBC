@@ -174,17 +174,17 @@ def WriteHeadings(sheet, row, version):
     row += 1
     sheet['Q'+str(row)] = 'HV'
 
-    sheet['E'+str(row+2)] = 'R0'
-    sheet['F'+str(row+2)] = 'std u.'
-    sheet['G'+str(row+2)] = 'dof'
+    sheet['E'+str(row+4)] = 'R0'
+    sheet['F'+str(row+4)] = 'std u.'
+    sheet['G'+str(row+4)] = 'dof'
 
-    sheet['E'+str(row+5)] = 'Rd'
-    sheet['F'+str(row+5)] = 'std u.'
-    sheet['G'+str(row+5)] = 'dof'
+    sheet['E'+str(row+7)] = 'Rd'
+    sheet['F'+str(row+7)] = 'std u.'
+    sheet['G'+str(row+7)] = 'dof'
 
-    sheet['E'+str(row+8)] = 'RLeak'
-    sheet['F'+str(row+8)] = 'std u.'
-    sheet['G'+str(row+8)] = 'dof'
+    sheet['E'+str(row+10)] = 'RLeak'
+    sheet['F'+str(row+10)] = 'std u.'
+    sheet['G'+str(row+10)] = 'dof'
 
     return row
 
@@ -207,7 +207,6 @@ def WriteThisResult(sheet, row, result):
     sheet['D'+str(row+2)] = result['T'].df
 
     sheet['E'+str(row)] = result['R'].x
-
     sheet['F'+str(row)] = result['R'].u
 
     if math.isinf(result['R'].df):
@@ -217,6 +216,18 @@ def WriteThisResult(sheet, row, result):
 
     # Exp Uncert:
     sheet['H'+str(row)] = result['R_expU']
+
+    sheet['E'+str(row+5)] = result['R0'].x
+    sheet['F'+str(row+5)] = result['R0'].u
+    sheet['G'+str(row+5)] = result['R0'].df
+
+    sheet['E'+str(row+8)] = result['Rd'].x
+    sheet['F'+str(row+8)] = result['Rd'].u
+    sheet['G'+str(row+8)] = result['Rd'].df
+
+    sheet['E'+str(row+11)] = result['RL'].x
+    sheet['F'+str(row+11)] = result['RL'].u
+    sheet['G'+str(row+11)] = result['RL'].df
 
 
 # Sorting helper function - sort by uncert. contribution
