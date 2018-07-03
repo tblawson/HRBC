@@ -200,8 +200,12 @@ log.write('\n'+str(len(R_INFO))+' resistors ('+str(last_R_row)+') rows')
 # Determine the meanings of 'LV' and 'HV'
 V1set_a = abs(ws_Data['A'+str(Data_start_row)].value)
 assert V1set_a is not None, 'Missing initial V1 value!'
-V1set_b = abs(ws_Data['A'+str(Data_start_row+6)].value)
-assert V1set_b is not None, 'Missing second V1 value!'
+V1set_temp = ws_Data['A'+str(Data_start_row+6)].value
+if V1set_temp is not None:
+    V1set_b = abs(V1set_temp)
+else:
+    V1set_b = V1set_a
+#    assert V1set_b is not None, 'Missing second V1 value!'
 
 if V1set_a < V1set_b:
     LV = V1set_a
@@ -325,7 +329,7 @@ while Data_row <= Data_stop_row:
 #    vrc = GTC.ar.result(G2/G1, label='vrc ' + Run_Id)
 
 #    Vlin_pert = I_INFO[role_descr['DVM']]['linearity_pert']  # G calc
-    Vlin_Vnull = I_INFO[role_descr['DVM']]['linearity_Vdav']  # Vnull calcs
+    Vlin_Vnull = I_INFO[role_descr['DVM']]['linearity_Vnullav']  # Vnull calcs
 
     # Start list of influence variables
     influencies = [G1, G2, Vlin_Vnull, R2_0, R2TRef, R2VRef]  # R2 dependancies
@@ -357,29 +361,24 @@ while Data_row <= Data_stop_row:
     del Ps[:]  # list for 4 room pressure values
     del Ts[:]  # list for 4 room Temp values
 
-    # Process times, RH and temperature data in this 4-row block:
-    for r in range(Data_row, Data_row+4):  # build list of 4 gmh / dvm readings
-        assert ws_Data['U'+str(r)].value is not None,\
-            'No R1 GMH temperature data!'
-        assert ws_Data['V'+str(r)].value is not None,\
-            'No R2 GMH temperature data!'
-        raw_gmh1.append(ws_Data['U'+str(r)].value)
-        raw_gmh2.append(ws_Data['V'+str(r)].value)
-
-        assert ws_Data['G'+str(r)].value is not None, 'No V2 timestamp!'
-        assert ws_Data['M'+str(r)].value is not None, 'No Vd1 timestamp!'
-        assert ws_Data['P'+str(r)].value is not None, 'No V1 timestamp!'
-        times.append(ws_Data['G'+str(r)].value)
-        times.append(ws_Data['M'+str(r)].value)
-        times.append(ws_Data['P'+str(r)].value)
-
-        assert ws_Data['S'+str(r)].value is not None,\
-            'No R1 raw DVM (temperature) data!'
-        raw_dvm1 = ws_Data['S'+str(r)].value
-
+    # Process times, RH and temperature data in this 6-row block:
+    for r in range(Data_row, Data_row+6):  # build list of 6 gmh / dvm readings
         assert ws_Data['T'+str(r)].value is not None,\
+            'No R1 raw DVM (temperature) data!'
+        assert ws_Data['U'+str(r)].value is not None,\
             'No R2 raw DVM (temperature) data!'
-        raw_dvm2 = ws_Data['T'+str(r)].value
+        raw_dvm1 = ws_Data['T'+str(r)].value
+        raw_dvm2 = ws_Data['U'+str(r)].value
+
+        assert ws_Data['V'+str(r)].value is not None,\
+            'No R1 GMH temperature data!'
+        assert ws_Data['W'+str(r)].value is not None,\
+            'No R2 GMH temperature data!'
+        raw_gmh1.append(ws_Data['V'+str(r)].value)
+        raw_gmh2.append(ws_Data['W'+str(r)].value)
+
+        assert ws_Data['AA'+str(r)].value is not None, 'No timestamp!'
+        times.append(ws_Data['AA'+str(r)].value)
 
         # Check corrections for range-dependant values...
         # and apply appropriate corrections
@@ -534,7 +533,7 @@ while Data_row <= Data_stop_row:
     delta_V2 = V2[3] - V2[2]
     drift_V2_1 = V2[3] - V2[0]
     drift_V2_2 = V2[5] - V2[3]
-    av_drift_V2 = GTC.fn.mean(drift_V2_1, drift_V2_2)
+    av_drift_V2 = GTC.fn.mean([drift_V2_1, drift_V2_2])
 
     # Define drift in nulls:
     Vdrift_vals = []
@@ -542,7 +541,7 @@ while Data_row <= Data_stop_row:
         delta_V = V[3] - V[2]  # Effect of V2 perturbation
         drift_1 = V[2] - V[0]
         drift_2 = V[5] - V[3]
-        av_drift = GTC.ta.estimate(drift_1, drift_2)
+        av_drift = GTC.ta.estimate([drift_1, drift_2])
         drift_u = GTC.magnitude(av_drift.x - (delta_V.x/delta_V2.x) *
                                 av_drift_V2.x)/4
         Vdrift_vals.append(GTC.ureal(0,
@@ -552,7 +551,7 @@ while Data_row <= Data_stop_row:
     # Pack drift values into a dictionary and add labels:
     keys = ['Va', 'Vb', 'Vc', 'Vd']
     Vdrift = dict(zip(keys, Vdrift_vals))
-    for key, val in Vdrift:
+    for key, val in Vdrift.iteritems():
         val.label = 'Vdrift_' + key + ' ' + Run_Id
         influencies.append(Vdrift[key])  # R2 dependancies
 
