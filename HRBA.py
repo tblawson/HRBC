@@ -71,7 +71,6 @@ print str(xlfile)
 # Open in NON-data-only mode, to preserve any fomulas when saving...
 wb_io = load_workbook(xlfile, data_only=False)
 ws_Data = wb_io.get_sheet_by_name('Data')
-ws_Rlink = wb_io.get_sheet_by_name('Rlink')
 ws_Results = wb_io.get_sheet_by_name('Results')
 ws_Params = wb_io.get_sheet_by_name('Parameters')
 
