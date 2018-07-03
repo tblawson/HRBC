@@ -716,12 +716,12 @@ class AqnThread(Thread):
 
         if devices.ROLES_INSTR['DVMT1'].demo is True:
             T1dvmOP = np.random.normal(108.0, 1.0e-2)
-            self.ws['S'+str(row)] = T1dvmOP
+            self.ws['T'+str(row)] = T1dvmOP
             print >>self.log, 'WriteDataThisRow(): cell', 'T'+str(row), ':',\
                 T1dvmOP
         else:
             T1dvmOP = devices.ROLES_INSTR['DVMT1'].SendCmd('READ?')
-            self.ws['S'+str(row)] = float(filter(self.filt, T1dvmOP))
+            self.ws['T'+str(row)] = float(filter(self.filt, T1dvmOP))
             print >>self.log, 'WriteDataThisRow(): cell', 'T'+str(row), ':',\
                 float(filter(self.filt, T1dvmOP))
 
