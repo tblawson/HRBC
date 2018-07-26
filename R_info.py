@@ -254,46 +254,48 @@ def WriteBudget(sheet, row, budget):
 def write_R1_T_fit(results, sheet, row, log):
     T_data = [T for T in [result['T'] for result in results]]  # All T values
     T_av = GTC.fn.mean(T_data)
-    # print'write_R1_T_fit():u(T_av)=',T_av.u,'dof(T_av)=',T_av.df
     T_rel = [t_k - T_av for t_k in T_data]  # x-vals
 
     y = [R for R in [result['R'] for result in results]]  # All R values
-    # u_y = [R.u for R in [result['R'] for result in results]] # All R uncerts
 
     if len(set(T_data)) <= 1:  # No temperature variation, so can't fit to T
         R1 = GTC.fn.mean(y)
-        print 'R1_LV (av, not fit):', R1
-        log.write('\nR1_LV (av, not fit): ' + str(R1))
+        alpha = GTC.ureal(0, 0, 1e6)
+        print 'R1_LV (av, not fit):', R1.x
+        print alpha.s, 'alpha dof =', alpha.df, '\n'
+        log.write('\nR1_LV (av, not fit): ' + str(R1.x))
     else:
-        # a_ta,b_ta = GTC.ta.line_fit_wls(T_rel,y,u_y).a_b
         # Assume uncert of individual measurements dominate uncert of fit
         R1, alpha = GTC.fn.line_fit_wls(T_rel, y).a_b
         print 'Fit params:\t intercept=', GTC.summary(R1),\
-            'Slope=', GTC.summary(alpha)
+            'Slope=', GTC.summary(alpha), '\n'
         log.write('\nFit params:\t intercept= ' + str(GTC.summary(R1)) +
                   ' Slope= ' + str(GTC.summary(alpha)))
 
-    sheet['R'+str(row)] = R1.x
-    sheet['S'+str(row)] = R1.u
-    if math.isinf(R1.df):
-        sheet['T'+str(row)] = str(R1.df)
-    else:
-        sheet['T'+str(row)] = round(R1.df)
-
-    sheet['U'+str(row)] = R1.u*GTC.rp.k_factor(R1.df)
-
-    sheet['V'+str(row)] = T_av.x
-    sheet['W'+str(row)] = T_av.u
-    if math.isinf(T_av.df):
-        sheet['X'+str(row)] = str(T_av.df)
-    else:
-        sheet['X'+str(row)] = round(T_av.df)
-
     t = [result['time_fl'] for result in results]  # x data (time,s from epoch)
-    t_av = GTC.ta.estimate(t)
-    time_av = dt.datetime.fromtimestamp(t_av.x)  # A Python datetime object
+    if len(t) > 1:
+        t_av = GTC.ta.estimate(t)
+        time_av = dt.datetime.fromtimestamp(t_av.x)  # A Python datetime object
+    else:
+        time_av = dt.datetime.fromtimestamp(t[0])
     # String-formatted for display:
-    sheet['Y'+str(row)] = time_av.strftime('%d/%m/%Y %H:%M:%S')
+    sheet['R'+str(row)] = time_av.strftime('%d/%m/%Y %H:%M:%S')
+
+    sheet['S'+str(row)] = R1.x
+    sheet['T'+str(row)] = R1.u
+    if math.isinf(R1.df):
+        sheet['U'+str(row)] = str(R1.df)
+    else:
+        sheet['U'+str(row)] = round(R1.df)
+
+    sheet['V'+str(row)] = R1.u*GTC.rp.k_factor(R1.df)
+
+    sheet['W'+str(row)] = T_av.x
+    sheet['X'+str(row)] = T_av.u
+    if math.isinf(T_av.df):
+        sheet['Y'+str(row)] = str(T_av.df)
+    else:
+        sheet['Y'+str(row)] = round(T_av.df)
 
     V1 = [V for V in [result['V'] for result in results]]
     V_av = GTC.fn.mean(V1)
