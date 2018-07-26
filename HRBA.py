@@ -495,30 +495,25 @@ while Data_row <= Data_stop_row:
     Vd = []  # 3 normal, 3 perturbed
 
     for line in range(6):
+        dof = ws_Data['C'+str(Data_row+line)].value-1
 
         V1.append(GTC.ureal(ws_Data['H'+str(Data_row+line)].value,
-                            ws_Data['I'+str(Data_row+line)].value,
-                            ws_Data['C'+str(Data_row+line)].value-1,
+                            ws_Data['I'+str(Data_row+line)].value, dof,
                             label='V1_'+str(line) + ' ' + Run_Id))
         V2.append(GTC.ureal(ws_Data['J'+str(Data_row+line)].value,
-                            ws_Data['K'+str(Data_row+line)].value,
-                            ws_Data['C'+str(Data_row+line)].value-1,
+                            ws_Data['K'+str(Data_row+line)].value, dof,
                             label='V2_'+str(line) + ' ' + Run_Id))
         Va.append(GTC.ureal(ws_Data['L'+str(Data_row+line)].value,
-                            ws_Data['M'+str(Data_row+line)].value,
-                            ws_Data['C'+str(Data_row+line)].value-1,
+                            ws_Data['M'+str(Data_row+line)].value, dof,
                             label='Va_'+str(line) + ' ' + Run_Id))
         Vb.append(GTC.ureal(ws_Data['N'+str(Data_row+line)].value,
-                            ws_Data['O'+str(Data_row+line)].value,
-                            ws_Data['C'+str(Data_row+line)].value-1,
+                            ws_Data['O'+str(Data_row+line)].value, dof,
                             label='Vb_'+str(line) + ' ' + Run_Id))
         Vc.append(GTC.ureal(ws_Data['P'+str(Data_row+line)].value,
-                            ws_Data['Q'+str(Data_row+line)].value,
-                            ws_Data['C'+str(Data_row+line)].value-1,
+                            ws_Data['Q'+str(Data_row+line)].value, dof,
                             label='Vc_'+str(line) + ' ' + Run_Id))
         Vd.append(GTC.ureal(ws_Data['R'+str(Data_row+line)].value,
-                            ws_Data['S'+str(Data_row+line)].value,
-                            ws_Data['C'+str(Data_row+line)].value-1,
+                            ws_Data['S'+str(Data_row+line)].value, dof,
                             label='Vd_'+str(line) + ' ' + Run_Id))
         assert V1[-1] is not None, 'Missing V1 data!'
         assert V2[-1] is not None, 'Missing V2 data!'
@@ -530,20 +525,20 @@ while Data_row <= Data_stop_row:
     influencies.extend(V1+V2+Va+Vb+Vc+Vd)  # R2 dependancies - raw measurements
 
     # V2 perturbation
-    delta_V2 = V2[3] - V2[2]
-    drift_V2_1 = V2[3] - V2[0]
-    drift_V2_2 = V2[5] - V2[3]
-    av_drift_V2 = GTC.fn.mean([drift_V2_1, drift_V2_2])
+    delta_V2 = V2[3].x - V2[2].x
+    drift_V2_1 = V2[2].x - V2[0].x
+    drift_V2_2 = V2[5].x - V2[3].x
+    av_drift_V2 = (drift_V2_1 + drift_V2_2)/2
+    print 'av_drift_V2:', av_drift_V2
 
     # Define drift in nulls:
     Vdrift_vals = []
     for V in (Va, Vb, Vc, Vd):
-        delta_V = V[3] - V[2]  # Effect of V2 perturbation
-        drift_1 = V[2] - V[0]
-        drift_2 = V[5] - V[3]
-        av_drift = GTC.ta.estimate([drift_1, drift_2])
-        drift_u = GTC.magnitude(av_drift.x - (delta_V.x/delta_V2.x) *
-                                av_drift_V2.x)/4
+        delta_V = V[3].x - V[2].x  # Effect of V2 perturbation
+        drift_1 = V[2].x - V[0].x
+        drift_2 = V[5].x - V[3].x
+        av_drift = (drift_1 + drift_2)/2
+        drift_u = (av_drift - (delta_V/delta_V2) * av_drift_V2)/4
         Vdrift_vals.append(GTC.ureal(0,
                                      GTC.tb.distribution['gaussian'](drift_u),
                                      8))
@@ -556,17 +551,37 @@ while Data_row <= Data_stop_row:
         influencies.append(Vdrift[key])  # R2 dependancies
 
     # Mean voltages (offset correction):
-    V1_av = (V1[0]-2*V1[1]+V1[2]+V1[3]-2*V1[4]+V1[5])/8
-    V2_av = (V2[0]-2*V2[1]+V2[2])/4
-    V2p_av = (V2[3]-2*V2[4]+V2[5])/4
-    Va_av = (Va[0]-2*Va[1]+Va[2])/4 + Vlin_Vnull + Vdrift['Va']
-    Vap_av = (Va[3]-2*Va[4]+Va[5])/4 + Vlin_Vnull + Vdrift['Va']
-    Vb_av = (Vb[0]-2*Vb[1]+Vb[2])/4 + Vlin_Vnull + Vdrift['Vb']
-    Vbp_av = (Vb[3]-2*Vb[4]+Vb[5])/4 + Vlin_Vnull + Vdrift['Vb']
-    Vc_av = (Vc[0]-2*Vc[1]+Vc[2])/4 + Vlin_Vnull + Vdrift['Vc']
-    Vcp_av = (Vc[3]-2*Vc[4]+Vc[5])/4 + Vlin_Vnull + Vdrift['Vc']
-    Vd_av = (Vd[0]-2*Vd[1]+Vd[2])/4 + Vlin_Vnull + Vdrift['Vd']
-    Vdp_av = (Vd[3]-2*Vd[4]+Vd[5])/4 + Vlin_Vnull + Vdrift['Vd']
+    V1_av = GTC.ar.result((V1[0]-2*V1[1]+V1[2]+V1[3]-2*V1[4]+V1[5])/8,
+                          label='V1_av')
+    print V1_av.s, V1_av.x, V1_av.u, V1_av.df
+    V2_av = GTC.ar.result((V2[0]-2*V2[1]+V2[2])/4, label='V2_av')
+    print V2_av.s, V2_av.x, V2_av.u, V2_av.df
+    V2p_av = GTC.ar.result((V2[3]-2*V2[4]+V2[5])/4, label='V2p_av')
+    print V2p_av.s, V2p_av.x, V2p_av.u, V2p_av.df
+    Va_av = GTC.ar.result((Va[0]-2*Va[1]+Va[2])/4 + Vlin_Vnull + Vdrift['Va'],
+                          label='Va_av')
+    print Va_av.s, Va_av.x, Va_av.u, Va_av.df
+    Vap_av = GTC.ar.result((Va[3]-2*Va[4]+Va[5])/4 + Vlin_Vnull + Vdrift['Va'],
+                           label='Vap_av')
+    print Vap_av.s, Vap_av.x, Vap_av.u, Vap_av.df
+    Vb_av = GTC.ar.result((Vb[0]-2*Vb[1]+Vb[2])/4 + Vlin_Vnull + Vdrift['Vb'],
+                          label='Vb_av')
+    print Vb_av.s, Vb_av.x, Vb_av.u, Vb_av.df
+    Vbp_av = GTC.ar.result((Vb[3]-2*Vb[4]+Vb[5])/4 + Vlin_Vnull + Vdrift['Vb'],
+                           label='Vbp_av')
+    print Vbp_av.s, Vbp_av.x, Vbp_av.u, Vbp_av.df
+    Vc_av = GTC.ar.result((Vc[0]-2*Vc[1]+Vc[2])/4 + Vlin_Vnull + Vdrift['Vc'],
+                          label='Vc_av')
+    print Vc_av.s, Vc_av.x, Vc_av.u, Vc_av.df
+    Vcp_av = GTC.ar.result((Vc[3]-2*Vc[4]+Vc[5])/4 + Vlin_Vnull + Vdrift['Vc'],
+                           label='Vcp_av')
+    print Vcp_av.s, Vcp_av.x, Vcp_av.u, Vcp_av.df
+    Vd_av = GTC.ar.result((Vd[0]-2*Vd[1]+Vd[2])/4 + Vlin_Vnull + Vdrift['Vd'],
+                          label='Vd_av')
+    print Vd_av.s, Vd_av.x, Vd_av.u, Vd_av.df
+    Vdp_av = GTC.ar.result((Vd[3]-2*Vd[4]+Vd[5])/4 + Vlin_Vnull + Vdrift['Vd'],
+                           label='Vdp_av')
+    print Vdp_av.s, Vdp_av.x, Vdp_av.u, Vdp_av.df, '\n'
 
     # Voltage perturbations:
     deltaV2 = V2p_av-V2_av
@@ -582,47 +597,82 @@ while Data_row <= Data_stop_row:
     dV2 = abs(abs(V2_av) - R2VRef)
 
     R2 = R2_0*(1 + R2alpha * dT2 + R2beta * dT2 ** 2 + R2gamma * dV2)
-    print 'R2 =', GTC.summary(R2)
+    print 'R2 =', R2.s
     assert abs(R2.x-R2val)/R2val < PPM_TOLERANCE['R2'],\
         'R2 > 100 ppm from nominal! R2 = {0}'.format(R2.x)
 
+    # Calculate Rd
+    '''
+    Determine approx. value, based on Vd1 and Vd2
+    This should be good enough, even for lowest R -
+    (few mOhm in 10k is a few ppm).
+    '''
+    Vd1_av = GTC.ar.result(GTC.fn.mean([Va_av, Vc_av]), label='Vd1_av')
+    print '<Vd1>:', Vd1_av.x, Vd1_av.u, Vd1_av.df
+    Vd2_av = GTC.ar.result(GTC.fn.mean([Vb_av, Vd_av]), label='Vd2_av')
+    print '<Vd2>:', Vd2_av.x, Vd2_av.u, Vd2_av.df
+    Vd1p_av = GTC.ar.result(GTC.fn.mean([Vap_av, Vcp_av]), label='Vd1p_av')
+    print '<Vd1p>:', Vd1p_av.x, Vd1p_av.u, Vd1p_av.df
+    Vd2p_av = GTC.ar.result(GTC.fn.mean([Vbp_av, Vdp_av]), label='Vd2p_av')
+    print '<Vd2p>:', Vd2p_av.x, Vd2p_av.u, Vd2p_av.df
+    Rd = GTC.ar.result(R2*(Vd1_av-Vd2_av)/(Vd2_av-V2_av), label='Rd')
+    print 'Rd_:', Rd.x, Rd.u, Rd.df
+    Rdp = GTC.ar.result(R2*(Vd1p_av-Vd2p_av)/(Vd2p_av-V2p_av), label='Rdp')
+    print 'Rdp:', Rdp.x, Rdp.u, Rdp.df
+    Rd_av = GTC.ar.result(GTC.fn.mean([Rd, Rdp]), label='Rd_av')
+    print 'Rd:', Rd_av.x, Rd_av.u, Rd_av.df
+#    assert Rd.x < 0.05, 'High link resistance (> 50 mOhm)!'
+
     # Calculate R1
-    R1_num = (deltaVb)*R2*V1_av*(V1_av*(deltaV2 - deltaVc) +
-                                 Vcp_av*V2_av - V2p_av*Vc_av)
-    R1_denom = (Vcp_av*V2_av - V2p_av*Vc_av)*(V1_av*(deltaVb - deltaV2) +
-                                              V2p_av*Vb_av -
-                                              Vbp_av*V2_av)
-    R1 = R1_num/R1_denom
-    print 'R1 =', GTC.summary(R1)
+    '''
+    From High-Res_singleDVM_GTXL.xlsx:
+    R1_num=-(R2+Rd)*V1*(Vcp*V2-Vap*V2-Vcp*V1+Vc*V1-V2p*Vc+V2p*Vap)
+    R1_denom=(V1-V2p)*(Vcp*V2-V2p*Vc)
+    '''
+    R1_num = GTC.ar.result((R2+Rd)*V1_av*(Vap_av*deltaV2 - V1_av*deltaVc +
+                           Vcp_av*V2_av - V2p_av*Vc_av), label='R1_num')
+    R1_denom = GTC.ar.result((V1_av-V2p_av)*(Vcp_av*V2_av - V2p_av*Vc_av),
+                             label='R1_denom')
+
+    R1 = GTC.ar.result(R1_num/R1_denom, label='R1')
+    print R1_num.s
+    print R1_denom.s
+    print 'R1:', R1.x, R1.u, R1.df
     assert abs(R1.x-R1val)/R1val < PPM_TOLERANCE['R1'],\
         'R1 > 1000 ppm from nominal!'
 
     # Calculate R0
-    R0 = deltaVb*R2*V1_av/(V1_av*(deltaVb - deltaV2) + V2p_av*Vb_av -
-                           Vbp_av*V2_av)
-    print 'R0 =', GTC.summary(R0)
+    '''
+    From High-Res_singleDVM_GTXL.xlsx:
+    R0_num = R1*(R2+Rd)*(Vcp*V1-V2p*Vap)
+    R0_denom = (V1-V2p)*(R2*V1+Rd*V1-Vap*R2-Vcp*R1+V2p*R1-Rd*Vap)
+    '''
+    R0_num = GTC.ar.result(R1*(R2+Rd)*(Vcp_av*V1_av - V2p_av*Vap_av),
+                           label='R0_num')
+    R0_denom = GTC.ar.result((V1_av-V2p_av)*((R2+Rd)*(V1_av-Vap_av) +
+                             R1*(V2p_av-Vcp_av)), label='Ro_denom')
+    R0 = R0_num/R0_denom
+    print 'R0:', R0.x, R0.u, R0.df
     assert R0.x > 1e7, 'DVM input-Z <= 10 MOhm!'
 
-    # Calculate Rd
-    Rd_num = deltaV2*R2*(V1_av*(deltaVa - deltaVb) - Vap_av*Vb_av +
-                         Vbp_av*Va_av)
-    Rd_denom = deltaVa*(V1_av*(deltaVb - deltaV2) + V2p_av*Vb_av -
-                        Vbp_av*V2_av)
-    Rd = Rd_num/Rd_denom
-    print 'Rd =', GTC.summary(Rd)
-    assert Rd.x < 0.05, 'High link resistance (> 50 mOhm)!'
-
     # Calculate RL
-    RL_num = deltaVb*R2*(V1_av*(deltaVd - deltaV2) - Vdp_av*V2_av +
-                         V2p_av*Vd_av)
-    RL_denom = deltaV2*(V1_av*(deltaVb - deltaVd) + Vdp_av*Vb_av -
-                        Vbp_av*Vd_av)
+    '''
+    From High-Res_singleDVM_GTXL.xlsx:
+    RL_num = -R0*(R1+Rd)*R2*(V1-Vb)
+    RL_denom = R0*R1*V2 + Rd*R0*V2 + R0*R2*V1 - Vb*R1*R2-
+               Vb*R0*R2 - Rd*Vb*R2 - Vb*R0*R1 - Rd*Vb*R0
+    '''
+    RL_num = GTC.ar.result(-R0*(R1+Rd)*R2*(V1_av-Vb_av), label='RL_num')
+    RL_denom = GTC.ar.result((R1+Rd)*(R0*V2_av - Vb_av*(R0+R2)) +
+                             R0*R2*(V1_av-Vb_av), label='RL_denom')
     RL = RL_num/RL_denom
-    print 'RL =', GTC.summary(RL)
+    print RL_num.s
+    print RL_denom.s
+    print 'RL:', RL.x, RL.u, RL.df
     assert RL.x > 1e9, 'Low leak resistance (<= 1 GOhm)!'
 
     T1 = T1_av + T_def1
-    print R1, 'at temperature', T1
+    print 'R1 =', R1.x, 'at temperature', T1.x
 
     '''
     Combine data for this measurement: name,time,R,T,V and write to
@@ -638,7 +688,7 @@ while Data_row <= Data_stop_row:
     # build uncertainty budget table
     budget_table = []  # A list of lists
     for i in influencies:  # rp.u_component(R1_gmh,i) gives + or - values
-        if i.u >= 0:
+        if i.u > 0.0:
             sensitivity = GTC.rp.u_component(R1, i)/i.u
         else:
             sensitivity = 0
@@ -692,7 +742,9 @@ log.write('\nLV:')
 R1_LV, Ohm_per_C_LV, T_LV, V_LV, date = R_info.write_R1_T_fit(results_LV,
                                                               ws_Results,
                                                               results_row, log)
-alpha_LV = Ohm_per_C_LV/R1_LV
+alpha_LV = GTC.ar.result(Ohm_per_C_LV/R1_LV,
+                         label='alpha_LV')  # Convert to /deg C
+print alpha_LV.s, alpha_LV.df
 
 results_row += 1
 
@@ -702,13 +754,17 @@ log.write('\nHV:')
 R1_HV, Ohm_per_C_HV, T_HV, V_HV, date = R_info.write_R1_T_fit(results_HV,
                                                               ws_Results,
                                                               results_row, log)
-alpha_HV = Ohm_per_C_HV/R1_HV
+alpha_HV = GTC.ar.result(Ohm_per_C_HV/R1_HV,
+                         label='alpha_HV')  # Convert to /deg C
 
-alpha = GTC.fn.mean([alpha_LV, alpha_HV])
+# Write estimated alpha and gamma
+alpha = GTC.ar.result(GTC.fn.mean([alpha_LV, alpha_HV]), label='alpha')
+print alpha.s
 beta = GTC.ureal(0, 0)  # assume no beta
 
 if HV == LV:  # Can't estimate gamma
-    gamma = GTC.ureal(0, 0)
+    gamma = GTC.ureal(0, 0, label='gamma')
+    print "Can't estimate gamma - setting to ureal(0,0):", gamma.s
 else:
     gamma = ((R1_HV-R1_LV)/(V_HV-V_LV))/R1_LV
 
@@ -721,21 +777,24 @@ results_row += 1
 
 ws_Results['R'+str(results_row)] = alpha.x
 ws_Results['S'+str(results_row)] = alpha.u
-
-if math.isinf(alpha.df):
-    # print'alpha.df is',alpha.df
-    ws_Results['T'+str(results_row)] = str(alpha.df)
-else:
-    # print'alpha.df =',alpha.df
+if math.isinf(alpha.df) or math.isnan(alpha.df):
+    # Redefine alpha to fix df='NaN' problem:
+    print 'Fixing alpha.df: Was', alpha.df,
+    alpha = GTC.ureal(alpha.x, alpha.u, label='alpha')
+    print 'now:', alpha.df
+#    print'alpha.df is', alpha.df
+    ws_Results['T'+str(results_row)] = 'inf'
+else:  # DOF >should< be numeric if not 'inf' or 'NaN':
+    #    print alpha.s, 'alpha.df =', alpha.df, str(alpha.df)
     ws_Results['T'+str(results_row)] = round(alpha.df)
 
 ws_Results['V'+str(results_row)] = gamma.x
 ws_Results['W'+str(results_row)] = gamma.u
 if math.isinf(gamma.df):
-    # print'gamma.df is',gamma.df
+    #    print'gamma.df is', gamma.df
     ws_Results['X'+str(results_row)] = str(gamma.df)
 else:
-    # print'gamma.df =',gamma.df
+    #    print'gamma.df =', gamma.df
     ws_Results['X'+str(results_row)] = round(gamma.df)
 
 #######################################################################
