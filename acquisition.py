@@ -135,6 +135,7 @@ class AqnThread(Thread):
         self.ws['D'+str(sub_row)] = 'Row del.'
         self.ws['E'+str(sub_row)] = 'AZ1 del.'
         self.ws['F'+str(sub_row)] = 'Range del.'
+        self.ws['G'+str(sub_row)] = 'Relay del.'
 
         self.ws['H'+str(Head_row)] = 'V1'
         self.ws['H'+str(sub_row)] = 'Vmeas'
