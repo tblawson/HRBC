@@ -336,7 +336,8 @@ class instrument(device):
                 self.instr.read_termination = '\r\n'  # C-return, line feed
                 self.instr.write_termination = '\r\n'
             self.instr.timeout = 2000  # Default 2 s timeout
-            INSTR_DATA[self.Descr]['demo'] is False  # A real working instr
+#            INSTR_DATA[self.Descr]['demo'] is False  # A real working instr
+            INSTR_DATA[self.Descr]['role'] = 'IN-USE '+self.Descr
             self.demo = False  # A real working instr ONLY on Open() success
             print 'devices.instrument.Open():', self.Descr,\
                 'session handle=', self.instr.session
