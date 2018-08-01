@@ -773,6 +773,7 @@ class AqnThread(Thread):
         # prematurely end run, prompted by regular checks of _want_abort flag
         self._want_abort = 1
         self.Standby()  # Set sources to 0V and leave system safe
+        self.log.flush()
 
         stat_ev = evts.StatusEvent(msg='', field='b')
         wx.PostEvent(self.TopLevel, stat_ev)
@@ -799,6 +800,7 @@ class AqnThread(Thread):
 
     def FinishRun(self):
         # Run complete - leave system safe and final xl save
+        self.log.flush()
         self.wb_io.save(self.xlfilename)
 
         self.Standby()  # Set sources to 0V and leave system safe
