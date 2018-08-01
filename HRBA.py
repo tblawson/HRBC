@@ -495,26 +495,33 @@ while Data_row <= Data_stop_row:
     Vd = []  # 3 normal, 3 perturbed
 
     for line in range(6):
-        dof = ws_Data['C'+str(Data_row+line)].value-1
-
-        V1.append(GTC.ureal(ws_Data['H'+str(Data_row+line)].value,
-                            ws_Data['I'+str(Data_row+line)].value, dof,
+        this_row = Data_row+line
+        dof = ws_Data['C'+str(this_row)].value-1
+        print'Row:', this_row
+        V1.append(GTC.ureal(ws_Data['H'+str(this_row)].value,
+                            ws_Data['I'+str(this_row)].value, dof,
                             label='V1_'+str(line) + ' ' + Run_Id))
-        V2.append(GTC.ureal(ws_Data['J'+str(Data_row+line)].value,
-                            ws_Data['K'+str(Data_row+line)].value, dof,
+        print'V1 =', ws_Data['H'+str(this_row)].value
+        V2.append(GTC.ureal(ws_Data['J'+str(this_row)].value,
+                            ws_Data['K'+str(this_row)].value, dof,
                             label='V2_'+str(line) + ' ' + Run_Id))
-        Va.append(GTC.ureal(ws_Data['L'+str(Data_row+line)].value,
-                            ws_Data['M'+str(Data_row+line)].value, dof,
+        print'V2 =', ws_Data['J'+str(this_row)].value
+        Va.append(GTC.ureal(ws_Data['L'+str(this_row)].value,
+                            ws_Data['M'+str(this_row)].value, dof,
                             label='Va_'+str(line) + ' ' + Run_Id))
-        Vb.append(GTC.ureal(ws_Data['N'+str(Data_row+line)].value,
-                            ws_Data['O'+str(Data_row+line)].value, dof,
+        print'Va =', ws_Data['L'+str(this_row)].value
+        Vb.append(GTC.ureal(ws_Data['N'+str(this_row)].value,
+                            ws_Data['O'+str(this_row)].value, dof,
                             label='Vb_'+str(line) + ' ' + Run_Id))
-        Vc.append(GTC.ureal(ws_Data['P'+str(Data_row+line)].value,
-                            ws_Data['Q'+str(Data_row+line)].value, dof,
+        print'Vb =', ws_Data['N'+str(this_row)].value
+        Vc.append(GTC.ureal(ws_Data['P'+str(this_row)].value,
+                            ws_Data['Q'+str(this_row)].value, dof,
                             label='Vc_'+str(line) + ' ' + Run_Id))
-        Vd.append(GTC.ureal(ws_Data['R'+str(Data_row+line)].value,
-                            ws_Data['S'+str(Data_row+line)].value, dof,
+        print'Vc =', ws_Data['P'+str(this_row)].value
+        Vd.append(GTC.ureal(ws_Data['R'+str(this_row)].value,
+                            ws_Data['S'+str(this_row)].value, dof,
                             label='Vd_'+str(line) + ' ' + Run_Id))
+        print'Vd =', ws_Data['R'+str(this_row)].value
         assert V1[-1] is not None, 'Missing V1 data!'
         assert V2[-1] is not None, 'Missing V2 data!'
         assert Va[-1] is not None, 'Missing Va data!'
@@ -538,7 +545,7 @@ while Data_row <= Data_stop_row:
         drift_1 = V[2].x - V[0].x
         drift_2 = V[5].x - V[3].x
         av_drift = (drift_1 + drift_2)/2
-        drift_u = (av_drift - (delta_V/delta_V2) * av_drift_V2)/4
+        drift_u = abs(av_drift - (delta_V/delta_V2) * av_drift_V2)/4
         Vdrift_vals.append(GTC.ureal(0,
                                      GTC.tb.distribution['gaussian'](drift_u),
                                      8))
@@ -553,7 +560,7 @@ while Data_row <= Data_stop_row:
     # Mean voltages (offset correction):
     V1_av = GTC.ar.result((V1[0]-2*V1[1]+V1[2]+V1[3]-2*V1[4]+V1[5])/8,
                           label='V1_av')
-    print V1_av.s, V1_av.x, V1_av.u, V1_av.df
+    print V1_av.s
     V2_av = GTC.ar.result((V2[0]-2*V2[1]+V2[2])/4, label='V2_av')
     print V2_av.s, V2_av.x, V2_av.u, V2_av.df
     V2p_av = GTC.ar.result((V2[3]-2*V2[4]+V2[5])/4, label='V2p_av')
@@ -651,9 +658,11 @@ while Data_row <= Data_stop_row:
                            label='R0_num')
     R0_denom = GTC.ar.result((V1_av-V2p_av)*((R2+Rd)*(V1_av-Vap_av) +
                              R1*(V2p_av-Vcp_av)), label='Ro_denom')
+    print R0_num.s
+    print R0_denom.s
     R0 = R0_num/R0_denom
     print 'R0:', R0.x, R0.u, R0.df
-    assert R0.x > 1e7, 'DVM input-Z <= 10 MOhm!'
+#    assert R0.x > 1e7, 'DVM input-Z <= 10 MOhm!'
 
     # Calculate RL
     '''
@@ -669,7 +678,7 @@ while Data_row <= Data_stop_row:
     print RL_num.s
     print RL_denom.s
     print 'RL:', RL.x, RL.u, RL.df
-    assert RL.x > 1e9, 'Low leak resistance (<= 1 GOhm)!'
+#    assert RL.x > 1e9, 'Low leak resistance (<= 1 GOhm)!'
 
     T1 = T1_av + T_def1
     print 'R1 =', R1.x, 'at temperature', T1.x
@@ -713,7 +722,7 @@ while Data_row <= Data_stop_row:
         results_HV.append(this_result)
 
     del influencies[:]
-    Data_row += 6  # Move to next measurement
+    Data_row += 6  # Move to next measurement-block
 
 # ----- End of data-row loop ---- #
 # ############################### #
