@@ -535,12 +535,9 @@ class AqnThread(Thread):
 # End of measurement sequence ~~~~~
 
             # Record room conditions
-            if devices.ROLES_INSTR['GMHroom'].demo is False:
-                self.Troom = devices.ROLES_INSTR['GMHroom'].Measure('T')
-                self.Proom = devices.ROLES_INSTR['GMHroom'].Measure('P')
-                self.RHroom = devices.ROLES_INSTR['GMHroom'].Measure('RH')
-            else:
-                self.Troom = self.Proom = self.RHroom = 0.0
+            self.Troom = devices.ROLES_INSTR['GMHroom'].Measure('T')
+            self.Proom = devices.ROLES_INSTR['GMHroom'].Measure('P')
+            self.RHroom = devices.ROLES_INSTR['GMHroom'].Measure('RH')
 
 #            self.Times.append(time.time())
             self.WriteDataThisRow(row)
