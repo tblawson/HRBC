@@ -428,7 +428,8 @@ class AqnThread(Thread):
             err = devices.ROLES_INSTR['SRC2'].CheckErr()
             print 'Cleared F5520A error:', err
             print >>self.log, 'Cleared F5520A error:', err
-        time.sleep(3)  # Wait 3 s after checking error
+            time.sleep(3)  # Wait 3 s after checking error
+
         # Get V1,V2 setting, n, delays from spreadsheet
         self.V1_set = self.ws.cell(row=row, column=1).value
         self.RunPage.V1Setting.SetValue(str(self.V1_set))
