@@ -235,7 +235,8 @@ class AqnThread(Thread):
             time.sleep(3)  # 3
 
             # Set RS232 to V1
-            devices.ROLES_INSTR['switchbox'].SendCmd(devices.SWITCH_CONFIGS['V1'])
+            conf = devices.SWITCH_CONFIGS['V1']
+            devices.ROLES_INSTR['switchbox'].SendCmd(conf)
             self.SetupPage.Switchbox.SetValue('V1')
             devices.ROLES_INSTR['DVM12'].SendCmd('AZERO ON')
             if self._want_abort:
@@ -255,7 +256,9 @@ class AqnThread(Thread):
             self.T1 = devices.ROLES_INSTR['GMH1'].Measure('T')
 
             # Update run displays on Run page via a DataEvent:
-            t1 = dt.datetime.fromtimestamp(np.mean(self.V1Times)).strftime("%d/%m/%Y %H:%M:%S")
+            fmt = "%d/%m/%Y %H:%M:%S"
+            t_av = np.mean(self.V1Times)
+            t1 = dt.datetime.fromtimestamp(t_av).strftime(fmt)
             V1m = np.mean(self.V1Data)
             print 'AqnThread.run(): V1m =', V1m
             print >>self.log, 'AqnThread.run(): V1m =', V1m
@@ -268,7 +271,8 @@ class AqnThread(Thread):
 
             #  V2...
             # Set RS232 to V2 BEFORE changing DVM range
-            devices.ROLES_INSTR['switchbox'].SendCmd(devices.SWITCH_CONFIGS['V2'])
+            conf = devices.SWITCH_CONFIGS['V2']
+            devices.ROLES_INSTR['switchbox'].SendCmd(conf)
             self.SetupPage.Switchbox.SetValue('V2')
 
             # If running with fixed range set range to 'str(self.V1_set)':
@@ -309,7 +313,8 @@ class AqnThread(Thread):
             self.T2 = devices.ROLES_INSTR['GMH2'].Measure('T')
 
             # Update displays on Run page via a DataEvent:
-            t2 = dt.datetime.fromtimestamp(np.mean(self.V2Times)).strftime("%d/%m/%Y %H:%M:%S")
+            t_av = np.mean(self.V2Times)
+            t2 = dt.datetime.fromtimestamp(t_av).strftime(fmt)
             V2m = np.mean(self.V2Data)
             print 'AqnThread.run(): V2m =', V2m
             print >>self.log, 'AqnThread.run(): V2m =', V2m
@@ -322,7 +327,8 @@ class AqnThread(Thread):
 
             #  Vd...
             # Set RS232 to Vd1
-            devices.ROLES_INSTR['switchbox'].SendCmd(devices.SWITCH_CONFIGS['Vd1'])
+            conf = devices.SWITCH_CONFIGS['Vd1']
+            devices.ROLES_INSTR['switchbox'].SendCmd(conf)
             self.SetupPage.Switchbox.SetValue('Vd1')
             devices.ROLES_INSTR['DVMd'].SendCmd('RANGE AUTO')
             if self._want_abort:
@@ -339,7 +345,8 @@ class AqnThread(Thread):
             for i in range(self.n_readings):
                 self.MeasureV('Vd')
             # Update displays on Run page via a DataEvent:
-            td = dt.datetime.fromtimestamp(np.mean(self.VdTimes)).strftime("%d/%m/%Y %H:%M:%S")
+            t_av = np.mean(self.VdTimes)
+            td = dt.datetime.fromtimestamp(t_av).strftime(fmt)
             Vdm = np.mean(self.VdData)
             print 'AqnThread.run(): Vdm =', Vdm
             print >>self.log, 'AqnThread.run(): Vdm =', Vdm
@@ -447,7 +454,6 @@ class AqnThread(Thread):
         del self.V2Times[:]
         del self.VdTimes[:]
 
-
     def MeasureV(self, node):
         assert node in ('V1', 'V2', 'Vd'), 'Unknown argument to MeasureV().'
         if node == 'V1':
@@ -486,26 +492,40 @@ class AqnThread(Thread):
         wx.PostEvent(self.TopLevel, stat_ev)
         stat_ev = evts.StatusEvent(msg='Row '+str(row), field=1)
         wx.PostEvent(self.TopLevel, stat_ev)
+        fmt = "%d/%m/%Y %H:%M:%S"
 
-        self.ws['P'+str(row)] = str(dt.datetime.fromtimestamp(np.mean(self.V1Times)).strftime("%d/%m/%Y %H:%M:%S"))
+        t_av = np.mean(self.V1Times)
+        t_stamp = str(dt.datetime.fromtimestamp(t_av).strftime(fmt))
+        self.ws['P'+str(row)] = t_stamp
         print >>self.log, 'WriteDataThisRow(): cell', 'P'+str(row), ':',
-        print >>self.log, str(dt.datetime.fromtimestamp(np.mean(self.V1Times)).strftime("%d/%m/%Y %H:%M:%S"))
-        self.ws['Q'+str(row)] = np.mean(self.V1Data)
-        print >>self.log, 'WriteDataThisRow(): cell', 'Q'+str(row), ':', np.mean(self.V1Data)
-        self.ws['R'+str(row)] = np.std(self.V1Data, ddof=1)
-        print >>self.log, 'WriteDataThisRow(): cell', 'R'+str(row), np.std(self.V1Data, ddof=1)
-        self.ws['G'+str(row)] = str(dt.datetime.fromtimestamp(np.mean(self.V2Times)).strftime("%d/%m/%Y %H:%M:%S"))
+        t_av = np.mean(self.V1Times)
+        print >>self.log, t_stamp
+
+        d_av = np.mean(self.V1Data)
+        self.ws['Q'+str(row)] = d_av
+        print >>self.log, 'WriteDataThisRow(): cell', 'Q'+str(row), ':', d_av
+        d_sd = np.std(self.V1Data, ddof=1)
+        self.ws['R'+str(row)] = d_sd
+        print >>self.log, 'WriteDataThisRow(): cell', 'R'+str(row), d_sd
+
+        t_av = np.mean(self.V2Times)
+        t_stamp = str(dt.datetime.fromtimestamp(t_av).strftime(fmt))
+        self.ws['G'+str(row)] = t_stamp
         print >>self.log, 'WriteDataThisRow(): cell', 'G'+str(row), ':',
-        print >>self.log, str(dt.datetime.fromtimestamp(np.mean(self.V2Times)).strftime("%d/%m/%Y %H:%M:%S"))
+        print >>self.log, t_stamp
+
         self.ws['H'+str(row)] = np.mean(self.V2Data)
         print >>self.log, 'WriteDataThisRow(): cell', 'H'+str(row), ':',
         print >>self.log, np.mean(self.V2Data)
         self.ws['I'+str(row)] = np.std(self.V2Data, ddof=1)
         print >>self.log, 'WriteDataThisRow(): cell', 'I'+str(row), ':',
         print >>self.log, np.std(self.V2Data, ddof=1)
-        self.ws['M'+str(row)] = str(dt.datetime.fromtimestamp(np.mean(self.VdTimes)).strftime("%d/%m/%Y %H:%M:%S"))
+
+        t_av = np.mean(self.VdTimes)
+        t_stamp = str(dt.datetime.fromtimestamp(t_av).strftime(fmt))
+        self.ws['M'+str(row)] = t_stamp
         print >>self.log, 'WriteDataThisRow(): cell', 'M'+str(row), ':',
-        print >>self.log, str(dt.datetime.fromtimestamp(np.mean(self.VdTimes)).strftime("%d/%m/%Y %H:%M:%S"))
+        print >>self.log, t_stamp
         self.ws['N'+str(row)] = np.mean(self.VdData)
         print >>self.log, 'WriteDataThisRow(): cell', 'N'+str(row), ':',
         print >>self.log, np.mean(self.VdData)
