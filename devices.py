@@ -333,6 +333,9 @@ class instrument(device):
         else:
             self.VStr = ''
 
+        # DCV ranges, coded by index (range 0 is a dummy range)
+        self.T3310A_ranges = (0, 0.2, 2, 20, 200, 1000)
+
     def Open(self):
         try:
             self.instr = RM.open_resource(self.str_addr)
@@ -392,15 +395,19 @@ class instrument(device):
         if self.demo is True:
             return 1
         elif 'SRC:' in self.Descr:
-            # Set voltage-source to V
-            s = str(V).join(self.VStr)
+            if 'T3310A' not in self.Descr:  # D4808 or 5520A:
+                # Construct V-setting cmd
+                s = str(V).join(self.VStr)
+            else:  # Transmille
+                if V <= 0.2:  # Express V in mV for 200mV scale!
+                    V *= 1000
+                s = 'R'+str(self.GetT3310Range(V))+'/O'+str(V)+'/S0'
             print'devices.instrument.SetV():', self.Descr, 's=', s
             try:
                 self.instr.write(s)
             except visa.VisaIOError:
                 m = 'Failed to write "%s" to %s,via handle %s'
                 print m % (s, self.Descr, self.instr.session)
-
                 return -1
             return 1
         elif 'DVM:' in self.Descr:
@@ -411,6 +418,12 @@ class instrument(device):
         else:  # 'none' in self.Descr, (or something odd has happened)
             print 'Invalid function for instrument', self.Descr
             return -1
+
+    def GetT3310Range(self, V):
+        for code, r in enumerate(self.T3310A_ranges):
+            if abs(V) <= r:
+                break
+        return str(code)  # e.g: 3 for {20<V<=200}
 
     def SetFn(self):
         # Set DVM function
