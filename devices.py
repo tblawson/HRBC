@@ -135,7 +135,7 @@ class GMH_Sensor(device):
                     return True
                 else:  # Already have device measurement info
                     print'devices.GMH_Sensor.Open(): Instrument ready\
-                    - demo=False.'
+ - demo=False.'
                     self.demo = False  # If we've got this far, probably OK
                     return True
             else:  # No response
@@ -160,12 +160,12 @@ class GMH_Sensor(device):
         Closes all / any GMH devices that are currently open.
         """
         print'\ndevices.GMH_Sensor.Close(): Setting demo=True and \
-        Closing all GMH sensors ...'
+closing all GMH sensors ...'
         self.demo = True
         self.error_code = ct.c_int16(GMHLIB.GMH_CloseCom())
 #        self.GetErrMsg()
         print 'devices.GMH_Sensor.Close(): \
-        CloseCom err_msg:', self.error_msg.value
+CloseCom err_msg:', self.error_msg.value
         return 1
 
     def Transmit(self, Addr, Func):
@@ -234,7 +234,7 @@ class GMH_Sensor(device):
                 print'at address', Address
             else:
                 print'devices.GMH_Sensor.GetSensorInfo(): \
-                Exhausted addresses at', Address
+Exhausted addresses at', Address
                 if Address > 1:  # Don't let the last address tried screw it up
                     self.error_code.value = 0
                     self.demo = False
@@ -333,8 +333,8 @@ class instrument(device):
         else:
             self.VStr = ''
 
-        # DCV ranges, coded by index (range 0 is a dummy range)
-        self.T3310A_ranges = (0, 0.2, 2, 20, 200, 1000)
+        # DCV ranges, coded by index
+        self.T3310A_ranges = (0.2, 2, 20, 200, 1000)
 
     def Open(self):
         try:
@@ -343,17 +343,22 @@ class instrument(device):
             if '3458A' in self.Descr:
                 self.instr.read_termination = '\r\n'  # carriage-ret, line-feed
                 self.instr.write_termination = '\r\n'  # c-ret, line-feed
-            self.instr.timeout = 2000  # default 2 s timeout
+            if 'T3310A' in self.Descr:
+                self.instr.timeout = 2000
+            else:
+                self.instr.timeout = 2000  # default 2 s timeout
             INSTR_DATA[self.Descr]['demo'] = False  # A real working instr.
             self.demo = False  # A real instrument ONLY on Open() success
             print 'devices.instrument.Open():', self.Descr, 'session handle=',
             print self.instr.session
-        except visa.VisaIOError:
+        except visa.VisaIOError as e:
             self.instr = None
             self.demo = True  # default to demo mode if can't open.
             INSTR_DATA[self.Descr]['demo'] = True
+            print (e)
             print 'devices.instrument.Open() failed:', self.Descr,
             print 'opened in demo mode'
+
         return self.instr
 
     def Close(self):
@@ -392,38 +397,51 @@ class instrument(device):
 
     def SetV(self, V):
         # set output voltage (SRC) or input range (DVM)
+        m_id = 'devices.instrument.SetV(): '
+        ret = 1
         if self.demo is True:
-            return 1
-        elif 'SRC:' in self.Descr:
+            return ret
+
+        if 'SRC:' in self.Descr:
             if 'T3310A' not in self.Descr:  # D4808 or 5520A:
                 # Construct V-setting cmd
                 s = str(V).join(self.VStr)
-            else:  # Transmille
-                if V <= 0.2:  # Express V in mV for 200mV scale!
-                    V *= 1000
-                s = 'R'+str(self.GetT3310Range(V))+'/O'+str(V)+'/S0'
-            print'devices.instrument.SetV():', self.Descr, 's=', s
+            else:  # Transmille 3310A
+                if abs(V) > 0.2:
+                    Vcmd = V
+                else:  # Express V in mV for 200mV scale!
+                    Vcmd = 1000*V
+#                s = '/'.join([self.GetT3310Range(V),
+#                              'O'+str(Vcmd),
+#                              self.OperStr])
+                s = '/'.join([self.GetT3310Range(V),
+                              'O'+str(Vcmd)])
+            print m_id, self.Descr, 's=', s
             try:
-                self.instr.write(s)
+                if 'T3310A' not in self.Descr:
+                    self.instr.write(s)
+                else:  # Transmille prefers query() to write()
+                    ret = self.instr.query(s)
+                print m_id + 'Wrote "%s" to %s' % (s, self.Descr)
             except visa.VisaIOError:
-                m = 'Failed to write "%s" to %s,via handle %s'
+                m = m_id + 'Failed to write "%s" to %s via handle %s'
                 print m % (s, self.Descr, self.instr.session)
                 return -1
-            return 1
+            return ret
         elif 'DVM:' in self.Descr:
             # Set DVM range to V
             s = str(V).join(self.VStr)
             self.instr.write(s)
-            return 1
+            return ret
         else:  # 'none' in self.Descr, (or something odd has happened)
-            print 'Invalid function for instrument', self.Descr
+            print m_id, 'Invalid function for instrument', self.Descr
             return -1
 
     def GetT3310Range(self, V):
         for code, r in enumerate(self.T3310A_ranges):
             if abs(V) <= r:
                 break
-        return str(code)  # e.g: 3 for {20<V<=200}
+        return 'R'+str(code+1)  # e.g: 4 for {20<V<=200}
 
     def SetFn(self):
         # Set DVM function
@@ -442,35 +460,59 @@ class instrument(device):
     def Oper(self):
         # Enable O/P terminals
         # For V-source instruments only
+        m_id = 'devices.instrument.Oper(): '
+        ret = 1
         if self.demo is True:
-            return 1
+            return ret
         if 'SRC' in self.Descr:
             s = self.OperStr
             if s != '':
                 try:
-                    self.instr.write(s)
-                except visa.VisaIOError:
-                    print'Failed to write "%s" to %s' % (s, self.Descr)
+                    if 'T3310A' not in self.Descr:
+                        self.instr.write(s)
+                    else:  # Transmille prefers query() to write()
+                        ret = self.instr.query(s)
+                except visa.VisaIOError as e:
+                    print m_id + 'Failed to write "%s" to %s' % (s, self.Descr)
+                    print (e)
                     return -1
-            print'devices.instrument.Oper():', self.Descr, 'output ENABLED.'
-            return 1
-        else:
-            print'devices.instrument.Oper(): Invalid function for', self.Descr
+                print m_id + 'Wrote "%s" to %s' % (s, self.Descr)
+            else:  # No cmd string defined
+                print m_id + 'Undefined Oper() cmd-string for', self.Descr
+                return -1
+            print m_id, self.Descr, 'output ENABLED.'
+            return ret
+        else:  # Not a SRC
+            print m_id + 'Invalid function for', self.Descr
             return -1
 
     def Stby(self):
         # Disable O/P terminals
         # For V-source instruments only
+        m_id = 'devices.instrument.Stby(): '
+        ret = 1
         if self.demo is True:
-            return 1
+            return ret
         if 'SRC' in self.Descr:
             s = self.StbyStr
             if s != '':
-                self.instr.write(s)  # was: query(s)
-            print'devices.instrument.Stby():', self.Descr, 'output DISABLED.'
-            return 1
+                try:
+                    if 'T3310A' not in self.Descr:
+                        self.instr.write(s)
+                    else:  # Transmille prefers query() to write()
+                        ret = self.instr.query(s)
+                except visa.VisaIOError as e:
+                    print m_id + 'Failed to write "%s" to %s' % (s, self.Descr)
+                    print (e)
+                    return -1
+                print m_id + 'Wrote "%s" to %s' % (s, self.Descr)
+            else:  # No cmd string defined
+                print m_id + 'Undefined Oper() cmd-string for', self.Descr
+                return -1
+            print m_id, self.Descr, 'output DISABLED.'
+            return ret
         else:
-            print'devices.instrument.Stby(): Invalid function for', self.Descr
+            print m_id + 'Invalid function for', self.Descr
             return -1
 
     def CheckErr(self):
@@ -490,7 +532,8 @@ class instrument(device):
             return -1
 
     def SendCmd(self, s):
-        demo_reply = 'SendCmd(): DEMO resp. to '+s
+        m_id = 'devices.instrument.SendCmd(): '
+        demo_reply = m_id + 'DEMO resp. to '+s
         reply = 1
         '''
         Switchbox combobox doesn't update when programatically changed
@@ -499,23 +542,21 @@ class instrument(device):
 #        if self.role == 'switchbox':  # update icb
 #            pass  # may need an event here...
         if self.demo is True:
-            print 'devices.instrument.SendCmd(): returning', demo_reply
+            print m_id + 'returning', demo_reply
             return demo_reply
         # Check if s contains '?' or 'X' or is an empty string
         # ... in which case a response is expected
-        if any(x in s for x in'?X'):
-            print'devices.instrument.SendCmd(): Query(%s) to %s' % (s,
-                                                                    self.Descr)
+        if any(x in s for x in'?X') or 'T3310A' in self.Descr:
+            print m_id + 'Query(%s) to %s' % (s, self.Descr)
             reply = self.instr.query(s)
             return reply
         elif s == '':
             reply = self.instr.read()
-            print'devices.instrument.SendCmd(): Read()', reply,
+            print m_id + 'Read()', reply,
             print'from', self.Descr
             return reply
         else:
-            print'devices.instrument.SendCmd(): Write(%s) to %s' % (s,
-                                                                    self.Descr)
+            print m_id + 'Write(%s) to %s' % (s, self.Descr)
             self.instr.write(s)
             return reply
 
