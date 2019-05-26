@@ -561,12 +561,12 @@ class SetupPage(wx.Panel):
         if 'GMH' in r:  # Changed from d to r
             # create and open a GMH instrument instance
             print'\nnbpages.SetupPage.CreateInstr(): \
-            Creating GMH device (%s -> %s).' % (d, r)
+Creating GMH device (%s -> %s).' % (d, r)
             devices.ROLES_INSTR.update({r: devices.GMH_Sensor(d)})
         else:
             # create a visa instrument instance
             print'\nnbpages.SetupPage.CreateInstr(): \
-            Creating VISA device (%s -> %s).' % (d, r)
+Creating VISA device (%s -> %s).' % (d, r)
             devices.ROLES_INSTR.update({r: devices.instrument(d)})
             devices.ROLES_INSTR[r].Open()
         self.SetInstr(d, r)
@@ -578,9 +578,9 @@ class SetupPage(wx.Panel):
         necessary.
         """
         assert d in devices.INSTR_DATA, 'Unknown instrument: %s - check \
-        Excel file is loaded.' % d
+Excel file is loaded.' % d
         assert 'role' in devices.INSTR_DATA[d], 'Unknown instrument \
-        parameter - check Excel Parameters sheet is populated.'
+parameter - check Excel Parameters sheet is populated.'
         devices.INSTR_DATA[d]['role'] = r  # update default role
 
         # Set the address cb to correct value (according to devices.INSTR_DATA)
@@ -619,7 +619,7 @@ class SetupPage(wx.Panel):
                 break
         print'\nnbpages.SetupPage.OnTest():', d
         assert 'test' in devices.INSTR_DATA[d], 'No test exists \
-        for this device.'
+for this device.'
         test = devices.INSTR_DATA[d]['test']  # test string
         print '\tTest string:', test
         self.Response.SetValue(str(devices.ROLES_INSTR[r].Test(test)))
@@ -633,7 +633,7 @@ class SetupPage(wx.Panel):
             instr.write(config)
         except devices.visa.VisaIOError:
             self.Response.SetValue('Couldn\'t open visa resource for \
-            switchbox!')
+switchbox!')
 
     def BuildCommStr(self, e):
         '''
@@ -654,7 +654,7 @@ class SetupPage(wx.Panel):
                   'TR2': self.GMH2Probes.GetValue()}
         joinstr = ' monitored by '
         commstr = 'R1: ' + params['R1'] + joinstr + params['TR1'] + '. R2: \
-        ' + params['R2'] + joinstr + params['TR2']
+' + params['R2'] + joinstr + params['TR2']
         evt = evts.UpdateCommentEvent(str=commstr)
         wx.PostEvent(RunPage, evt)
 
@@ -721,7 +721,7 @@ class RunPage(wx.Panel):
         self.Comment = wx.TextCtrl(self, id=wx.ID_ANY, size=(600, 20))
         self.Comment.Bind(wx.EVT_TEXT, self.OnComment)
         comtip = 'This is auto-generated from data on the Setup page. \
-        Other notes may be added manually.'
+Other notes may be added manually.'
         self.Comment.SetToolTipString(comtip)
 
         self.NewRunIDBtn = wx.Button(self, id=wx.ID_ANY,
@@ -747,7 +747,7 @@ class RunPage(wx.Panel):
         ZeroVoltsBtn = wx.Button(self, id=wx.ID_ANY, label='Set zero volts')
         ZeroVoltsBtn.Bind(wx.EVT_BUTTON, self.OnZeroVolts)
 
-        self.RangeTBtn = wx.ToggleButton(self, id=wx.ID_ANY, val=True,
+        self.RangeTBtn = wx.ToggleButton(self, id=wx.ID_ANY,
                                          label='DVM12 Range mode')
         self.RangeTBtn.Bind(wx.EVT_TOGGLEBUTTON, self.OnRangeMode)
 
@@ -973,11 +973,11 @@ class RunPage(wx.Panel):
         '''
         V1 = e.GetValue()
         src1 = devices.ROLES_INSTR['SRC1']
-        src1.SetV(V1)
-        time.sleep(0.5)
         if V1 == 0:
             src1.Stby()
+            src1.SetV(V1)
         else:
+            src1.SetV(V1)
             src1.Oper()
         time.sleep(0.5)
 
@@ -987,11 +987,11 @@ class RunPage(wx.Panel):
         '''
         V2 = e.GetValue()
         src2 = devices.ROLES_INSTR['SRC2']
-        src2.SetV(V2)
-        time.sleep(0.5)
         if V2 == 0:
             src2.Stby()
+            src2.SetV(V2)
         else:
+            src2.SetV(V2)
             src2.Oper()
         time.sleep(0.5)
 
@@ -1000,23 +1000,24 @@ class RunPage(wx.Panel):
         src1 = devices.ROLES_INSTR['SRC1']
         if self.V1Setting.GetValue() == 0:
             print'RunPage.OnZeroVolts(): \
-            Zero/Stby directly (not via V1 display)'
-            src1.SetV(0)
+Zero/Stby directly (not via V1 display)'
             src1.Stby()
+            src1.SetV(0)
         else:
             self.V1Setting.SetValue('0')  # Calls OnV1Set() ONLY IF VAL CHANGES
-            print'RunPage.OnZeroVolts():  Zero/Stby via V1 display'
+            print'RunPage.OnZeroVolts(): Zero/Stby via V1 display'
 
         # V2:
         src2 = devices.ROLES_INSTR['SRC2']
         if self.V2Setting.GetValue() == 0:
             print'RunPage.OnZeroVolts(): \
-            Zero/Stby directly (not via V2 display)'
-            src2.SetV(0)
+Zero/Stby directly (not via V2 display)'
             src2.Stby()
+            src2.SetV(0)
         else:
             self.V2Setting.SetValue('0')  # Calls OnV2Set() ONLY IF VAL CHANGES
-            print'RunPage.OnZeroVolts():  Zero/Stby via V2 display'
+            print'RunPage.OnZeroVolts(): Zero/Stby via V2 display'
+        time.sleep(0.5)
 
     def OnStart(self, e):
         '''
