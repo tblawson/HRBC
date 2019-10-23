@@ -497,7 +497,7 @@ class SetupPage(wx.Panel):
         self.instrument_choice = {'SRC1': 'SRC: D4808',
                                   'SRC2': 'SRC: F5520A',
                                   'DVM12': 'DVM: HP3458A, s/n452',
-                                  'DVMd': 'DVM: HP3458A, s/n230',
+                                  'DVMd': 'DVM: HP3458A, s/n382',
                                   'DVMT1': 'none',  # 'DVM: HP34401A, s/n976'
                                   'DVMT2': 'none',  # 'DVM: HP34420A, s/n130'
                                   'GMH1': 'GMH: s/n627',

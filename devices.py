@@ -362,8 +362,8 @@ Excel Parameters sheet.'
 
     def Close(self):
         # Close comms with instrument
+        m = 'devices.instrument.Close():'
         if self.demo is True:
-            m = 'devices.instrument.Close():'
             print m, self.Descr, 'in demo mode - nothing to close'
         if self.instr is not None:
             print m, self.Descr, 'session handle=', self.instr.session
