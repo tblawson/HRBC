@@ -21,10 +21,12 @@ INF = 1e6  # 'inf' dof
 ZERO = GTC.ureal(0, 0)
 
 # Use for G1 & G2 in AUTO mode:
-Vgain_codes_auto = {0.5: 'Vgain_0.5r1', 1.0: 'Vgain_1r1', 5.0: 'Vgain_5r10',
+Vgain_codes_auto = {0.1: 'Vgain_0.1r0.1', 0.5: 'Vgain_0.5r1', 0.9: 'Vgain_1r1',
+                    1.0: 'Vgain_1r1', 5.0: 'Vgain_5r10', 9.0: 'Vgain_10r10',
                     10.0: 'Vgain_10r10', 100.0: 'Vgain_100r100'}
 # Use for G2 in FIXED mode:
-Vgain_codes_fixed = {0.5: 'Vgain_0.5r10', 1.0: 'Vgain_1r10',
+Vgain_codes_fixed = {0.1: 'Vgain_0.5r1', 0.5: 'Vgain_0.5r1', 0.9: 'Vgain_1r1',
+                     1.0: 'Vgain_1r10', 5.0: 'Vgain_5r10', 9.0: 'Vgain_10r10', 
                      10.0: 'Vgain_10r100', 100.0: 'Vgain_100r100'}
 
 
