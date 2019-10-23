@@ -342,6 +342,7 @@ Excel Parameters sheet.'
         TransmilleDCVRanges = {}
 
     def Open(self):
+        m = 'devices.instrument.Open():'
         try:
             self.instr = RM.open_resource(self.str_addr)
             self.is_open = 1
@@ -351,7 +352,6 @@ Excel Parameters sheet.'
             self.instr.timeout = 2000  # default 2 s timeout
             INSTR_DATA[self.Descr]['demo'] = False  # A real working instr
             self.demo = False  # A real working instr ONLY on Open() success
-            m = 'devices.instrument.Open():'
             print m, self.Descr, 'session handle=', self.instr.session
         except visa.VisaIOError:
             self.instr = None
