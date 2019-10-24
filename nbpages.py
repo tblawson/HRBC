@@ -51,7 +51,7 @@ class SetupPage(wx.Panel):
 
         self.SRC_COMBO_CHOICE = ['none']
         self.DVM_COMBO_CHOICE = ['none']
-        self.GMH_COMBO_CHOICE = ['none']  # devices.GMH_DESCR # ('GMH s/n628', 'GMH s/n627')
+        self.GMH_COMBO_CHOICE = ['none']
         self.SB_COMBO_CHOICE = devices.SWITCH_CONFIGS.keys()
         self.T_SENSOR_CHOICE = devices.T_Sensors
         self.cbox_addr_COM = []
@@ -60,7 +60,7 @@ class SetupPage(wx.Panel):
         self.cbox_instr_DVM = []
         self.cbox_instr_GMH = []
 
-        self.BuildComboChoices()
+#        self.BuildComboChoices()
 
         self.GMH1Addr = self.GMH2Addr = 0  # invalid initial address as default
 
@@ -395,6 +395,10 @@ class SetupPage(wx.Panel):
                                                     'tbtn': self.SwitchboxTest}})
 
     def BuildComboChoices(self):
+        '''
+        Called from UpdateFilepath().
+        Populate combobox choices from known list of available instruments.
+        '''
         for d in devices.INSTR_DATA.keys():
             if 'SRC:' in d:
                 self.SRC_COMBO_CHOICE.append(d)
@@ -402,6 +406,11 @@ class SetupPage(wx.Panel):
                 self.DVM_COMBO_CHOICE.append(d)
             elif 'GMH:' in d:
                 self.GMH_COMBO_CHOICE.append(d)
+
+        # Strip redundant entries:
+        self.SRC_COMBO_CHOICE = list(set(self.SRC_COMBO_CHOICE))
+        self.DVM_COMBO_CHOICE = list(set(self.DVM_COMBO_CHOICE))
+        self.GMH_COMBO_CHOICE = list(set(self.GMH_COMBO_CHOICE))
 
         # Re-build combobox choices from list of SRC's
         for cbox in self.cbox_instr_SRC:
