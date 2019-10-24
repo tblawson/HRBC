@@ -249,10 +249,6 @@ class SetupPage(wx.Panel):
                                     id=wx.ID_ANY)
         self.Response = wx.TextCtrl(self, id=wx.ID_ANY, value='',
                                     style=wx.TE_READONLY)
-
-#        self.TR1 = wx.TextCtrl(self, id = wx.ID_ANY, value = 'T(R1)', style = wx.TE_READONLY)
-#        self.TR2 = wx.TextCtrl(self, id = wx.ID_ANY, value = 'T(R2)', style = wx.TE_READONLY)
-
         gbSizer = wx.GridBagSizer()
 
         # Instruments
@@ -355,8 +351,6 @@ class SetupPage(wx.Panel):
                     flag=wx.ALL | wx.EXPAND, border=5)
         gbSizer.Add(self.Response, pos=(4, 4), span=(1, 3),
                     flag=wx.ALL | wx.EXPAND, border=5)
-#        gbSizer.Add(self.TR1, pos=(6,4), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
-#        gbSizer.Add(self.TR2, pos=(7,4), span=(1,1), flag=wx.ALL|wx.EXPAND, border=5)
         gbSizer.Add(self.VisaList, pos=(0, 5), span=(1, 1),
                     flag=wx.ALL | wx.EXPAND, border=5)
         gbSizer.Add(self.ResList, pos=(0, 4), span=(3, 1),
@@ -508,8 +502,10 @@ class SetupPage(wx.Panel):
             d = self.instrument_choice[r]
             devices.ROLES_WIDGETS[r]['icb'].SetValue(d)  # Update i_cb
             self.CreateInstr(d, r)
-        self.R1Name.SetValue('CHANGE_THIS! 1G')
-        self.R2Name.SetValue('CHANGE_THIS! 1M')
+        if 'Name' in self.R1Name.GetValue(): 
+            self.R1Name.SetValue('CHANGE_THIS! 1G')
+        if 'Name' in self.R2Name.GetValue():
+            self.R2Name.SetValue('CHANGE_THIS! 1M')
 
     def UpdateInstr(self, e):
         '''
