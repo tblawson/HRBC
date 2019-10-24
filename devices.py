@@ -120,7 +120,7 @@ class GMH_Sensor(device):
             self.Transmit(1, self.ValFn)
             self.GetErrMsg()
             if self.error_code.value in range(0, 4):  # Sensor responds...
-                # Ensure max poweroff time
+                # Ensure max power-off time
                 self.intData.value = 120  # 120 mins B4 power-off
                 self.Transmit(1, self.SetPowOffFn)
                 if len(self.info) == 0:  # No device info yet
