@@ -93,6 +93,7 @@ class GMH_Sensor(device):
         self.MeasFn = ct.c_short(180)  # GetMeasCode()
         self.UnitFn = ct.c_int16(178)  # GetUnitCode()
         self.ValFn = ct.c_short(0)  # GetValue()
+        self.SetPowOffFn = ct.c_short(223)
         self.error_msg = ct.create_string_buffer(70)
         self.meas_alias = {'T': 'Temperature',
                            'P': 'Absolute Pressure',
@@ -119,6 +120,9 @@ class GMH_Sensor(device):
             self.Transmit(1, self.ValFn)
             self.GetErrMsg()
             if self.error_code.value in range(0, 4):  # Sensor responds...
+                # Ensure max poweroff time
+                self.intData.value = 120  # 120 mins B4 power-off
+                self.Transmit(1, self.SetPowOffFn)
                 if len(self.info) == 0:  # No device info yet
                     print 'devices.GMH_Sensor.Open(): Getting sensor info...'
                     self.GetSensorInfo()
