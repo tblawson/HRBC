@@ -23,56 +23,56 @@
 		"test": "T",
 		"role": "GMH1"
 	},
-	"DVM_34420A:s/n130": {
+	"DVM: HP34420A, s/n130": {
 		"addr": 7,
 		"str_addr": "GPIB0::7::INSTR",
 		"init_str": "FUNC OHMF;OCOMP ON",
 		"test": "*IDN?",
 		"role": null
 	},
-	"DVM_34401A:s/n976": {
+	"DVM: 34401A, s/n976": {
 		"addr": 17,
 		"str_addr": "GPIB0::17::INSTR",
 		"init_str": "FUNC OHMF;OCOMP ON",
 		"test": "*IDN?",
 		"role": null,
 	},
-	"DVM_3458A:s/n066": {
+	"DVM: 3458A, s/n066": {
 		"addr": 20,
 		"str_addr": "GPIB0::20::INSTR",
 		"init_str": "DCV",
 		"test": "ID?",
 		"role": null,
 	},
-	"DVM_3458A:s/n129": {
+	"DVM: HP3458A, s/n129": {
 		"addr": 25,
 		"str_addr": "GPIB0::25::INSTR",
 		"init_str": "DCV",
 		"test": "ID?",
 		"role": null
 	},
-	"DVM_3458A:s/n230": {
+	"DVM: HP3458A, s/n230": {
 		"addr": 21,
 		"str_addr": "GPIB0::21::INSTR",
 		"init_str": "DCV",
 		"test": "ID?",
 		"role": null
 	},
-	"DVM_3458A:s/n382": {
+	"DVM: HP3458A, s/n382": {
 		"addr": 22,
 		"str_addr": "GPIB0::22::INSTR",
 		"init_str": "DCV",
 		"test": "ID?",
 		"role": "DVMd"
 	},
-	"DVM_3458A:s/n452": {
+	"DVM: HP3458A, s/n452": {
 		"addr": 23,
 		"str_addr": "GPIB0::23::INSTR",
 		"init_str": "DCV",
 		"test": "ID?",
 		"role": "DVM12"
 	},
-	"DVM_3458A:s/n518": {
+	"DVM: HP3458A, s/n518": {
 		"addr": 24,
 		"str_addr": "GPIB0::24::INSTR",
 		"init_str": "DCV",
@@ -98,6 +98,28 @@
 		"stby_str": "STBY",
 		"test": "*IDN?",
 		"role": "SRC2"
+	},
+	"SRC: T3310A,s/nU3212I18": {
+		"addr": 27,
+		"str_addr": "GPIB0::27::INSTR",
+		"init_str": null,
+		"setV_str": "R",
+		"oper_str": "S0",
+		"stby_str": "S1",
+		"cmd_sep": "/"
+		"test": "*IDN?",
+		"role": "null"
+	},
+	"SRC: T3310A,s/nU3213I18": {
+		"addr": 28,
+		"str_addr": "GPIB0::28::INSTR",
+		"init_str": null,
+		"setV_str": ["R", "O"],
+		"oper_str": "S0",
+		"stby_str": "S1",
+		"cmd_sep": "/"
+		"test": "*IDN?",
+		"role": "null"
 	},
 	"V1": {
 		"addr": 2,
