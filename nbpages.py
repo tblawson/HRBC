@@ -67,7 +67,7 @@ class SetupPage(wx.Panel):
         self.ResourceList = []
         self.ComList = []
         self.GPIBList = []
-        self.GPIBAddressList = ['addresses', 'GPIB0::0']  # Initial dummy vals 
+        self.GPIBAddressList = ['addresses', 'GPIB0::0']  # Initial dummy vals
         self.COMAddressList = ['addresses', 'COM0']  # Initial dummy vals
 
         self.test_btns = []  # list of test buttons

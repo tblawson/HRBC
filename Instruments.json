@@ -1,0 +1,126 @@
+{
+	"none": {
+		"addr": 0,
+		"str_addr": "NOADDRESS",
+		"test": null,
+		"role": null
+	},
+	"GMH:s/n628": {
+		"addr": 5,
+		"str_addr": "COM5",
+		"test": "T",
+		"role": "GMH2"
+	},
+	"GMH:s/n367": {
+		"addr": 8,
+		"str_addr": "COM8",
+		"test": "RH",
+		"role": "GMHroom"
+	},
+	"GMH:s/n627": {
+		"addr": 9,
+		"str_addr": "COM9",
+		"test": "T",
+		"role": "GMH1"
+	},
+	"DVM_34420A:s/n130": {
+		"addr": 7,
+		"str_addr": "GPIB0::7::INSTR",
+		"init_str": "FUNC OHMF;OCOMP ON",
+		"test": "*IDN?",
+		"role": null
+	},
+	"DVM_34401A:s/n976": {
+		"addr": 17,
+		"str_addr": "GPIB0::17::INSTR",
+		"init_str": "FUNC OHMF;OCOMP ON",
+		"test": "*IDN?",
+		"role": null,
+	},
+	"DVM_3458A:s/n066": {
+		"addr": 20,
+		"str_addr": "GPIB0::20::INSTR",
+		"init_str": "DCV",
+		"test": "ID?",
+		"role": null,
+	},
+	"DVM_3458A:s/n129": {
+		"addr": 25,
+		"str_addr": "GPIB0::25::INSTR",
+		"init_str": "DCV",
+		"test": "ID?",
+		"role": null
+	},
+	"DVM_3458A:s/n230": {
+		"addr": 21,
+		"str_addr": "GPIB0::21::INSTR",
+		"init_str": "DCV",
+		"test": "ID?",
+		"role": null
+	},
+	"DVM_3458A:s/n382": {
+		"addr": 22,
+		"str_addr": "GPIB0::22::INSTR",
+		"init_str": "DCV",
+		"test": "ID?",
+		"role": "DVMd"
+	},
+	"DVM_3458A:s/n452": {
+		"addr": 23,
+		"str_addr": "GPIB0::23::INSTR",
+		"init_str": "DCV",
+		"test": "ID?",
+		"role": "DVM12"
+	},
+	"DVM_3458A:s/n518": {
+		"addr": 24,
+		"str_addr": "GPIB0::24::INSTR",
+		"init_str": "DCV",
+		"test": "ID?",
+		"role": null,
+	},
+	"SRC_D4808": {
+		"addr": 2,
+		"str_addr": "GPIB0::2::INSTR",
+		"init_str": ["F0G0D0S0=", "M+0O1=", "R0="],
+		"setV_str": ["M", "="],
+		"oper_str": "O1=",
+		"stby_str": "O0=",
+		"test": "X8=",
+		"role": "SRC1"
+	},
+	"SRC_F5520A": {
+		"addr": 4,
+		"str_addr": "GPIB0::4::INSTR",
+		"init_str": null,
+		"setV_str": ["OUT", "V,0Hz"],
+		"oper_str": "OPER",
+		"stby_str": "STBY",
+		"test": "*IDN?",
+		"role": "SRC2"
+	},
+	"V1": {
+		"addr": 2,
+		"str_addr": "COM2",
+		"test": "A",
+		"role": "switchbox"
+	},
+	"Vd2": {
+		"addr": 2,
+		"str_addr": "COM2",
+		"test": "B",
+		"role": "switchbox"
+	},
+	"Vd1": {
+		"addr": 2,
+		"str_addr": "COM2",
+		"test": "C",
+		"role": "switchbox"
+	},
+	"V2": {
+		"addr": 2,
+		"str_addr": "COM2",
+		"test": "D",
+		"role": "switchbox"
+	}
+}
