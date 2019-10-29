@@ -179,7 +179,7 @@ class RLThread(Thread):
                     time.sleep(1)  # was 10
                     dvmOP = devices.ROLES_INSTR['DVMd'].Read()
                     self.RLink_data.append(float(filter(self.filt, dvmOP)))
-                P = 100*((revs-1)*self.N_readings+row)/(self.N_reversals*self.N_readings) # % progress
+                P = 100*((revs-1)*self.N_readings+row)/(self.N_reversals*self.N_readings)  # % progress
                 update_ev = evts.DataEvent(t=0, Vm=self.RLink_data[row-1],
                                            Vsd=0, P=P, r=col_letter+str(row),
                                            flag='-')
