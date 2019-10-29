@@ -150,6 +150,7 @@ class RLThread(Thread):
             if self._want_abort:
                 self.AbortRun()
                 return
+
             del self.RLink_data[:]
 
             # Apply source voltages
@@ -157,6 +158,9 @@ class RLThread(Thread):
             self.RunPage.V1Setting.SetValue(str(self.V1set))
             time.sleep(5)
             self.RunPage.V2Setting.SetValue(str(self.V2set))
+            if self._want_abort:
+                self.AbortRun()
+                return            
             time.sleep(60)
             row = 1
 
