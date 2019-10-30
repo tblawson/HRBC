@@ -163,6 +163,9 @@ class RLThread(Thread):
             self.RunPage.V1Setting.SetValue(str(self.V1set))
             time.sleep(5)
             self.RunPage.V2Setting.SetValue(str(self.V2set))
+            if self._want_abort:
+                self.AbortRun()
+                return
             time.sleep(60)
             row = 1  # self.start_row + 1
 
@@ -222,8 +225,8 @@ class RLThread(Thread):
         stat_ev = evts.StatusEvent(msg='AbortRun(): Run stopped', field=0)
         wx.PostEvent(self.TopLevel, stat_ev)
 
-        stop_ev = evts.DataEvent(t='-', Vm='-', Vsd='-',
-                                 P=0, r='-', flag='E')  # End
+        stop_ev = evts.DataEvent(t='-', Vm='-', Vsd='-', P=0, r='-',
+                                 flag='E')  # End
         wx.PostEvent(self.RunPage, stop_ev)
 
         self.RunPage.RLinkBtn.Enable(True)
@@ -236,8 +239,8 @@ class RLThread(Thread):
 
         self.Standby()
 
-        stop_ev = evts.DataEvent(t='-', Vm='-', Vsd='-', P=0,
-                                 r='-', flag='F')  # Finished
+        stop_ev = evts.DataEvent(t='-', Vm='-', Vsd='-', P=0, r='-',
+                                 flag='F')  # Finished
         wx.PostEvent(self.RunPage, stop_ev)
         stat_ev = evts.StatusEvent(msg='RLINK RUN COMPLETED', field=0)
         wx.PostEvent(self.TopLevel, stat_ev)

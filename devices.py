@@ -123,7 +123,7 @@ class GMH_Sensor(device):
             '''
             self.Transmit(1, self.ValFn)  # Sets error_code and error_msg
             if self.error_code.value in range(0, 4):  # Sensor responds...
-                # Ensure max poweroff time
+                # Ensure max power-off time
                 self.intData.value = 120  # 120 mins B4 power-off
                 self.Transmit(1, self.SetPowOffFn)
 
@@ -337,6 +337,7 @@ class instrument(device):
         self.T3310A_ranges = (0.2, 2, 20, 200, 1000)
 
     def Open(self):
+        m = 'devices.instrument.Open():'
         try:
             self.instr = RM.open_resource(self.str_addr)
             self.is_open = 1
@@ -349,30 +350,28 @@ class instrument(device):
                 self.instr.timeout = 2000  # default 2 s timeout
             INSTR_DATA[self.Descr]['demo'] = False  # A real working instr.
             self.demo = False  # A real instrument ONLY on Open() success
-            print 'devices.instrument.Open():', self.Descr, 'session handle=',
+            print m, self.Descr, 'session handle=',
             print self.instr.session
         except visa.VisaIOError as e:
             self.instr = None
             self.demo = True  # default to demo mode if can't open.
             INSTR_DATA[self.Descr]['demo'] = True
             print (e)
-            print 'devices.instrument.Open() failed:', self.Descr,
+            print m, 'failed:', self.Descr,
             print 'opened in demo mode'
 
         return self.instr
 
     def Close(self):
         # Close comms with instrument
+        m = 'devices.instrument.Close():'
         if self.demo is True:
-            print 'devices.instrument.Close():', self.Descr,
-            print 'in demo mode - nothing to close'
+            print m, self.Descr, 'in demo mode - nothing to close'
         if self.instr is not None:
-            print 'devices.instrument.Close():', self.Descr,
-            print 'session handle=', self.instr.session
+            print m, self.Descr, 'session handle=', self.instr.session
             self.instr.close()
         else:
-            print 'devices.instrument.Close():', self.Descr,
-            print 'is "None" or already closed'
+            print m, self.Descr, 'is "None" or already closed'
         self.is_open = 0
 
     def Init(self):

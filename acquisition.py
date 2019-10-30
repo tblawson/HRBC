@@ -353,17 +353,11 @@ class AqnThread(Thread):
             assert len(self.VdData) > 1, "Can't take SD of one or less items!"
             Vdsd = np.std(self.VdData, ddof=1)
             P = 100.0*pbar/(1 + self.stop_row - self.start_row)
-            update_ev = evts.DataEvent(t=td, Vm=Vdm, Vsd=Vdsd,
-                                       P=P, r=row, flag='d')
-            wx.PostEvent(self.RunPage, update_ev)
 
             # Record room conditions
-            if devices.ROLES_INSTR['GMHroom'].demo is False:
-                self.Troom = devices.ROLES_INSTR['GMHroom'].Measure('T')
-                self.Proom = devices.ROLES_INSTR['GMHroom'].Measure('P')
-                self.RHroom = devices.ROLES_INSTR['GMHroom'].Measure('RH')
-            else:
-                self.Troom = self.Proom = self.RHroom = 0.0
+            self.Troom = devices.ROLES_INSTR['GMHroom'].Measure('T')
+            self.Proom = devices.ROLES_INSTR['GMHroom'].Measure('P')
+            self.RHroom = devices.ROLES_INSTR['GMHroom'].Measure('RH')
 
             self.WriteDataThisRow(row)
 
@@ -384,6 +378,11 @@ class AqnThread(Thread):
                                      Vd=self.VdData, V1=self.V1Data,
                                      V2=self.V2Data, clear=clear_plot)
             wx.PostEvent(self.PlotPage, plot_ev)
+
+            update_ev = evts.DataEvent(t=td, Vm=Vdm, Vsd=Vdsd, P=P,
+                                       r=row, flag='d')
+            wx.PostEvent(self.RunPage, update_ev)
+
             pbar += 1
             row += 1
 

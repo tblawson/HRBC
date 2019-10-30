@@ -945,6 +945,7 @@ Other notes may be added manually.'
             self.Vsd.SetValue(str(e.Vsd))
             self.Row.SetValue(str(e.r))
             self.Progress.SetValue(e.P)
+            self.Progress.SetToolTipString(str(e.P)+"%")
 
     def UpdateDels(self, e):
         '''

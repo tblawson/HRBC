@@ -102,8 +102,8 @@ class MainFrame(wx.Frame):
 
     def OnAbout(self, event=None):
         # A message dialog with 'OK' button. wx.OK is a standard wxWidgets ID.
-        descr = "A Python'd version of the TestPoint High Resistance \
-        Bridge program."
+        descr = "HRBC v"+VERSION+": \
+A Python'd version of the TestPoint High Resistance Bridge program."
         dlg_description = "HRBC v"+VERSION+": "+descr
         dlg_title = "About HighResBridge"
         dlg = wx.MessageDialog(self, dlg_description, dlg_title, wx.OK)
@@ -111,10 +111,12 @@ class MainFrame(wx.Frame):
         dlg.Destroy()  # Destroy when done.
 
     def OnSave(self, event=None):
-        print 'Saving', self.page1.XLFile.GetValue(), '...'
-        if self.ExcelPath is not None:
+        if self.ExcelPath is not "":
+            print 'Saving', self.page1.XLFile.GetValue(), '...'
             self.page1.wb.save(self.page1.XLFile.GetValue())
             self.page1.log.close()
+        else:
+            print 'Nothing to save. Bye.'
 
     def OnOpen(self, event=None):
         dlg = wx.FileDialog(self, message="Select data file",
@@ -131,11 +133,11 @@ class MainFrame(wx.Frame):
         dlg.Destroy()
 
     def CloseInstrSessions(self, event=None):
+        head = 'Main.CloseInstrSessions(): '
         for r in devices.ROLES_INSTR.keys():
             devices.ROLES_INSTR[r].Close()
         devices.RM.close()
-        print'Main.CloseInstrSessions():',
-        print'closed VISA resource manager and GMH instruments'
+        print head, 'closed VISA resource manager and GMH instruments.'
 
     def OnQuit(self, event=None):
         self.CloseInstrSessions()
