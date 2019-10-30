@@ -421,6 +421,11 @@ class SetupPage(wx.Panel):
             elif 'GMH:' in d:
                 self.GMH_COMBO_CHOICE.append(d)
 
+        # Strip redundant entries:
+        self.SRC_COMBO_CHOICE = list(set(self.SRC_COMBO_CHOICE))
+        self.DVM_COMBO_CHOICE = list(set(self.DVM_COMBO_CHOICE))
+        self.GMH_COMBO_CHOICE = list(set(self.GMH_COMBO_CHOICE))
+
         # Re-build combobox choices from list of SRCs
         for cbox in self.cbox_instr_SRC:
             current_val = cbox.GetValue()
