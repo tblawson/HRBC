@@ -367,9 +367,9 @@ while Data_row <= Data_stop_row:
 #    G1_code = R_info.Vgain_codes_auto[round(V1set,1)]
 #    G1 = I_INFO[role_descr['DVM12']][G1_code]
 
+    sf2 = -int(round(math.log10(V2set)))  # round to nearest power of 10
+    sf1 = -int(round(math.log10(V1set)))
     if 'AUTO' in range_mode:
-        sf2 = -int(round(math.log10(V2set)))  # round to nearest power of 10
-        sf1 = -int(round(math.log10(V1set)))
         G2_code = R_info.Vgain_codes_auto[round(abs(V2set), sf2)]
         G1_code = R_info.Vgain_codes_auto[round(V1set, sf1)]
     else:  # 'FIXED'
