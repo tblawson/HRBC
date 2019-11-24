@@ -368,15 +368,17 @@ while Data_row <= Data_stop_row:
 #    G1 = I_INFO[role_descr['DVM12']][G1_code]
 
     if 'AUTO' in range_mode:
-        G2_code = R_info.Vgain_codes_auto[round(abs(V2set), 1)]
-        G1_code = R_info.Vgain_codes_auto[round(V1set, 1)]
+        sf2 = -int(round(math.log10(V2set)))  # round to nearest power of 10
+        sf1 = -int(round(math.log10(V1set)))
+        G2_code = R_info.Vgain_codes_auto[round(abs(V2set), sf2)]
+        G1_code = R_info.Vgain_codes_auto[round(V1set, sf1)]
     else:  # 'FIXED'
         if round(V1set) >= round(abs(V2set)):
-            G1_code = R_info.Vgain_codes_auto[round(V1set, 1)]
-            G2_code = R_info.Vgain_codes_fixed[round(abs(V2set), 1)]
+            G1_code = R_info.Vgain_codes_auto[round(V1set, sf1)]
+            G2_code = R_info.Vgain_codes_fixed[round(abs(V2set), sf2)]
         else:
-            G2_code = R_info.Vgain_codes_auto[round(abs(V2set), 1)]
-            G1_code = R_info.Vgain_codes_fixed[round(V1set, 1)]
+            G2_code = R_info.Vgain_codes_auto[round(abs(V2set), sf2)]
+            G1_code = R_info.Vgain_codes_fixed[round(V1set, sf1)]
 
     G1 = I_INFO[role_descr['DVM12']][G1_code]
     G2 = I_INFO[role_descr['DVM12']][G2_code]
