@@ -207,7 +207,7 @@ elif V1set_b < V1set_a:
     HV = V1set_a
 else:  # 'HV' and 'LV' equal
     LV = HV = V1set_a
-print 'LV =',LV,'; HV =',HV
+print 'LV =', LV, '; HV =', HV
 
 # Set up reading of Data sheet
 Data_row = Data_start_row

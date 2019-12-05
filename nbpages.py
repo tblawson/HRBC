@@ -899,12 +899,14 @@ class RunPage(wx.Panel):
         if e.flag in 'EF':  # finished
             self.RunThread = None
             self.StartBtn.Enable(True)
+            self.Progress.SetToolTipString(str(0)+'%')
         else:
             self.Time.SetValue(str(e.t))
             self.Vav.SetValue(str(e.Vm))
             self.Vsd.SetValue(str(e.Vsd))
             self.Row.SetValue(str(e.r))
             self.Progress.SetValue(e.P)
+            self.Progress.SetToolTipString(str(e.P)+'%')
 
     def UpdateDels(self, e):
         # Triggered by an 'update delays' event
