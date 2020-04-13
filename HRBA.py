@@ -54,7 +54,7 @@ VERSION = 1.3
 # DVM, GMH Correction factors, etc.
 
 ZERO = GTC.ureal(0, 0)
-PPM_TOLERANCE = {'R2': 2e-4, 'G': 0.01, 'R1': 1e-3}
+PPM_TOLERANCE = {'R2': 2e-4, 'G': 0.01, 'R1': 5e-2}  # 1e-3
 
 datadir = raw_input('Path to data directory:')
 xlname = raw_input('Excel filename:')

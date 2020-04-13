@@ -56,7 +56,7 @@ LANG_OFFSET = 4096
 '''--------------------------------------------------------------'''
 
 
-class device():
+class Device(object):
     """
     A generic external device or instrument
     """
@@ -70,7 +70,7 @@ class device():
         pass
 
 
-class GMH_Sensor(device):
+class GMHSensor(Device):
     """
     A class to wrap around the low-level functions of GMH3x32E.dll.
     For use with most Greisinger GMH devices.
@@ -109,76 +109,76 @@ class GMH_Sensor(device):
         Use COM port number to open device
         Returns 1 if successful, 0 if not
         """
-        print'\ndevices.GMH_Sensor.Open(): Trying port', repr(self.addr)
+        print('\ndevices.GMH_Sensor.Open(): Trying port', repr(self.addr))
         self.error_code = ct.c_int16(GMHLIB.GMH_OpenCom(self.addr))
-        self.GetErrMsg()  # Get self.error_msg
+        self.get_err_msg()  # Get self.error_msg
 
         if self.error_code.value in range(0, 4) or self.error_code.value == -2:
-            print 'devices.GMH_Sensor.Open(): ', self.str_addr, 'is open.'
+            print('devices.GMH_Sensor.Open(): ', self.str_addr, 'is open.')
 
             # We're not there yet - test device responsiveness
-            self.Transmit(1, self.ValFn)
-            self.GetErrMsg()
+            self.transmit(1, self.ValFn)
+            self.get_err_msg()
             if self.error_code.value in range(0, 4):  # Sensor responds...
                 # Ensure max power-off time
                 self.intData.value = 120  # 120 mins B4 power-off
-                self.Transmit(1, self.SetPowOffFn)
+                self.transmit(1, self.SetPowOffFn)
                 if len(self.info) == 0:  # No device info yet
-                    print 'devices.GMH_Sensor.Open(): Getting sensor info...'
+                    print('devices.GMH_Sensor.Open(): Getting sensor info...')
                     self.GetSensorInfo()
                     self.demo = False  # If we got this far we're probably OK
                     return True
                 else:  # Already have device measurement info
-                    print'devices.GMH_Sensor.Open(): \
-                    Instrument ready - demo=False.'
+                    print('devices.GMH_Sensor.Open(): \
+                    Instrument ready - demo=False.')
                     self.demo = False  # If we got this far we're probably OK
                     return True
             else:  # No response
-                print 'devices.GMH_Sensor.Open():', self.error_msg.value
+                print('devices.GMH_Sensor.Open():', self.error_msg.value)
                 self.Close()
                 self.demo = True
                 return False
 
         else:  # Com open failed
-            print'devices.GMH_Sensor.Open() FAILED:', self.Descr
+            print('devices.GMH_Sensor.Open() FAILED:', self.Descr)
             self.Close()
             self.demo = True
             return False
 
     def Init(self):
-        print'devices.GMH_Sensor.Init():', self.Descr, 'initiated \
-        (nothing happens here).'
+        print('devices.GMH_Sensor.Init():', self.Descr, 'initiated \
+        (nothing happens here).')
         pass
 
     def Close(self):
         """
         Closes all / any GMH devices that are currently open.
         """
-        print'\ndevices.GMH_Sensor.Close(): \
-        Setting demo=True and Closing all GMH sensors ...'
+        print('\ndevices.GMH_Sensor.Close(): \
+        Setting demo=True and Closing all GMH sensors ...')
         self.demo = True
         self.error_code = ct.c_int16(GMHLIB.GMH_CloseCom())
         m = 'devices.GMH_Sensor.Close(): CloseCom err_msg:'
-        print m, self.error_msg.value
+        print( m, self.error_msg.value)
         return 1
 
-    def Transmit(self, Addr, Func):
+    def transmit(self, addr, func):
         """
         Wrapper for the general-purpose interrogation function GMH_Transmit().
         """
-        self.error_code = ct.c_int16(GMHLIB.GMH_Transmit(Addr, Func,
+        self.error_code = ct.c_int16(GMHLIB.GMH_Transmit(addr, func,
                                                          ct.byref(self.Prio),
                                                          ct.byref(self.flData),
                                                          ct.byref(self.intData)))
-        self.GetErrMsg()
+        self.get_err_msg()
         if self.error_code.value < 0:
-            print'\ndevices.GMH_Sensor.Transmit():FAIL'
+            print('\ndevices.GMH_Sensor.Transmit():FAIL')
             return False
         else:
-            print'\ndevices.GMH_Sensor.Transmit():PASS'
+            print('\ndevices.GMH_Sensor.Transmit():PASS')
             return True
 
-    def GetErrMsg(self):
+    def get_err_msg(self):
         """
         Translate return code into error message and store in self.error_msg.
         """
@@ -208,7 +208,7 @@ class GMH_Sensor(device):
         m = 'devices.GMH_Sensor.GetSensorInfo(): '
         for Address in range(1, 100):
             Addr = ct.c_short(Address)
-            if self.Transmit(Addr, self.MeasFn):  # Writes to self.intData
+            if self.transmit(Addr, self.MeasFn):  # Writes to self.intData
                 # Transmit() was successful
                 addresses.append(Address)
 
@@ -218,7 +218,7 @@ class GMH_Sensor(device):
                 GMHLIB.GMH_GetMeasurement(meas_code, ct.byref(self.meas_str))
                 measurements.append(self.meas_str.value)
 
-                self.Transmit(Addr, self.UnitFn)
+                self.transmit(Addr, self.UnitFn)
 
                 unit_code = ct.c_int16(self.intData.value + los)
                 # Write result to self.unit_str:
@@ -260,7 +260,7 @@ class GMH_Sensor(device):
             assert self.demo is False, 'Illegal access to demo device!'
             Address = self.info[self.meas_alias[meas]][0]
             Addr = ct.c_short(Address)
-            self.Transmit(Addr, self.ValFn)
+            self.transmit(Addr, self.ValFn)
             self.Close()
 
             m = 'devices.Measure():'
@@ -284,7 +284,7 @@ class GMH_Sensor(device):
 '''
 
 
-class instrument(device):
+class instrument(Device):
     '''
     A class for associating instrument data with a VISA instance of
     that instrument
