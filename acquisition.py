@@ -171,9 +171,9 @@ class AqnThread(Thread):
         time.sleep(3)
 
         # Get some initial temperatures...
-        T = devices.ROLES_INSTR['GMH1'].Measure('T')
+        T = devices.ROLES_INSTR['GMH1'].measure('T')
         self.ws['U'+str(self.start_row-1)] = T
-        T = devices.ROLES_INSTR['GMH2'].Measure('T')
+        T = devices.ROLES_INSTR['GMH2'].measure('T')
         self.ws['V'+str(self.start_row-1)] = T
 
         # Record ALL roles and corresponding instr descriptions in XL sheet
@@ -259,7 +259,7 @@ class AqnThread(Thread):
             devices.ROLES_INSTR['DVM12'].Read()  # junk = ...dvmV1V2
             for i in range(self.n_readings):
                 self.MeasureV('V1')
-            self.T1 = devices.ROLES_INSTR['GMH1'].Measure('T')
+            self.T1 = devices.ROLES_INSTR['GMH1'].measure('T')
 
             # Update run displays on Run page via a DataEvent:
             av_t = np.mean(self.V1Times)
@@ -316,7 +316,7 @@ class AqnThread(Thread):
             devices.ROLES_INSTR['DVM12'].Read()
             for i in range(self.n_readings):
                 self.MeasureV('V2')
-            self.T2 = devices.ROLES_INSTR['GMH2'].Measure('T')
+            self.T2 = devices.ROLES_INSTR['GMH2'].measure('T')
 
             # Update displays on Run page via a DataEvent:
             av_t = np.mean(self.V2Times)
@@ -361,9 +361,9 @@ class AqnThread(Thread):
             P = 100.0*pbar/(1 + self.stop_row - self.start_row)  # % progress
 
             # Record room conditions
-            self.Troom = devices.ROLES_INSTR['GMHroom'].Measure('T')
-            self.Proom = devices.ROLES_INSTR['GMHroom'].Measure('P')
-            self.RHroom = devices.ROLES_INSTR['GMHroom'].Measure('RH')
+            self.Troom = devices.ROLES_INSTR['GMHroom'].measure('T')
+            self.Proom = devices.ROLES_INSTR['GMHroom'].measure('P')
+            self.RHroom = devices.ROLES_INSTR['GMHroom'].measure('RH')
 
             self.WriteDataThisRow(row)
 
@@ -410,7 +410,7 @@ class AqnThread(Thread):
             if 'GMH' not in devices.ROLES_INSTR[r].Descr:
                 print'AqnThread.initialise(): Opening', d
                 print >>self.log, 'AqnThread.initialise(): Opening', d
-                devices.ROLES_INSTR[r].Open()
+                devices.ROLES_INSTR[r].open()
             else:
                 print'AqnThread.initialise(): %s already open' % d
                 print >>self.log, 'AqnThread.initialise(): %s already open' % d

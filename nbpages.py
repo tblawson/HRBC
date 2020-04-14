@@ -540,7 +540,7 @@ class SetupPage(wx.Panel):
             # create a visa instrument instance
             print'\nnbpages.SetupPage.CreateInstr(): Creating VISA device (%s -> %s).' % (d, r)
             devices.ROLES_INSTR.update({r: devices.instrument(d)})
-            devices.ROLES_INSTR[r].Open()
+            devices.ROLES_INSTR[r].open()
         self.SetInstr(d, r)
 
 

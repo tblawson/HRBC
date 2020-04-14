@@ -137,7 +137,7 @@ A Python'd version of the TestPoint High Resistance Bridge program."
     def CloseInstrSessions(self, event=None):
         head = 'Main.CloseInstrSessions(): '
         for r in devices.ROLES_INSTR.keys():
-            devices.ROLES_INSTR[r].Close()
+            devices.ROLES_INSTR[r].close()
         devices.RM.close()
         print head, 'closed VISA resource manager and GMH instruments'
 
