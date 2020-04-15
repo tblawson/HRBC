@@ -3,8 +3,7 @@
 Created on Tue Jun 30 14:31:53 2015
 
 @author: t.lawson
-"""
-"""
+
 HighRes_events.py
 Definitions of event types - since the GUI makes use of events to monitor
 the status of widgets (buttons, displays,etc.), use of events is a natural
@@ -42,7 +41,7 @@ RowEvent, EVT_ROW = wx.lib.newevent.NewEvent()
 DelaysEvent, EVT_DELAYS = wx.lib.newevent.NewEvent()
 
 # Event to update Run Id
-#RunIdEvent, EVT_RUNID = wx.lib.newevent.NewEvent()
+# RunIdEvent, EVT_RUNID = wx.lib.newevent.NewEvent()
 
 # Event to update file path text_ctrl on SetupPage
 FilePathEvent, EVT_FILEPATH = wx.lib.newevent.NewEvent()
