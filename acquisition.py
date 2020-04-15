@@ -1,5 +1,5 @@
 
-.# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 """
 Created on Wed Jun 24 09:36:42 2015
 
@@ -22,8 +22,7 @@ import time
 
 import numpy as np
 
-# from openpyxl import load_workbook # WEDNESDAY
-from openpyxl.styles import Font, Border, Side
+from openpyxl.styles import Font, Border, Side, colors
 
 import HighRes_events as evts
 import devices  # visastuff
@@ -49,26 +48,39 @@ class AqnThread(Thread):
         self.V2Times = []
         self.VdTimes = []
 
+        self.V1_set = 0.0
+        self.V2_set = 0.0
+        self.start_del = 0.0
+        self.n_readings = 0
+        self.AZ1_del = 0.0
+        self.range_del = 0.0
+        self.T1 = 0.0
+        self.T2 = 0.0
+        self.Troom = 0.0
+        self.Proom = 0.0
+        self.RHroom = 0.0
+
         self.log = self.SetupPage.log
 
         self.Range_Mode = {True: 'AUTO', False: 'FIXED'}
 
-        print'Role -> Instrument:'
-        print >>self.log, 'Role -> Instrument:'
-        print'------------------------------'
-        print >>self.log, '------------------------------'
+        print('Role -> Instrument:')
+        print('Role -> Instrument:', file=self.log)
+        print('------------------------------')
+        print('------------------------------', file=self.log)
+
         # Print all GPIB instrument objects
         for r in devices.ROLES_WIDGETS.keys():
             d = devices.ROLES_WIDGETS[r]['icb'].GetValue()
             # For 'switchbox' role, d is actually the setting
             # (V1, Vd1,...) not the instrument description.
 
-            print'%s -> %s' % (devices.INSTR_DATA[d]['role'], d)
-            print >>self.log, '%s -> %s' % (devices.INSTR_DATA[d]['role'], d)
+            print('{} -> {}'.format(devices.INSTR_DATA[d]['role'], d))
+            print('{} -> {}'.format(devices.INSTR_DATA[d]['role'], d), file=self.log)
             if r != devices.INSTR_DATA[d]['role']:
                 devices.INSTR_DATA[d]['role'] = r
-                print'Role data corrected to:', r, '->', d
-                print >>self.log, 'Role data corrected to:', r, '->', d
+                print('Role data corrected to: {} -> {}'.format(r, d))
+                print('Role data corrected to: {} -> {}'.format(r, d), file=self.log)
 
         # Get filename of Excel file
         self.xlfilename = self.SetupPage.XLFile.GetValue()  # Full path
@@ -98,11 +110,10 @@ class AqnThread(Thread):
         self.start()  # Starts the thread running on creation
 
     def run(self):
-        '''
+        """
         Run Worker Thread.
         This is where all the important stuff goes, in a repeated cycle.
-        '''
-
+        """
         # Set button availability
         self.RunPage.StopBtn.Enable(True)
         self.RunPage.StartBtn.Enable(False)
@@ -113,44 +124,44 @@ class AqnThread(Thread):
         wx.PostEvent(self.PlotPage, clr_plot_ev)
 
         # Column headings
-        Head_row = self.start_row-2  # Main headings
+        head_row = self.start_row-2  # Main headings
         sub_row = self.start_row-1  # Sub-headings
         # Write unique id for this run
         # - used to pair measurement data with RLink data
         self.ws['A'+str(sub_row)] = 'Run Id:'
         self.ws['B'+str(sub_row)].font = Font(b=True)
         self.ws['B'+str(sub_row)] = str(self.RunPage.run_id)
-        self.ws['A'+str(Head_row)] = 'V1_set'
-        self.ws['B'+str(Head_row)] = 'V2_set'
-        self.ws['C'+str(Head_row)] = 'n'
-        self.ws['D'+str(Head_row)] = 'Start/xl del.'
-        self.ws['E'+str(Head_row)] = 'AZ1 del.'
-        self.ws['F'+str(Head_row)] = 'Range del.'
-        self.ws['G'+str(Head_row)] = 'V2'
+        self.ws['A'+str(head_row)] = 'V1_set'
+        self.ws['B'+str(head_row)] = 'V2_set'
+        self.ws['C'+str(head_row)] = 'n'
+        self.ws['D'+str(head_row)] = 'Start/xl del.'
+        self.ws['E'+str(head_row)] = 'AZ1 del.'
+        self.ws['F'+str(head_row)] = 'Range del.'
+        self.ws['G'+str(head_row)] = 'V2'
         self.ws['G'+str(sub_row)] = 't'
         self.ws['H'+str(sub_row)] = 'V'
         self.ws['I'+str(sub_row)] = 'sd(V)'
         # miss columns j,k,l
-        self.ws['M'+str(Head_row)] = 'Vd1'
+        self.ws['M'+str(head_row)] = 'Vd1'
         self.ws['M'+str(sub_row)] = 't'
         self.ws['N'+str(sub_row)] = 'V'
         self.ws['O'+str(sub_row)] = 'sd(V)'
-        self.ws['P'+str(Head_row)] = 'V1'
+        self.ws['P'+str(head_row)] = 'V1'
         self.ws['P'+str(sub_row)] = 't'
         self.ws['Q'+str(sub_row)] = 'V'
         self.ws['R'+str(sub_row)] = 'sd(V)'
-        self.ws['S'+str(Head_row)] = 'dvm_T1'
-        self.ws['T'+str(Head_row)] = 'dvm_T2'
-        self.ws['U'+str(Head_row)] = 'GMH_T1'
-        self.ws['V'+str(Head_row)] = 'GMH_T2'
-        self.ws['W'+str(Head_row)] = 'Ambient Conditions'
+        self.ws['S'+str(head_row)] = 'dvm_T1'
+        self.ws['T'+str(head_row)] = 'dvm_T2'
+        self.ws['U'+str(head_row)] = 'GMH_T1'
+        self.ws['V'+str(head_row)] = 'GMH_T2'
+        self.ws['W'+str(head_row)] = 'Ambient Conditions'
         self.ws['W'+str(sub_row)] = 'T'
         self.ws['X'+str(sub_row)] = 'P(mbar)'
         self.ws['Y'+str(sub_row)] = '%RH'
-        self.ws['Z'+str(Head_row)] = 'Comment'
-        self.ws['AC'+str(Head_row)] = 'Role'
-        self.ws['AD'+str(Head_row)] = 'Instrument descr.'
-        self.ws['AE'+str(Head_row)] = 'Range mode'
+        self.ws['Z'+str(head_row)] = 'Comment'
+        self.ws['AC'+str(head_row)] = 'Role'
+        self.ws['AD'+str(head_row)] = 'Instrument descr.'
+        self.ws['AE'+str(head_row)] = 'Range mode'
 
         stat_ev = evts.StatusEvent(msg='AqnThread.run():', field=0)
         wx.PostEvent(self.TopLevel, stat_ev)
@@ -208,11 +219,11 @@ class AqnThread(Thread):
         # loop over xl rows..
         while row <= self.stop_row:
             if self._want_abort:
-                self.AbortRun()
+                self.abort_run()
                 return
 
             if self._want_abort:
-                self.AbortRun()
+                self.abort_run()
                 return
             stat_ev = evts.StatusEvent(msg='AqnThread.run():', field=0)
             wx.PostEvent(self.TopLevel, stat_ev)
@@ -221,17 +232,17 @@ class AqnThread(Thread):
             wx.PostEvent(self.TopLevel, stat_ev)
             time.sleep(5)
 
-            self.SetUpMeasThisRow(row)
+            self.set_up_meas_this_row(row)
 
             row_ev = evts.RowEvent(r=row)
             wx.PostEvent(self.RunPage, row_ev)
 
             #  V1...
-            devices.ROLES_INSTR['DVM12'].SendCmd('LFREQ LINE')
+            devices.ROLES_INSTR['DVM12'].send_cmd('LFREQ LINE')
             time.sleep(0.5)
-            devices.ROLES_INSTR['DVM12'].SendCmd('DCV,'+str(int(self.V1_set)))
+            devices.ROLES_INSTR['DVM12'].send_cmd('DCV,' + str(int(self.V1_set)))
             if self._want_abort:
-                self.AbortRun()
+                self.abort_run()
                 return
 
             stat_ev = evts.StatusEvent(msg='AqnThread.run():', field=0)
@@ -242,11 +253,11 @@ class AqnThread(Thread):
 
             # Set RS232 to V1
             cmd = devices.SWITCH_CONFIGS['V1']
-            devices.ROLES_INSTR['switchbox'].SendCmd(cmd)
+            devices.ROLES_INSTR['switchbox'].send_cmd(cmd)
             self.SetupPage.Switchbox.SetValue('V1')  # update sw-box config icb
-            devices.ROLES_INSTR['DVM12'].SendCmd('AZERO ON')
+            devices.ROLES_INSTR['DVM12'].send_cmd('AZERO ON')
             if self._want_abort:
-                self.AbortRun()
+                self.abort_run()
                 return
 
             stat_ev = evts.StatusEvent(msg='Range delay...', field=1)
@@ -255,90 +266,90 @@ class AqnThread(Thread):
 
             stat_ev = evts.StatusEvent(msg='Measuring V1', field=1)
             wx.PostEvent(self.TopLevel, stat_ev)
-            devices.ROLES_INSTR['DVM12'].Read()  # junk = ...dvmV1V2
-            devices.ROLES_INSTR['DVM12'].Read()  # junk = ...dvmV1V2
+            devices.ROLES_INSTR['DVM12'].read()  # junk = ...dvmV1V2
+            devices.ROLES_INSTR['DVM12'].read()  # junk = ...dvmV1V2
             for i in range(self.n_readings):
                 self.MeasureV('V1')
             self.T1 = devices.ROLES_INSTR['GMH1'].measure('T')
 
             # Update run displays on Run page via a DataEvent:
-            av_t = np.mean(self.V1Times)
+            av_t = np.mean(self.V1Times)[0]
             t1 = dt.datetime.fromtimestamp(av_t).strftime("%d/%m/%Y %H:%M:%S")
-            V1m = np.mean(self.V1Data)
-            print 'AqnThread.run(): V1m =', V1m
-            print >>self.log, 'AqnThread.run(): V1m =', V1m
+            V1m = np.mean(self.V1Data)[0]
+            print('AqnThread.run(): V1m =', V1m)
+            print('AqnThread.run(): V1m =', V1m, file=self.log)
             assert len(self.V1Data) > 1, "Can't take SD of one or less items!"
-            V1sd = np.std(self.V1Data, ddof=1)
-            P = 100.0*pbar/(1 + self.stop_row - self.start_row)  # % progress
-            update_ev = evts.DataEvent(t=t1, Vm=V1m, Vsd=V1sd, P=P,
+            V1sd = np.std(self.V1Data, ddof=1)[0]
+            prog = 100.0 * pbar / (1 + self.stop_row - self.start_row)  # % progress
+            update_ev = evts.DataEvent(t=t1, Vm=V1m, Vsd=V1sd, P=prog,
                                        r=row, flag='1')
             wx.PostEvent(self.RunPage, update_ev)
 
             #  V2...
             # Set RS232 to V2 BEFORE changing DVM range
             cmd = devices.SWITCH_CONFIGS['V2']
-            devices.ROLES_INSTR['switchbox'].SendCmd(cmd)
+            devices.ROLES_INSTR['switchbox'].send_cmd(cmd)
             self.SetupPage.Switchbox.SetValue('V2')  # update sw-box config icb
 
             # If running with fixed range set range to 'str(self.V1_set)':
-            if self.RunPage.RangeTBtn.GetValue() == True:
+            if self.RunPage.RangeTBtn.GetValue():  # is True
                 range2 = self.V2_set
             else:
                 range2 = self.V1_set
             cmd = 'DCV,' + str(range2)
-            devices.ROLES_INSTR['DVM12'].SendCmd(cmd)  # Reset DVM range
+            devices.ROLES_INSTR['DVM12'].send_cmd(cmd)  # Reset DVM range
             if self._want_abort:
-                self.AbortRun()
+                self.abort_run()
                 return
             time.sleep(0.5)  # was 0.1
-            devices.ROLES_INSTR['DVM12'].SendCmd('LFREQ LINE')
+            devices.ROLES_INSTR['DVM12'].send_cmd('LFREQ LINE')
 
             stat_ev = evts.StatusEvent(msg='AqnThread.run():', field=0)
             wx.PostEvent(self.TopLevel, stat_ev)
             stat_ev = evts.StatusEvent(msg='Short delay 3...', field=1)
             wx.PostEvent(self.TopLevel, stat_ev)
             if self._want_abort:
-                self.AbortRun()
+                self.abort_run()
                 return
             time.sleep(3)
 
             stat_ev = evts.StatusEvent(msg='Range delay...', field=1)
             wx.PostEvent(self.TopLevel, stat_ev)
             if self._want_abort:
-                self.AbortRun()
+                self.abort_run()
                 return
             time.sleep(self.range_del)
 
             stat_ev = evts.StatusEvent(msg='Measuring V2', field=1)
             wx.PostEvent(self.TopLevel, stat_ev)
 
-            devices.ROLES_INSTR['DVM12'].Read()
-            devices.ROLES_INSTR['DVM12'].Read()
+            devices.ROLES_INSTR['DVM12'].read()
+            devices.ROLES_INSTR['DVM12'].read()
             for i in range(self.n_readings):
                 self.MeasureV('V2')
             self.T2 = devices.ROLES_INSTR['GMH2'].measure('T')
 
             # Update displays on Run page via a DataEvent:
-            av_t = np.mean(self.V2Times)
+            av_t = np.mean(self.V2Times)[0]
             t2 = dt.datetime.fromtimestamp(av_t).strftime("%d/%m/%Y %H:%M:%S")
-            V2m = np.mean(self.V2Data)
-            print 'AqnThread.run(): V2m =', V2m
-            print >>self.log, 'AqnThread.run(): V2m =', V2m
+            V2m = np.mean(self.V2Data)[0]
+            print('AqnThread.run(): V2m =', V2m)
+            print('AqnThread.run(): V2m =', V2m, file=self.log)
             assert len(self.V2Data) > 1, "Can't take SD of one or less items!"
-            V2sd = np.std(self.V2Data, ddof=1)
-            P = 100.0*pbar/(1 + self.stop_row - self.start_row)  # % progress
-            update_ev = evts.DataEvent(t=t2, Vm=V2m, Vsd=V2sd, P=P,
+            V2sd = np.std(self.V2Data, ddof=1)[0]
+            prog = 100.0 * pbar / (1 + self.stop_row - self.start_row)  # % progress
+            update_ev = evts.DataEvent(t=t2, Vm=V2m, Vsd=V2sd, P=prog,
                                        r=row, flag='2')
             wx.PostEvent(self.RunPage, update_ev)
 
             #  Vd...
             # Set RS232 to Vd1
             cmd = devices.SWITCH_CONFIGS['Vd1']
-            devices.ROLES_INSTR['switchbox'].SendCmd(cmd)
+            devices.ROLES_INSTR['switchbox'].send_cmd(cmd)
             self.SetupPage.Switchbox.SetValue('Vd1')  # update switchbox icb
-            devices.ROLES_INSTR['DVMd'].SendCmd('RANGE AUTO')
+            devices.ROLES_INSTR['DVMd'].send_cmd('RANGE AUTO')
             if self._want_abort:
-                self.AbortRun()
+                self.abort_run()
                 return
             stat_ev = evts.StatusEvent(msg='Range delay...', field=1)
             wx.PostEvent(self.TopLevel, stat_ev)
@@ -346,26 +357,26 @@ class AqnThread(Thread):
 
             stat_ev = evts.StatusEvent(msg='Measuring Vd', field=1)
             wx.PostEvent(self.TopLevel, stat_ev)
-            devices.ROLES_INSTR['DVMd'].SendCmd('LFREQ LINE')
-            devices.ROLES_INSTR['DVMd'].Read()  # dummy read
+            devices.ROLES_INSTR['DVMd'].send_cmd('LFREQ LINE')
+            devices.ROLES_INSTR['DVMd'].read()  # dummy read
             for i in range(self.n_readings):
                 self.MeasureV('Vd')
             # Update displays on Run page via a DataEvent:
-            av_t = np.mean(self.VdTimes)
+            av_t = np.mean(self.VdTimes)[0]
             td = dt.datetime.fromtimestamp(av_t).strftime("%d/%m/%Y %H:%M:%S")
-            Vdm = np.mean(self.VdData)
-            print 'AqnThread.run(): Vdm =', Vdm
-            print >>self.log, 'AqnThread.run(): Vdm =', Vdm
+            Vdm = np.mean(self.VdData)[0]
+            print('AqnThread.run(): Vdm =', Vdm)
+            print('AqnThread.run(): Vdm =', Vdm, file=self.log)
             assert len(self.VdData) > 1, "Can't take SD of one or less items!"
-            Vdsd = np.std(self.VdData, ddof=1)
-            P = 100.0*pbar/(1 + self.stop_row - self.start_row)  # % progress
+            Vdsd = np.std(self.VdData, ddof=1)[0]
+            prog = 100.0 * pbar / (1 + self.stop_row - self.start_row)  # % progress
 
             # Record room conditions
             self.Troom = devices.ROLES_INSTR['GMHroom'].measure('T')
             self.Proom = devices.ROLES_INSTR['GMHroom'].measure('P')
             self.RHroom = devices.ROLES_INSTR['GMHroom'].measure('RH')
 
-            self.WriteDataThisRow(row)
+            self.write_data_this_row(row)
 
             # Plot data
             VdDates = []
@@ -385,7 +396,7 @@ class AqnThread(Thread):
                                      V2=self.V2Data, clear=clear_plot)
             wx.PostEvent(self.PlotPage, plot_ev)
 
-            update_ev = evts.DataEvent(t=td, Vm=Vdm, Vsd=Vdsd, P=P,
+            update_ev = evts.DataEvent(t=td, Vm=Vdm, Vsd=Vdsd, P=prog,
                                        r=row, flag='d')
             wx.PostEvent(self.RunPage, update_ev)            
 
@@ -393,7 +404,7 @@ class AqnThread(Thread):
             row += 1
 
         # (end of while loop):
-        self.FinishRun()
+        self.finish_run()
         return
 
     def initialise(self):
@@ -408,40 +419,40 @@ class AqnThread(Thread):
 
             # Open non-GMH devices:
             if 'GMH' not in devices.ROLES_INSTR[r].Descr:
-                print'AqnThread.initialise(): Opening', d
-                print >>self.log, 'AqnThread.initialise(): Opening', d
+                print('AqnThread.initialise(): Opening {}.'.format(d))
+                print('AqnThread.initialise(): Opening {}.'.format(d), file=self.log)
                 devices.ROLES_INSTR[r].open()
             else:
-                print'AqnThread.initialise(): %s already open' % d
-                print >>self.log, 'AqnThread.initialise(): %s already open' % d
+                print('AqnThread.initialise(): {} - no initialisation needed.'.format(d))
+                print('AqnThread.initialise(): {} - no initialisation needed.'.format(d), file=self.log)
 
             stat_ev = evts.StatusEvent(msg=d, field=1)
             wx.PostEvent(self.TopLevel, stat_ev)
-            devices.ROLES_INSTR[r].Init()
+            devices.ROLES_INSTR[r].init()
             time.sleep(1)
         stat_ev = evts.StatusEvent(msg='Done', field=0)
         wx.PostEvent(self.TopLevel, stat_ev)
 
-    def SetUpMeasThisRow(self, row):
+    def set_up_meas_this_row(self, row):
         d = devices.ROLES_INSTR['SRC2'].Descr
         if d.endswith('F5520A'):
-            err = devices.ROLES_INSTR['SRC2'].CheckErr()
-            print 'Cleared F5520A error:', err
-            print >>self.log, 'Cleared F5520A error:', err
+            err = devices.ROLES_INSTR['SRC2'].check_err()
+            print('Cleared F5520A error:', err)
+            print('Cleared F5520A error:', err, file=self.log)
             time.sleep(3)  # Wait 3 s after checking error
 
         # Get V1,V2 setting, n, delays from spreadsheet
         self.V1_set = self.ws.cell(row=row, column=1).value
         self.RunPage.V1Setting.SetValue(str(self.V1_set))
         if self._want_abort:
-                self.AbortRun()
+                self.abort_run()
                 return
         time.sleep(5)  # wait 5 s after setting voltage
         self.V2_set = self.ws.cell(row=row, column=2).value
         self.RunPage.V2Setting.SetValue(str(self.V2_set))
         self.start_del = self.ws.cell(row=row, column=4).value
         if self._want_abort:
-                self.AbortRun()
+                self.abort_run()
                 return
         time.sleep(self.start_del)
         self.n_readings = self.ws.cell(row=row, column=3).value
@@ -469,7 +480,7 @@ class AqnThread(Thread):
                 self.V1Data.append(dvmOP)
             else:
                 # lfreq line, azero once,range auto, wait for settle
-                dvmOP = devices.ROLES_INSTR['DVM12'].Read()
+                dvmOP = devices.ROLES_INSTR['DVM12'].read()
                 self.V1Data.append(float(filter(self.filt, dvmOP)))
         elif node == 'V2':
             self.V2Times.append(time.time())
@@ -477,149 +488,133 @@ class AqnThread(Thread):
                 dvmOP = np.random.normal(self.V2_set, 1.0e-5*abs(self.V2_set))
                 self.V2Data.append(dvmOP)
             else:
-                dvmOP = devices.ROLES_INSTR['DVM12'].Read()
+                dvmOP = devices.ROLES_INSTR['DVM12'].read()
                 self.V2Data.append(float(filter(self.filt, dvmOP)))
         elif node == 'Vd':
             self.VdTimes.append(time.time())
             if self.AZ1_del > 0:
-                devices.ROLES_INSTR['DVMd'].SendCmd('AZERO ONCE')
+                devices.ROLES_INSTR['DVMd'].send_cmd('AZERO ONCE')
                 time.sleep(self.AZ1_del)
             if devices.ROLES_INSTR['DVMd'].demo is True:
                 dvmOP = np.random.normal(0.0, 1.0e-6)
                 self.VdData.append(dvmOP)
             else:
-                dvmOP = devices.ROLES_INSTR['DVMd'].Read()
+                dvmOP = devices.ROLES_INSTR['DVMd'].read()
                 self.VdData.append(float(filter(self.filt, dvmOP)))
             return 1
 
-    def WriteDataThisRow(self, row):
+    def write_data_this_row(self, row):
         m = 'AqnThread.WriteDataThisRow():'
         stat_ev = evts.StatusEvent(msg=m, field=0)
         wx.PostEvent(self.TopLevel, stat_ev)
         stat_ev = evts.StatusEvent(msg='Row '+str(row), field=1)
         wx.PostEvent(self.TopLevel, stat_ev)
 
-        av_t = np.mean(self.V1Times)
+        av_t = np.mean(self.V1Times)[0]
         fmt = "%d/%m/%Y %H:%M:%S"
         t_stamp = str(dt.datetime.fromtimestamp(av_t).strftime(fmt))
         self.ws['P'+str(row)] = t_stamp
-        print >>self.log, 'WriteDataThisRow(): cell', 'P'+str(row), ':',
-        t_stamp
+        print('WriteDataThisRow(): cell P{}: {}'.format(str(row), t_stamp), file=self.log)
 
-        self.ws['Q'+str(row)] = np.mean(self.V1Data)
-        print >>self.log, 'WriteDataThisRow(): cell', 'Q'+str(row), ':',
-        np.mean(self.V1Data)
+        V1_mean = np.mean(self.V1Data)[0]
+        self.ws['Q'+str(row)] = V1_mean
+        print('WriteDataThisRow(): cell Q{}: {}'.format(str(row), V1_mean), file=self.log)
 
-        self.ws['R'+str(row)] = np.std(self.V1Data, ddof=1)
-        print >>self.log, 'WriteDataThisRow(): cell', 'R'+str(row),
-        np.std(self.V1Data, ddof=1)
+        V1_sd = np.std(self.V1Data, ddof=1)[0]
+        self.ws['R'+str(row)] = V1_sd
+        print('WriteDataThisRow(): cell R{}: {}'.format(str(row), V1_sd), file=self.log)
 
-        av_t = np.mean(self.V2Times)
+        av_t = np.mean(self.V2Times)[0]
         t_stamp = str(dt.datetime.fromtimestamp(av_t).strftime(fmt))
         self.ws['G'+str(row)] = t_stamp
-        print >>self.log, 'WriteDataThisRow(): cell', 'G'+str(row), ':',
-        t_stamp
+        print('WriteDataThisRow(): cell G{}: {}'.format(str(row), t_stamp), file=self.log)
 
-        self.ws['H'+str(row)] = np.mean(self.V2Data)
-        print >>self.log, 'WriteDataThisRow(): cell', 'H'+str(row), ':',
-        np.mean(self.V2Data)
+        V2_mean = np.mean(self.V2Data)[0]
+        self.ws['H'+str(row)] = V2_mean
+        print('WriteDataThisRow(): cell H{}: {}'.format(str(row), V2_mean), file=self.log)
 
-        self.ws['I'+str(row)] = np.std(self.V2Data, ddof=1)
-        print >>self.log, 'WriteDataThisRow(): cell', 'I'+str(row), ':',
-        np.std(self.V2Data, ddof=1)
+        V2_sd = np.std(self.V2Data, ddof=1)[0]
+        self.ws['I'+str(row)] = V2_sd
+        print('WriteDataThisRow(): cell I{}: {}'.format(str(row), V2_sd), file=self.log)
 
-        av_t = np.mean(self.VdTimes)
+        av_t = np.mean(self.VdTimes)[0]
         t_stamp = str(dt.datetime.fromtimestamp(av_t).strftime(fmt))
         self.ws['M'+str(row)] = t_stamp
-        print >>self.log, 'WriteDataThisRow(): cell', 'M'+str(row), ':',
-        t_stamp
+        print('WriteDataThisRow(): cell M{}: {}'.format(str(row), t_stamp), file=self.log)
 
-        self.ws['N'+str(row)] = np.mean(self.VdData)
-        print >>self.log, 'WriteDataThisRow(): cell', 'N'+str(row), ':',
-        np.mean(self.VdData)
+        Vd_mean = np.mean(self.VdData)[0]
+        self.ws['N'+str(row)] = Vd_mean
+        print('WriteDataThisRow(): cell N{}: {}'.format(str(row), Vd_mean), file=self.log)
 
-        self.ws['O'+str(row)] = np.std(self.VdData, ddof=1)
-        print >>self.log, 'WriteDataThisRow(): cell', 'O'+str(row), ':',
-        np.std(self.VdData, ddof=1)
+        Vd_sd = np.std(self.VdData, ddof=1)[0]
+        self.ws['O'+str(row)] = Vd_sd
+        print('WriteDataThisRow(): cell O{}: {}'.format(str(row), Vd_sd), file=self.log)
 
         if devices.ROLES_INSTR['DVMT1'].demo is True:
-            T1dvmOP = np.random.normal(108.0, 1.0e-2)
-            self.ws['S'+str(row)] = T1dvmOP
-            print >>self.log, 'WriteDataThisRow(): cell', 'S'+str(row), ':',
-            T1dvmOP
+            T1dvm_out = np.random.normal(108.0, 1.0e-2)
+            self.ws['S' + str(row)].font = Font(color=colors.RED)
+            # self.ws['S' + str(row)] = T1dvm_out
+            # print('WriteDataThisRow(): cell S{}: {}'.format(str(row), T1dvm_out), file=self.log)
         else:
-            T1dvmOP = devices.ROLES_INSTR['DVMT1'].SendCmd('READ?')
-            self.ws['S'+str(row)] = float(filter(self.filt, T1dvmOP))
-            print >>self.log, 'WriteDataThisRow(): cell', 'S'+str(row), ':',
-            float(filter(self.filt, T1dvmOP))
+            T1dvm_out = devices.ROLES_INSTR['DVMT1'].send_cmd('READ?')
+            self.ws['S' + str(row)].font = Font(color=colors.BLACK)
+        self.ws['S'+str(row)] = T1dvm_out  # float(filter(self.filt, T1dvm_out))
+        print('WriteDataThisRow(): cell S{}: {}'.format(str(row), T1dvm_out), file=self.log)
 
         if devices.ROLES_INSTR['DVMT2'].demo is True:
-            T2dvmOP = np.random.normal(108.0, 1.0e-2)
-            self.ws['T'+str(row)] = T2dvmOP
-            print >>self.log, 'WriteDataThisRow(): cell', 'T'+str(row), ':',
-            T2dvmOP
+            T2dvm_out = np.random.normal(108.0, 1.0e-2)
+            self.ws['T' + str(row)].font = Font(color=colors.RED)
+            # self.ws['T' + str(row)] = T2dvm_out
+            # print('WriteDataThisRow(): cell T{}: {}'.format(str(row), T2dvm_out))
         else:
-            T2dvmOP = devices.ROLES_INSTR['DVMT2'].SendCmd('READ?')
-            self.ws['T'+str(row)] = float(filter(self.filt, T2dvmOP))
-            print >>self.log, 'WriteDataThisRow(): cell', 'T'+str(row), ':',
-            float(filter(self.filt, T2dvmOP))
+            T2dvm_out = devices.ROLES_INSTR['DVMT2'].send_cmd('READ?')
+            self.ws['T' + str(row)].font = Font(color=colors.BLACK)
+        self.ws['T'+str(row)] = T2dvm_out  # float(filter(self.filt, T2dvm_out))
+        print('WriteDataThisRow(): cell T{}: {}'.format(str(row), T2dvm_out), file=self.log)
 
         self.ws['U'+str(row)] = self.T1
-        print >>self.log, 'WriteDataThisRow(): cell', 'U'+str(row), ':',
-        self.T1
+        print('WriteDataThisRow(): cell U{}: {}'.format(str(row), self.T1), file=self.log)
         self.ws['V'+str(row)] = self.T2
-        print >>self.log, 'WriteDataThisRow(): cell', 'V'+str(row), ':',
-        self.T2
+        print('WriteDataThisRow(): cell V{}: {}'.format(str(row), self.T2), file=self.log)
         self.ws['W'+str(row)] = self.Troom
-        print >>self.log, 'WriteDataThisRow(): cell', 'W'+str(row), ':',
-        self.Troom
+        print('WriteDataThisRow(): cell W{}: {}'.format(str(row), self.Troom), file=self.log)
         self.ws['X'+str(row)] = self.Proom
-        print >>self.log, 'WriteDataThisRow(): cell', 'X'+str(row), ':',
-        self.Proom
+        print('WriteDataThisRow(): cell X{}: {}'.format(str(row), self.Proom), file=self.log)
         self.ws['Y'+str(row)] = self.RHroom
-        print >>self.log, 'WriteDataThisRow(): cell', 'Y'+str(row), ':',
-        self.RHroom
+        print('WriteDataThisRow(): cell Y{}: {}'.format(str(row), self.RHroom), file=self.log)
         self.ws['Z'+str(row)] = self.Comment
-        print >>self.log, 'WriteDataThisRow(): cell', 'Z'+str(row), ':',
-        self.Comment
+        print('WriteDataThisRow(): cell Z{}: {}'.format(str(row), self.Comment), file=self.log)
 
         # Save after every row
         self.wb_io.save(self.xlfilename)
 
-    def AbortRun(self):
+    def abort_run(self):
         # prematurely end run, prompted by regular checks of _want_abort flag
-        self.Standby()  # Set sources to 0V and leave system safe
-
-        stop_ev = evts.DataEvent(t='-', Vm='-', Vsd='-', P=0, r='-',
-                                 flag='E')  # End
+        self.standby()  # Set sources to 0V and leave system safe
+        stop_ev = evts.DataEvent(t='-', Vm='-', Vsd='-', P=0, r='-', flag='E')  # End
         wx.PostEvent(self.RunPage, stop_ev)
+        self.reset_buttons()
 
-        self.ResetButtons()
-
-    def FinishRun(self):
+    def finish_run(self):
         # Run complete - leave system safe and final xl save
         self.wb_io.save(self.xlfilename)
-
-        self.Standby()  # Set sources to 0V and leave system safe
-
-        stop_ev = evts.DataEvent(t='-', Vm='-', Vsd='-', P=0, r='-',
-                                 flag='F')  # Finished
+        self.standby()  # Set sources to 0V and leave system safe
+        stop_ev = evts.DataEvent(t='-', Vm='-', Vsd='-', P=0, r='-', flag='F')  # Finished
         wx.PostEvent(self.RunPage, stop_ev)
         stat_ev = evts.StatusEvent(msg='RUN COMPLETED', field=0)
         wx.PostEvent(self.TopLevel, stat_ev)
         stat_ev = evts.StatusEvent(msg='', field=1)
         wx.PostEvent(self.TopLevel, stat_ev)
+        self.reset_buttons()
 
-        self.ResetButtons()
-
-    def ResetButtons(self):
+    def reset_buttons(self):
         self.RunPage.StartBtn.Enable(True)
         self.RunPage.RLinkBtn.Enable(True)
         self.RunPage.StopBtn.Enable(False)
 
-    def Standby(self):
+    def standby(self):
         # Set sources to 0V and disable outputs
-        devices.ROLES_INSTR['SRC1'].SendCmd('R0=')
+        devices.ROLES_INSTR['SRC1'].send_cmd('R0=')
         self.RunPage.V1Setting.SetValue(str(0))
         self.RunPage.V2Setting.SetValue(str(0))
 
@@ -635,6 +630,5 @@ class AqnThread(Thread):
         # ...and retain any number (as a string)
         accept_str = u'-0.12345678eE9'
         return char in accept_str  # Returns 'True' or 'False'
-
 
 """--------------End of Thread class definition-------------------"""

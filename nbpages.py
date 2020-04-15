@@ -593,7 +593,7 @@ class SetupPage(wx.Panel):
         assert 'test' in devices.INSTR_DATA[d], 'No test exists for this device.'
         test = devices.INSTR_DATA[d]['test']  # test string
         print '\tTest string:', test
-        self.Response.SetValue(str(devices.ROLES_INSTR[r].Test(test)))
+        self.Response.SetValue(str(devices.ROLES_INSTR[r].test(test)))
         self.status.SetStatusText('Testing %s with cmd %s' % (d, test), 0)
 
     def OnSwitchTest(self, e):
@@ -927,24 +927,24 @@ class RunPage(wx.Panel):
         # Called by change in value (manually OR by software!)
         V1 = e.GetValue()
         src1 = devices.ROLES_INSTR['SRC1']
-        src1.SetV(V1)  # 'M+0R0='
+        src1.set_V(V1)  # 'M+0R0='
         time.sleep(0.5)
         if V1 == 0:
-            src1.Stby()
+            src1.stby()
         else:
-            src1.Oper()
+            src1.oper()
         time.sleep(0.5)
 
     def OnV2Set(self, e):
         # Called by change in value (manually OR by software!)
         V2 = e.GetValue()
         src2 = devices.ROLES_INSTR['SRC2']
-        src2.SetV(V2)
+        src2.set_V(V2)
         time.sleep(0.5)
         if V2 == 0:
-            src2.Stby()
+            src2.stby()
         else:
-            src2.Oper()
+            src2.oper()
         time.sleep(0.5)
 
     def OnZeroVolts(self, e):
@@ -952,8 +952,8 @@ class RunPage(wx.Panel):
         src1 = devices.ROLES_INSTR['SRC1']
         if self.V1Setting.GetValue() == 0:
             print'RunPage.OnZeroVolts(): Zero/Stby directly (not via V1 display)'
-            src1.SetV(0)
-            src1.Stby()
+            src1.set_V(0)
+            src1.stby()
         else:
             self.V1Setting.SetValue('0')  # Calls OnV1Set() ONLY IF VALUE CHANGES
             print'RunPage.OnZeroVolts():  Zero/Stby via V1 display'
@@ -962,8 +962,8 @@ class RunPage(wx.Panel):
         src2 = devices.ROLES_INSTR['SRC2']
         if self.V2Setting.GetValue() == 0:
             print'RunPage.OnZeroVolts(): Zero/Stby directly (not via V2 display)'
-            src2.SetV(0)
-            src2.Stby()
+            src2.set_V(0)
+            src2.stby()
         else:
             self.V2Setting.SetValue('0')  # Calls OnV2Set() ONLY IF VALUE CHANGES
             print'RunPage.OnZeroVolts():  Zero/Stby via V2 display'

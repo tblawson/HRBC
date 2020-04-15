@@ -133,13 +133,13 @@ class RLThread(Thread):
         revs = 1
 
         # Configuration and initialisation
-        devices.ROLES_INSTR['switchbox'].SendCmd(devices.SWITCH_CONFIGS['V2'])
+        devices.ROLES_INSTR['switchbox'].send_cmd(devices.SWITCH_CONFIGS['V2'])
         self.SetupPage.Switchbox.SetValue('V2')  # update sw'box config icb
-        devices.ROLES_INSTR['DVMd'].SendCmd('FUNC DCV,AUTO')
-        dvmOP = devices.ROLES_INSTR['DVMd'].Read()  # Set appropriate V-range
-        devices.ROLES_INSTR['DVMd'].SendCmd('DCV,'+str(dvmOP))
-        devices.ROLES_INSTR['DVMd'].SendCmd('LFREQ LINE')
-        devices.ROLES_INSTR['SRC1'].SendCmd('R0=')
+        devices.ROLES_INSTR['DVMd'].send_cmd('FUNC DCV,AUTO')
+        dvmOP = devices.ROLES_INSTR['DVMd'].read()  # Set appropriate V-range
+        devices.ROLES_INSTR['DVMd'].send_cmd('DCV,' + str(dvmOP))
+        devices.ROLES_INSTR['DVMd'].send_cmd('LFREQ LINE')
+        devices.ROLES_INSTR['SRC1'].send_cmd('R0=')
         time.sleep(3)
 
         self.V1set = self.AbsV1
@@ -173,11 +173,11 @@ class RLThread(Thread):
                                              abs(self.Vdiff*1.0e-8))
                     self.RLink_data.append(dvmOP)
                 else:
-                    devices.ROLES_INSTR['DVMd'].SendCmd('LFREQ LINE')
+                    devices.ROLES_INSTR['DVMd'].send_cmd('LFREQ LINE')
                     time.sleep(1)
-                    devices.ROLES_INSTR['DVMd'].SendCmd('AZERO ONCE')
+                    devices.ROLES_INSTR['DVMd'].send_cmd('AZERO ONCE')
                     time.sleep(1)  # was 10
-                    dvmOP = devices.ROLES_INSTR['DVMd'].Read()
+                    dvmOP = devices.ROLES_INSTR['DVMd'].read()
                     self.RLink_data.append(float(filter(self.filt, dvmOP)))
                 P = 100*((revs-1)*self.N_readings+row)/(self.N_reversals*self.N_readings)  # % progress
                 update_ev = evts.DataEvent(t=0, Vm=self.RLink_data[row-1],

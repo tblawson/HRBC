@@ -146,9 +146,9 @@ Excel Parameters sheet.'
         else:
             self.CmdSep = ''
 
-        transmille_DCVRanges = {}
+        transmille_dcv_ranges = {}
 
-    def Open(self):
+    def open(self):
         m = 'devices.instrument.Open():'
         try:
             self.instr = RM.open_resource(self.str_addr)
@@ -167,7 +167,7 @@ Excel Parameters sheet.'
             print(m, self.descr, 'opened in demo mode.')
         return self.instr
 
-    def Close(self):
+    def close(self):
         # Close comms with instrument
         m = 'devices.instrument.Close():'
         if self.demo is True:
@@ -179,7 +179,7 @@ Excel Parameters sheet.'
             print(m, self.descr, 'is "None" or already closed.')
         self.is_open = 0
 
-    def Init(self):
+    def init(self):
         # Send initiation string
         m = 'devices.instrument.Init():'
         if self.demo is True:
@@ -198,7 +198,7 @@ Excel Parameters sheet.'
             print(m, self.descr, 'initiated with cmd: {}'.format(s))
         return reply
 
-    def SetV(self, V):
+    def set_V(self, V):
         # set output voltage (SRC) or input range (DVM)
         if self.demo is True:
             return 1
@@ -222,7 +222,7 @@ Excel Parameters sheet.'
             print('Invalid function for instrument {}.'.format(self.descr))
             return -1
 
-    def SetFn(self):
+    def set_fn(self):
         # Set DVM function
         if self.demo is True:
             return 1
@@ -236,7 +236,7 @@ Excel Parameters sheet.'
             print('devices.instrument.SetFn(): Invalid function for', self.descr)
             return -1
 
-    def Oper(self):
+    def oper(self):
         # Enable O/P terminals.
         # For V-source instruments only!
         if self.demo is True:
@@ -255,7 +255,7 @@ Excel Parameters sheet.'
             print('devices.instrument.Oper(): Invalid function for {}.'.format(self.descr))
             return -1
 
-    def Stby(self):
+    def stby(self):
         # Disable O/P terminals.
         # For V-source instruments only!
         if self.demo is True:
@@ -274,7 +274,7 @@ Excel Parameters sheet.'
             print('devices.instrument.Stby(): Invalid function for {}.'.format(self.descr))
             return -1
 
-    def CheckErr(self):
+    def check_err(self):
         # Get last error string and clear error queue
         # For V-source instruments only (F5520A)
         if self.demo is True:
@@ -290,7 +290,7 @@ Excel Parameters sheet.'
             print(m.format(self.descr))
             return -1
 
-    def SendCmd(self, s):
+    def send_cmd(self, s):
         m = 'devices.instrument.SendCmd(): '
         demo_reply = 'SendCmd(): DEMO resp. to {}'.format(s)
         reply = ''
@@ -314,7 +314,7 @@ Excel Parameters sheet.'
             self.instr.write(s)
             return reply
 
-    def Read(self):
+    def read(self):
         reply = 0
         if self.demo is True:
             return reply
@@ -330,7 +330,7 @@ Excel Parameters sheet.'
             print('devices.instrument.Read(): Invalid function for {}.'.format(self.descr))
             return reply
 
-    def Test(self, s):
+    def test(self, s):
         """ Used to test that the instrument is functioning. """
-        return self.SendCmd(s)
+        return self.send_cmd(s)
 # __________________________________________
