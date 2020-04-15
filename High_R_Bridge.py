@@ -9,8 +9,8 @@ Created on Mon Jun 29 11:36:13 2015
 """
 
 """
-High_R_Bridge.py - Version 0.3
-A Python version of the high resistance bridge TestPoint application.
+High_R_Bridge.py - Version 2.0
+A Python3 version of the high resistance bridge TestPoint application.
 This app is intended to offer the same functionality as the original
 TestPoint version but avoiding the clutter. It uses a wxPython notebook,
 with separate pages (tabs) dedicated to:
@@ -39,11 +39,11 @@ VERSION = "2.0"
 print('HRBC', VERSION)
 
 
-"""
-MainFrame Definition:
-holds the MainPanel in which the appliction runs
-"""
 class MainFrame(wx.Frame):
+    """
+    MainFrame Definition:
+    holds the MainPanel in which the appliction runs
+    """
     def __init__(self, *args, **kwargs):
         wx.Frame.__init__(self,size=(900,500),*args, **kwargs)
         self.version = VERSION
