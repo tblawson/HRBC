@@ -25,18 +25,18 @@ are output to.
 
 import os
 
-#os.environ['GMHPATH'] = 'C:\Users\\t.lawson\Documents\Python Scripts\High_Res_Bridge\GMHdll'
-#os.environ['XLPATH'] = 'C:\Users\\t.lawson\Documents\Python Scripts\High_Res_Bridge'
+# os.environ['GMHPATH'] = 'C:\Users\\t.lawson\Documents\Python Scripts\High_Res_Bridge\GMHdll'
+# os.environ['XLPATH'] = 'C:\Users\\t.lawson\Documents\Python Scripts\High_Res_Bridge'
 
 import wx
-#import wx.lib.inspection
+# import wx.lib.inspection
 import nbpages as page
 import HighRes_events as evts
 import devices
 
-VERSION = "1.1"
+VERSION = "2.0"
 
-print 'HRBC', VERSION
+print('HRBC', VERSION)
 
 
 """
@@ -47,33 +47,35 @@ class MainFrame(wx.Frame):
     def __init__(self, *args, **kwargs):
         wx.Frame.__init__(self,size=(900,500),*args, **kwargs)
         self.version = VERSION
-        self.ExcelPath = ""
+        self.excelpath = ""
+        self.directory = ""
 
         # Event bindings
-        self.Bind(evts.EVT_STAT, self.UpdateStatus)
+        self.Bind(evts.EVT_STAT, self.update_status)
 
         self.sb = self.CreateStatusBar()
         self.sb.SetFieldsCount(2)
 
-        MenuBar = wx.MenuBar()
-        FileMenu = wx.Menu()
+        menu_bar = wx.MenuBar()
+        file_menu = wx.Menu()
 
-        About = FileMenu.Append(wx.ID_ABOUT, text='&About', help='About HighResBridgeControl (HRBC)')
-        self.Bind(wx.EVT_MENU, self.OnAbout, About)
+        about = file_menu.Append(wx.ID_ABOUT, text='&About', help='About HighResBridgeControl (HRBC)')
+        self.Bind(wx.EVT_MENU, self.on_about, about)
 
-        Open = FileMenu.Append(wx.ID_OPEN, text='&Open', help='Open an Excel file')
-        self.Bind(wx.EVT_MENU, self.OnOpen, Open)
+        open = file_menu.Append(wx.ID_OPEN, text='&Open', help='Open an Excel file')
+        self.Bind(wx.EVT_MENU, self.on_open, open)
 
-        Save = FileMenu.Append(wx.ID_SAVE, text='&Save', help='Save data to an Excel file - this usually happens automatically during a run.')
-        self.Bind(wx.EVT_MENU, self.OnSave, Save)
+        save = file_menu.Append(wx.ID_SAVE, text='&Save',
+                                help='Save data to an Excel file - this usually happens automatically during a run.')
+        self.Bind(wx.EVT_MENU, self.on_save, save)
 
-        FileMenu.AppendSeparator()
+        file_menu.AppendSeparator()
 
-        Quit = FileMenu.Append(wx.ID_EXIT, text='&Quit', help='Exit HighResBridge')
+        Quit = file_menu.Append(wx.ID_EXIT, text='&Quit', help='Exit HighResBridge')
         self.Bind(wx.EVT_MENU, self.OnQuit, Quit)
 
-        MenuBar.Append(FileMenu, "&File")
-        self.SetMenuBar(MenuBar)
+        menu_bar.Append(file_menu, "&File")
+        self.SetMenuBar(menu_bar)
 
         # Create a panel to hold the NoteBook...
         self.MainPanel = wx.Panel(self)
@@ -96,14 +98,14 @@ class MainFrame(wx.Frame):
         sizer.Add(self.NoteBook, 1, wx.EXPAND)
         self.MainPanel.SetSizer(sizer)
 
-    def UpdateStatus(self, e):
+    def update_status(self, e):
         if e.field == 'b':
             self.sb.SetStatusText(e.msg, 0)
             self.sb.SetStatusText(e.msg, 1)
         else:
             self.sb.SetStatusText(e.msg, e.field)
 
-    def OnAbout(self, event=None):
+    def on_about(self, event=None):
         # A message dialog with 'OK' button. wx.OK is a standard wxWidgets ID.
         dlg_description = "HRBC v"+VERSION+":\
 A Python'd version of the TestPoint High Resistance Bridge program."
@@ -112,42 +114,44 @@ A Python'd version of the TestPoint High Resistance Bridge program."
         dlg.ShowModal()  # Show dialog.
         dlg.Destroy()  # Destroy when done.
 
-    def OnSave(self, event=None):
-        if self.ExcelPath is not "":
-            print 'Saving', self.page1.XLFile.GetValue(), '...'
+    def on_save(self, event=None):
+        if self.excelpath is not "":
+            print('Saving', self.page1.XLFile.GetValue(), '...')
             self.page1.wb.save(self.page1.XLFile.GetValue())
             self.page1.log.close()
         else:
-            print 'Nothing to save. Bye.'
+            print('Nothing to save. Bye.')
 
-    def OnOpen(self, event=None):
+    def on_open(self, event=None):
         dlg = wx.FileDialog(self, message="Select data file",
                             defaultDir=os.getcwd(), defaultFile="",
                             wildcard="*", style=wx.OPEN | wx.CHANGE_DIR)
         if dlg.ShowModal() == wx.ID_OK:
-            self.ExcelPath = dlg.GetPath()
+            self.excelpath = dlg.GetPath()
             self.directory = dlg.GetDirectory()
-            print self.directory
-            print self.ExcelPath
-            file_evt = evts.FilePathEvent(XLpath=self.ExcelPath,
+            print(self.directory)
+            print(self.excelpath)
+            file_evt = evts.FilePathEvent(XLpath=self.excelpath,
                                           d=self.directory, v=VERSION)
             wx.PostEvent(self.page1, file_evt)
         dlg.Destroy()
 
-    def CloseInstrSessions(self, event=None):
+    def close_instr_sessions(self, event=None):
         head = 'Main.CloseInstrSessions(): '
         for r in devices.ROLES_INSTR.keys():
             devices.ROLES_INSTR[r].close()
         devices.RM.close()
-        print head, 'closed VISA resource manager and GMH instruments'
+        print(head, 'closed VISA resource manager and GMH instruments.')
 
     def OnQuit(self, event=None):
-        self.CloseInstrSessions()
-        self.OnSave()
+        self.close_instr_sessions()
+        self.on_save()
         self.Close()
 
 
 """_______________________________________________"""
+
+
 class MainApp(wx.App):
     """Class MainApp."""
     def OnInit(self):
@@ -158,7 +162,8 @@ class MainApp(wx.App):
         self.frame.SetTitle("High Resistance Bridge Control v"+VERSION)
         return True
 
+
 if __name__ == '__main__':
     app = MainApp(0)
-    #wx.lib.inspection.InspectionTool().Show()
+    # wx.lib.inspection.InspectionTool().Show()
     app.MainLoop()
