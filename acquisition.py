@@ -477,19 +477,21 @@ class AqnThread(Thread):
             self.V1Times.append(time.time())
             if devices.ROLES_INSTR['DVM12'].demo is True:
                 dvm_op = np.random.normal(self.V1_set, 1.0e-5*abs(self.V1_set))
-                self.V1Data.append(dvm_op)
+                # self.V1Data.append(dvm_op)
             else:
                 # lfreq line, azero once,range auto, wait for settle
                 dvm_op = devices.ROLES_INSTR['DVM12'].read()
-                self.V1Data.append(float(filter(self.filt, dvm_op)))
+                # self.V1Data.append(float(filter(self.filt, dvm_op)))
+            self.V1Data.append(dvm_op)
         elif node == 'V2':
             self.V2Times.append(time.time())
             if devices.ROLES_INSTR['DVM12'].demo is True:
                 dvm_op = np.random.normal(self.V2_set, 1.0e-5*abs(self.V2_set))
-                self.V2Data.append(dvm_op)
+                # self.V2Data.append(dvm_op)
             else:
                 dvm_op = devices.ROLES_INSTR['DVM12'].read()
-                self.V2Data.append(float(filter(self.filt, dvm_op)))
+                # self.V2Data.append(float(filter(self.filt, dvm_op)))
+            self.V2Data.append(dvm_op)
         elif node == 'Vd':
             self.VdTimes.append(time.time())
             if self.AZ1_del > 0:
@@ -497,10 +499,11 @@ class AqnThread(Thread):
                 time.sleep(self.AZ1_del)
             if devices.ROLES_INSTR['DVMd'].demo is True:
                 dvm_op = np.random.normal(0.0, 1.0e-6)
-                self.VdData.append(dvm_op)
+                # self.VdData.append(dvm_op)
             else:
                 dvm_op = devices.ROLES_INSTR['DVMd'].read()
-                self.VdData.append(float(filter(self.filt, dvm_op)))
+                # self.VdData.append(float(filter(self.filt, dvm_op)))
+            self.VdData.append(dvm_op)
             return 1
 
     def write_data_this_row(self, row):
