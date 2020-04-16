@@ -60,7 +60,7 @@ datadir = input('Path to data directory:')
 xlname = input('Excel filename:')
 xlfile = os.path.join(datadir, xlname)
 
-logname = R_info.Make_Log_Name(VERSION)
+logname = R_info.make_log_name(VERSION)
 logfile = os.path.join(datadir, logname)
 log = open(logfile, 'a')
 
@@ -158,7 +158,7 @@ for r in ws_Params.rows:  # a tuple of row objects
         # Get instrument parameters first...
         last_I_row = r[col_I].row
         I_params.append(I_row_items[1])
-        I_values.append(R_info.Uncertainize(I_row_items))
+        I_values.append(R_info.uncertainize(I_row_items))
         if I_row_items[1] == u'test':  # last parameter for this description
             I_DESCR.append(I_row_items[0])  # build description list
             I_sublist.append(dict(zip(I_params,I_values)))  # add parameter dictionary to sublist
@@ -169,7 +169,7 @@ for r in ws_Params.rows:  # a tuple of row objects
         if R_end == 0:  # Check we're not at the end of resistor data-block
             last_R_row = r[col_A].row  # Need to know this if we write more data, post-analysis
             R_params.append(R_row_items[1])
-            R_values.append(R_info.Uncertainize(R_row_items))
+            R_values.append(R_info.uncertainize(R_row_items))
             if R_row_items[1] == u'T_sensor':  # last parameter for this description
                 R_DESCR.append(R_row_items[0])  # build description list
                 R_sublist.append(dict(zip(R_params, R_values)))  # add parameter dictionary to sublist
@@ -238,7 +238,7 @@ print('Run Id:', Run_Id)
 log.write('\nRun Id: ' + Run_Id)
 
 # Write headings
-summary_row = R_info.WriteHeadings(ws_Summary, summary_start_row, VERSION)
+summary_row = R_info.write_headings(ws_Summary, summary_start_row, VERSION)
 
 # Lists of dictionaries...
 # ...(with name,time,Resistance,Temperature,Voltage entries).
@@ -246,9 +246,9 @@ results_HV = []  # High voltage measurements
 results_LV = []  # Low voltage measurements
 
 # Get resistor names and values
-R1_name, R2_name = R_info.ExtractNames(Data_comment)
-R1val = R_info.GetRval(R1_name)
-R2val = R_info.GetRval(R2_name)
+R1_name, R2_name = R_info.extract_names(Data_comment)
+R1val = R_info.get_r_val(R1_name)
+R2val = R_info.get_r_val(R2_name)
 
 # Check for knowledge of R2:
 if R2_name not in R_INFO:
@@ -265,7 +265,7 @@ head_height = 6  # Rows of header before each block of data
 jump = head_height + N_reads  # rows to jump between starts of each header
 
 # Find correct RLink data-header
-RL_start_row = R_info.GetRLstartrow(ws_Rlink, Run_Id, jump, log)
+RL_start_row = R_info.get_rlink_startrow(ws_Rlink, Run_Id, jump, log)
 assert RL_start_row > 1, 'Unable to find matching Rlink data!'
 
 # Next, define nom_R, abs_V quantities
@@ -478,8 +478,8 @@ while Data_row <= Data_stop_row:
                               label='T2_av_gmh ' + Run_Id) 
 
     assert len(times) > 1, 'Not enough timestamps to average!'
-    times_av_str = R_info.av_t_strin(times, 'str')  # mean time(as a time string)
-    times_av_fl = R_info.av_t_strin(times, 'fl')  # mean time(as a float)
+    times_av_str = R_info.av_t_string(times, 'str')  # mean time(as a time string)
+    times_av_fl = R_info.av_t_string(times, 'fl')  # mean time(as a float)
 
     """
     TO DO: Incorporate ambient T, P, %RH readings into final reported results...
@@ -617,7 +617,7 @@ while Data_row <= Data_stop_row:
                    'time_fl': times_av_fl, 'V': V1av, 'R': R1, 'T': T1,
                    'R_expU': R1.u*GTC.rp.k_factor(R1.df)}  # 'quick=False' arg deprecated.
 
-    R_info.WriteThisResult(ws_Summary, summary_row, this_result)
+    R_info.write_this_result(ws_Summary, summary_row, this_result)
 
     # build uncertainty budget table
     budget_table =[]
@@ -633,8 +633,8 @@ while Data_row <= Data_stop_row:
                                  reverse=True)
 
     # write budget to Summary sheet
-    summary_row = R_info.WriteBudget(ws_Summary, summary_row,
-                                     budget_table_sorted)
+    summary_row = R_info.write_budget(ws_Summary, summary_row,
+                                      budget_table_sorted)
     summary_row += 1  # Add a blank line between each measurement for ease of reading
 
     # Separate results by voltage (V1av) if different

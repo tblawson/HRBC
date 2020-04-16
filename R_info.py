@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-R_info.py
+R_info.py -
+Utility functions and global definitions used by HRBA.py.
 
 Created on Fri Sep 18 09:40:33 2015
 
@@ -13,7 +14,7 @@ import math
 import xlrd
 from openpyxl.styles import Font, colors, PatternFill, Border, Side
 import GTC
-from numbers import Number
+# from numbers import Number
 
 RL_SEARCH_LIMIT = 500
 
@@ -32,37 +33,32 @@ Vgain_codes_fixed = {0.1: 'Vgain_0.5r1', 0.5: 'Vgain_0.5r1', 0.9: 'Vgain_1r1',
 
 # ______________________________Useful funtions:______________________________
 
-def Make_Log_Name(v):
-    return 'HRBAv'+str(v)+'_'+str(dt.date.today())+'.log'
+def make_log_name(v):
+    return 'HRBAv{}_{}.log'.format(str(v), str(dt.date.today()))
 
 
-# Extract resistor names from comment
-"""
-Parse first part of comment for resistor names.
-Names must appear immediately after the strings 'R1: ' and 'R2: ' and
-immediately before the string ' monitored by GMH'.
-"""
-
-
-def ExtractNames(comment):
+def extract_names(comment):
+    """
+    Extract resistor names from comment.
+    Parse first part of comment for resistor names.
+    Names must appear immediately after the strings 'R1: ' and 'R2: ' and
+    immediately before the string ' monitored by GMH'.
+    """
     assert comment.find('R1: ') >= 0, 'R1 name not found in comment!'
     assert comment.find('R2: ') >= 0, 'R2 name not found in comment!'
-    R1_name = comment[comment.find('R1: ') + 4:comment.find(' monitored by GMH')]
-    R2_name = comment[comment.find('R2: ') + 4:comment.rfind(' monitored by GMH')]
-    return (R1_name, R2_name)
+    r1_name = comment[comment.find('R1: ') + 4:comment.find(' monitored by GMH')]
+    r2_name = comment[comment.find('R2: ') + 4:comment.rfind(' monitored by GMH')]
+    return r1_name, r2_name
 
 
-# Extract nominal resistor value from name
-"""
-Parse the resistor name for the nominal value.Resistor names MUST be of the form
-'xxx nnp', where 'xxx ' is a one-word description ending with a SINGLE SPACE,
-'nn' is an integer (usually a decade value) and the last character 'p' is a letter
-indicating a decade multiplier.
-
-"""
-
-
-def GetRval(name):
+def get_r_val(name):
+    """
+    Extract nominal resistor value from name.
+    Parse the resistor name for the nominal value. Resistor names MUST be of the form
+    'xxx nnp', where 'xxx ' is a one-word description ending with a SINGLE SPACE,
+    'nn' is an integer (usually a decade value) and the last character 'p' is a letter
+    indicating a decade multiplier.
+    """
     prefixes = {'r': 1, 'R': 1, 'k': 1000, 'M': 1e6, 'G': 1e9}
 
     if name[-1] in prefixes:
@@ -72,33 +68,36 @@ def GetRval(name):
     assert mult != 0, 'Error parsing comment - unkown multiplier!'
 
     # return numeric part of last word, multiplied by 1, 10^3, 10^6 or 10^9:
-    return(mult*int(string.strip(string.split(name)[-1], string.letters)))
+    return mult*int(name.strip(name.split(name)[-1]), string.ascii_letters)
 
 
-def GetRLstartrow(sheet, Id, jump, log):
+def get_rlink_startrow(sheet, id, jump, log):
     search_row = 1
     while search_row < RL_SEARCH_LIMIT:  # Don't search forever.
         result = sheet['A'+str(search_row)].value  # scan down column A
         if result == 'Run Id:':
             RL_Id = sheet['B'+str(search_row)].value  # Find a run Id
-            if RL_Id == Id:  # Found the right data, so we're done.
+            if RL_Id == id:  # Found the right data, so we're done.
                 RL_start = search_row + 1  # 1st line of Rlink data's header (excl Id)
                 return RL_start
             else:  # Jump to just before start of next data-block
                 search_row += jump
         search_row += 1
-    print 'No matching Rlink data!'
-    log.write('GetRLstartrow():No matching Rlink data!\n')
+    print('No matching Rlink data!')
+    log.write('GetRLstartrow(): No matching Rlink data!\n')
     return -1
 
 
-# Convert list of data to ureal, where possible
-def Uncertainize(row_items):
+def uncertainize(row_items):
+    """
+    Convert list of data to ureal, where possible.
+    If non-numeric, just return the 'value' part of input.
+    """
     v = row_items[2]
     u = row_items[3]
     d = row_items[4]
     l = row_items[5]
-    if (u is not None) and isinstance(v, Number):
+    if (u is not None) and isinstance(v, (int, float)):  # Number
         if d == u'inf':
             un_num = GTC.ureal(v, u, label=l)  # default dof = inf
         else:
@@ -108,30 +107,41 @@ def Uncertainize(row_items):
         return v
 
 
-# Convert a resistive T-sensor reading from resistance to temperature
 def R_to_T(alpha, beta, R, R0, T0):
+    """
+    Convert a resistive T-sensor reading from resistance to temperature.
+
+    :parameter alpha (ureal) - temperature coefficient.
+    :parameter beta (ureal) - second-order temperature coefficient.
+    :parameter r (ureal) - resistance reading.
+    :parameter r0 (ureal) - calibration value of resistance.
+    :parameter T0 (ureal) - calibration value of temperature.
+    :return T (ureal) - temperature (deg C)
+    """
     if beta == 0:  # no 2nd-order T-Co
-        T = (R/R0 - 1)/alpha + T0
+        T = (R / R0 - 1) / alpha + T0
     else:
         a = beta
         b = alpha-2*T0
-        c = 1-alpha*T0 + beta*T0**2 - (R/R0)
+        c = 1-alpha*T0 + beta*T0**2 - (R / R0)
         T = (-b + GTC.sqrt(b**2-4*a*c))/(2*a)
     return T
 
 
-# Return average of a list of time-strings("%d/%m/%Y %H:%M:%S")
-# as a time string or float
-def av_t_strin(t_list, switch):
+def av_t_string(t_list, switch):
+    """
+    Return average of a list of time-strings ("%d/%m/%Y %H:%M:%S")
+    as a time string (switch='str') or float (switch='fl').
+    """
     assert switch in ('fl', 'str'), 'Unknown switch for function av_t_strin()!'
     throwaway = dt.datetime.strptime('20110101', '%Y%m%d')  # known bug fix
     n = float(len(t_list))
     t_av = 0.0
     for s in t_list:
-        if type(s) is unicode:
+        if isinstance(s, str):  # type(s) is str
             t_dt = dt.datetime.strptime(s, '%d/%m/%Y %H:%M:%S')
         elif type(s) is float:
-            print s, 'is a float...'
+            print(s, 'is a float...')
             t_dt = xlrd.xldate.xldate_as_datetime(s, 0)
         else:
             assert 0, 'Time format is not unicode or float!'
@@ -146,8 +156,10 @@ def av_t_strin(t_list, switch):
         return t_av_fl.strftime('%d/%m/%Y %H:%M:%S')  # av. time as string
 
 
-# Write headings on Summary sheet
-def WriteHeadings(sheet, row, version):
+def write_headings(sheet, row, version):
+    """
+    Write headings on Summary sheet.
+    """
     now = dt.datetime.now()
     sheet['A'+str(row-1)].font = Font(b=True)
     sheet['A'+str(row-1)] = 'Processed with HRBA v'+str(version)+' on '+now.strftime("%A, %d. %B %Y %I:%M%p")
@@ -181,11 +193,12 @@ def WriteHeadings(sheet, row, version):
     return row
 
 
-# Write measurement summary   
-def WriteThisResult(sheet, row, result):
+def write_this_result(sheet, row, result):
+    """
+    Write measurement summary
+    """
     sheet['A'+str(row)].font = Font(color=colors.YELLOW)
-    sheet['A'+str(row)].fill = PatternFill(patternType='solid',
-                                           fgColor=colors.RED)
+    sheet['A'+str(row)].fill = PatternFill(patternType='solid', fgColor=colors.RED)
     sheet['A'+str(row)] = str(result['name'])
 
     sheet['B'+str(row)] = result['V'].x
@@ -211,12 +224,12 @@ def WriteThisResult(sheet, row, result):
     sheet['H'+str(row)] = result['R_expU']
 
 
-# Sorting helper function - sort by uncert. contribution
 def by_u_cont(line):
+    """Sorting helper function - sort by uncert. contribution"""
     return line[5]
 
 
-def WriteBudget(sheet, row, budget):
+def write_budget(sheet, row, budget):
     for line in budget:
         sheet['J'+str(row)] = line[0]  # Quantity (label)
         sheet['K'+str(row)] = line[1]  # Value
@@ -231,26 +244,31 @@ def WriteBudget(sheet, row, budget):
     return row
 
 
-# Weighted least-squares fit (R1-T)
 def write_R1_T_fit(results, sheet, row, log):
+    """
+    Weighted least-squares fit (R1-T).
+    """
     T_data = [T for T in [result['T'] for result in results]]  # All T values
     T_av = GTC.fn.mean(T_data)
     # print'write_R1_T_fit():u(T_av)=',T_av.u,'dof(T_av)=',T_av.df
-    T_rel = [t_k - T_av for t_k in T_data]  # x-vals
+    T_rel = [t_k - T_av for t_k in T_data]  # x-vals shifted by T_av
+    alpha = GTC.ureal(0,0)
 
     y = [R for R in [result['R'] for result in results]]  # All R values
-    # u_y = [R.u for R in [result['R'] for result in results]] # All R uncerts
+    u_y = [R.u for R in [result['R'] for result in results]] # All R uncerts
 
     if len(set(T_data)) <= 1: # No temperature variation recorded, so can't fit to T
         R1 = GTC.fn.mean(y)
-        print 'R1_LV (av, not fit):', R1
+        print('R1_LV (av, not fit):', R1)
         log.write('\nR1_LV (av, not fit): ' + str(R1))
     else:
         # a_ta,b_ta = GTC.ta.line_fit_wls(T_rel,y,u_y).a_b
         # Assume uncert of individual measurements dominate uncert of fit
-        R1, alpha = GTC.fn.line_fit_wls(T_rel, y).a_b
-        print 'Fit params:\t intercept=', GTC.summary(R1), 'Slope=', GTC.summary(alpha)
-        log.write('\nFit params:\t intercept= ' + str(GTC.summary(R1)) + ' Slope= ' + str(GTC.summary(alpha)))
+        R1, alpha = GTC.ta.line_fit_wls(T_rel, y, u_y).a_b  # GTC.ta.line_fit_wls(T_rel, y).a_b
+        print('Fit params:\t intercept={}+/-{},dof={}. Slope={}+/-{},dof={}'.format(R1.x, R1.u, R1.df, alpha.x,
+                                                                                    alpha.u, alpha.df))
+        log.write('Fit params:\t intercept={}+/-{},dof={}. Slope={}+/-{},dof={}'.format(R1.x, R1.u, R1.df, alpha.x,
+                                                                                        alpha.u, alpha.df))
 
     sheet['R'+str(row)] = R1.x
     sheet['S'+str(row)] = R1.u
@@ -281,7 +299,7 @@ def write_R1_T_fit(results, sheet, row, log):
         sheet['AB'+str(row)] = str(V_av.df)
     else:
         sheet['AB'+str(row)] = round(V_av.df)
-    return (R1, alpha, T_av, V_av, time_av)
+    return R1, alpha, T_av, V_av, time_av
 
 
 def update_R_Info(name, params, data, sheet, row, Id, v):
@@ -320,7 +338,7 @@ def update_R_Info(name, params, data, sheet, row, Id, v):
     return row
 
 
-def GetDigi(readings):
+def get_digi(readings):
     """
     Return maximum digitization level of a set of data.
     """
