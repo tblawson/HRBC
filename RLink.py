@@ -17,7 +17,7 @@ Contains definitions for usual __init__() and run() methods
 from threading import Thread
 import datetime as dt
 import time
-import string
+# import string
 
 import numpy as np
 import wx
@@ -26,6 +26,7 @@ from openpyxl.styles import Font, colors
 
 import HighRes_events as evts
 import devices
+import R_info
 
 
 class RLThread(Thread):
@@ -43,15 +44,15 @@ class RLThread(Thread):
 
         self.log = self.SetupPage.log
 
-        print'\nRole -> Instrument:'
-        print'------------------------------'
+        print('\nRole -> Instrument:')
+        print('------------------------------')
         # Print all instrument objects
         for r in devices.ROLES_WIDGETS.keys():
             d = devices.ROLES_WIDGETS[r]['icb'].GetValue()
-            print'%s -> %s' % (devices.INSTR_DATA[d]['role'], d)
+            print('{} -> {}'.format(devices.INSTR_DATA[d]['role'], d))
             if r != devices.INSTR_DATA[d]['role']:
                 devices.INSTR_DATA[d]['role'] = r
-                print'Role data corrected to:', r, '->', d
+                print('Role data corrected to: {} -> {}'.format(r, d))
 
         # Get filename of Excel file
         self.xlfilename = self.SetupPage.XLFile.GetValue()
@@ -61,7 +62,7 @@ class RLThread(Thread):
         self.ws = self.wb_io.get_sheet_by_name('Rlink')
 
         # read start row & run parameters from Excel file
-        self.start_row = self.ws['B1'].value # 1st row of actual data (after 6 lines of header)
+        self.start_row = self.ws['B1'].value  # 1st row of actual data (after 6 lines of header)
         self.headrow = self.start_row - 6
         self.N_reversals = self.ws['B2'].value
         self.N_readings = self.ws['B3'].value
@@ -75,12 +76,17 @@ class RLThread(Thread):
         self.R1Name = self.SetupPage.R1Name.GetValue()
         self.R2Name = self.SetupPage.R2Name.GetValue()
 
-        # Extract resistor nominal values from names
-        R1multiplier = self.Getmultiplier(self.R1Name)
-        R2multiplier = self.Getmultiplier(self.R2Name)
-        self.R1Val = R1multiplier*int(string.strip(string.split(self.R1Name)[-1], string.letters))
-        self.R2Val = R2multiplier*int(string.strip(string.split(self.R2Name)[-1], string.letters))
+        self.V1set = 0.0
+        self.V2set = 0.0
+        self.Vdiff = 0.0
 
+        # Extract resistor nominal values from names
+        # r1multiplier = self.Getmultiplier(self.R1Name)
+        # r2multiplier = self.Getmultiplier(self.R2Name)
+        # self.R1Val = r1multiplier*int(string.strip(string.split(self.R1Name)[-1], string.letters))
+        # self.R2Val = r2multiplier*int(string.strip(string.split(self.R2Name)[-1], string.letters))
+        self.R1Val = R_info.get_r_val(self.R1Name)
+        self.R2Val = R_info.get_r_val(self.R2Name)
         self.start()  # Starts the thread running on creation
 
     def run(self):
@@ -109,11 +115,11 @@ class RLThread(Thread):
                        '', 'Nom. value', '|V|'],
                        ['R1', self.R1Name, self.R1Val, self.AbsV1],
                        ['R2', self.R2Name, self.R2Val, self.AbsV2]]
-        Delta = u'\N{GREEK CAPITAL LETTER DELTA}'
+        cap_delta = u'\N{GREEK CAPITAL LETTER DELTA}'
         last_head_row = []
         for c in range(1, 6):
-            last_head_row.append(Delta + 'V+')
-            last_head_row.append(Delta + 'V-')
+            last_head_row.append(cap_delta + 'V+')
+            last_head_row.append(cap_delta + 'V-')
         row_content.append(last_head_row)
 
         headings = dict(zip(headrows, row_content))
@@ -121,7 +127,7 @@ class RLThread(Thread):
         for r in headings.keys():
             for c in range(1, len(headings[r])+1):
                 if r == self.headrow + 5:  # 'delta_V' row
-                    if (c % 2 == 0):  # even columns
+                    if c % 2 == 0:  # even columns
                         col = colors.BLUE
                     else:  # odd columns
                         col = colors.RED
@@ -136,8 +142,8 @@ class RLThread(Thread):
         devices.ROLES_INSTR['switchbox'].send_cmd(devices.SWITCH_CONFIGS['V2'])
         self.SetupPage.Switchbox.SetValue('V2')  # update sw'box config icb
         devices.ROLES_INSTR['DVMd'].send_cmd('FUNC DCV,AUTO')
-        dvmOP = devices.ROLES_INSTR['DVMd'].read()  # Set appropriate V-range
-        devices.ROLES_INSTR['DVMd'].send_cmd('DCV,' + str(dvmOP))
+        dvm_op = devices.ROLES_INSTR['DVMd'].read()  # Set appropriate V-range
+        devices.ROLES_INSTR['DVMd'].send_cmd('DCV,' + str(dvm_op))
         devices.ROLES_INSTR['DVMd'].send_cmd('LFREQ LINE')
         devices.ROLES_INSTR['SRC1'].send_cmd('R0=')
         time.sleep(3)
@@ -148,7 +154,7 @@ class RLThread(Thread):
 
         while revs <= self.N_reversals:  # column index
             if self._want_abort:
-                self.AbortRun()
+                self.abort_run()
                 return
 
             del self.RLink_data[:]
@@ -159,7 +165,7 @@ class RLThread(Thread):
             time.sleep(5)
             self.RunPage.V2Setting.SetValue(str(self.V2set))
             if self._want_abort:
-                self.AbortRun()
+                self.abort_run()
                 return            
             time.sleep(60)
             row = 1
@@ -168,20 +174,22 @@ class RLThread(Thread):
             col_letter = get_column_letter(revs)
             d = devices.ROLES_WIDGETS['DVMd']['icb'].GetValue()
             while row <= self.N_readings:  # row index
-                if devices.INSTR_DATA[d]['demo'] == True:
-                    dvmOP = np.random.normal(self.Vdiff*1.0e-6,
-                                             abs(self.Vdiff*1.0e-8))
-                    self.RLink_data.append(dvmOP)
+                if devices.INSTR_DATA[d]['demo']:
+                    dvm_op = np.random.normal(self.Vdiff*1.0e-6,
+                                              abs(self.Vdiff*1.0e-8))
+                    # self.RLink_data.append(dvm_op)
                 else:
                     devices.ROLES_INSTR['DVMd'].send_cmd('LFREQ LINE')
                     time.sleep(1)
                     devices.ROLES_INSTR['DVMd'].send_cmd('AZERO ONCE')
                     time.sleep(1)  # was 10
-                    dvmOP = devices.ROLES_INSTR['DVMd'].read()
-                    self.RLink_data.append(float(filter(self.filt, dvmOP)))
-                P = 100*((revs-1)*self.N_readings+row)/(self.N_reversals*self.N_readings)  # % progress
+                    dvm_op = devices.ROLES_INSTR['DVMd'].read()
+                    # self.RLink_data.append(float(filter(self.filt, dvm_op)))
+                self.RLink_data.append(dvm_op)
+
+                prog = 100 * ((revs - 1) * self.N_readings + row) / (self.N_reversals * self.N_readings)  # % progress
                 update_ev = evts.DataEvent(t=0, Vm=self.RLink_data[row-1],
-                                           Vsd=0, P=P, r=col_letter+str(row),
+                                           Vsd=0, P=prog, r=col_letter + str(row),
                                            flag='-')
                 wx.PostEvent(self.RunPage, update_ev)
                 if revs % 2 == 0:  # even columns
@@ -195,7 +203,7 @@ class RLThread(Thread):
                 row += 1
             # (end of readings loop)
 
-            print self.RLink_data[row-2]
+            print(self.RLink_data[row-2])
 
             # Reverse source polarities
             self.V1set *= -1
@@ -207,12 +215,12 @@ class RLThread(Thread):
             # Set next data-block's start row (allowing for gap+6-line header)
             self.ws['B1'] = self.start_row + self.N_readings + 7
         # (end of reversals loop)
-        self.FinishRun()
+        self.finish_run()
         return
 
-    def AbortRun(self):
+    def abort_run(self):
         # prematurely end run
-        self.Standby()  # Set sources to 0V and leave system safe
+        self.standby()  # Set sources to 0V and leave system safe
 
         stat_ev = evts.StatusEvent(msg='AbortRun(): Run stopped', field=0)
         wx.PostEvent(self.TopLevel, stat_ev)
@@ -225,11 +233,11 @@ class RLThread(Thread):
         self.RunPage.StartBtn.Enable(True)
         self.RunPage.StopBtn.Enable(False)
 
-    def FinishRun(self):
+    def finish_run(self):
         # save data in xl file
         self.wb_io.save(self.xlfilename)
 
-        self.Standby()  # Set sources to 0V and leave system safe
+        self.standby()  # Set sources to 0V and leave system safe
 
         stop_ev = evts.DataEvent(t='-', Vm='-', Vsd='-', P=0, r='-', flag='F')  # Finished
         wx.PostEvent(self.RunPage, stop_ev)
@@ -242,7 +250,7 @@ class RLThread(Thread):
         self.RunPage.StartBtn.Enable(True)
         self.RunPage.StopBtn.Enable(False)
 
-    def Standby(self):
+    def standby(self):
         self.RunPage.V1Setting.SetValue('0')
         self.RunPage.V2Setting.SetValue('0')
 
@@ -253,20 +261,21 @@ class RLThread(Thread):
         wx.PostEvent(self.TopLevel, stat_ev)
         self._want_abort = 1
 
-    def Getmultiplier(self, name):
-        # A helper function to extract the value multiplier from resistor name
-        if name[-1] == 'k':
-            mult = 1000
-        elif name[-1] == 'M':
-            mult = int(1e6)
-        elif name[-1] == 'G':
-            mult = int(1e9)
-        return mult
+    # def get_multiplier(self, name):
+    #     # A helper function to extract the value multiplier from resistor name
+    #     mult = 0
+    #     if name[-1] == 'k':
+    #         mult = 1000
+    #     elif name[-1] == 'M':
+    #         mult = int(1e6)
+    #     elif name[-1] == 'G':
+    #         mult = int(1e9)
+    #     return mult
 
-    def filt(self, char):
-        # A helper function to strip rubbish from DVM o/p unicode string
-        # and retain any number (as a string)
-        accept_str = u'-0.12345678eE9'
-        return char in accept_str  # Returns 'True' or 'False'
+    # def filt(self, char):
+    #     # A helper function to strip rubbish from DVM o/p unicode string
+    #     # and retain any number (as a string)
+    #     accept_str = u'-0.12345678eE9'
+    #     return char in accept_str  # Returns 'True' or 'False'
 
 """--------------End of Thread class definition-------------------"""
