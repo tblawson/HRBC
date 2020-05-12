@@ -49,12 +49,13 @@ import GTC
 
 import R_info  # useful functions
 
-VERSION = 1.3
+VERSION = 2.0  # 1st Python 3 version.
 
 # DVM, GMH Correction factors, etc.
 
 ZERO = GTC.ureal(0, 0)
-PPM_TOLERANCE = {'R2': 2e-4, 'G': 0.01, 'R1': 5e-2}  # 1e-3
+FRAC_TOLERANCE = {'R2': 2e-2, 'G': 0.01, 'R1': 1}  # {'R2': 2e-4, 'G': 0.01, 'R1': 5e-2}
+RLINK_MAX = 2000  # Ohms
 
 datadir = input('Path to data directory:')
 xlname = input('Excel filename:')
@@ -71,10 +72,10 @@ log.write(now_fmt + '\n' + xlfile + '\n')
 # open existing workbook
 print(str(xlfile))
 wb_io = load_workbook(xlfile, data_only=True)  # data-only option added for validation
-ws_Data = wb_io.get_sheet_by_name('Data')
-ws_Rlink = wb_io.get_sheet_by_name('Rlink')
-ws_Summary = wb_io.get_sheet_by_name('Results')
-ws_Params = wb_io.get_sheet_by_name('Parameters')
+ws_Data = wb_io['Data']  # wb_io.get_sheet_by_name('Data') deprecated
+ws_Rlink = wb_io['Rlink']
+ws_Summary = wb_io['Results']
+ws_Params = wb_io['Parameters']
 
 # Get local parameters
 Data_start_row = ws_Data['B1'].value
@@ -280,7 +281,7 @@ nom_R1 = GTC.ureal(val1, val1/1e4, 8, label='nom_R1')  # don't >know< uncertaint
 val2 = ws_Rlink['C'+str(RL_start_row+3)].value
 assert val2 is not None, 'Missing nominal R2 value!'
 nom_R2 = GTC.ureal(val2, val2/1e4, 8, label='nom_R2')  # don't >know< uncertainty of nominal values
-val1 =ws_Rlink['D'+str(RL_start_row+2)].value
+val1 = ws_Rlink['D'+str(RL_start_row+2)].value
 assert val1 is not None, 'Missing nominal V1 value!'
 abs_V1 = GTC.ureal(val1, val1/1e4, 8, label='abs_V1')  # don't >know< uncertainty of nominal values
 val2 = ws_Rlink['D'+str(RL_start_row+3)].value
@@ -288,8 +289,10 @@ assert val2 is not None, 'Missing nominal V2 value!'
 abs_V2 = GTC.ureal(val2, val2/1e4, 8, label='abs_V2')  # don't >know< uncertainty of nominal values
 
 # Calculate I
-I = (abs_V1 + abs_V2) / (nom_R1 + nom_R2)
-I.label = 'Rd_I' + Run_Id
+I = GTC.result((abs_V1 + abs_V2) / (nom_R1 + nom_R2), 'Rd_I' + Run_Id)
+# i_label =
+# print("Setting label to '{}':".format(i_label))
+# I.label = i_label
 
 # Average all +Vs and -Vs
 Vp = []  # Positive polarity measurements
@@ -306,18 +309,17 @@ for Vrow in range(RL_start_row+5, RL_start_row+5+N_reads):
         assert Vn[-1] is not None, 'Missing Vn value!'
         col += 1
 
-av_dV_p = GTC.ta.estimate(Vp)
-av_dV_p.label = 'av_dV_p' + Run_Id
-av_dV_n = GTC.ta.estimate(Vn)
-av_dV_n.label = 'av_dV_n' + Run_Id
-av_dV = 0.5*GTC.magnitude(av_dV_p - av_dV_n)
-av_dV.label = 'Rd_dV' + Run_Id
+av_dV_p = GTC.result(GTC.ta.estimate(Vp), 'av_dV_p' + Run_Id)
+# av_dV_p.label =
+av_dV_n = GTC.result(GTC.ta.estimate(Vn), 'av_dV_n' + Run_Id)
+# av_dV_n.label =
+av_dV = GTC.result(0.5*GTC.magnitude(av_dV_p - av_dV_n), 'Rd_dV' + Run_Id)
+# av_dV.label =
 
 # Finally, calculate Rd
 Rd = GTC.result(av_dV/I, label='Rlink ' + Run_Id)
 print('\nRlink = {} +/- {}, dof = {}'.format(Rd.x, Rd.u, Rd.df))
-assert Rd.x < 0.1, 'High link resistance! {} Ohm'.format(str(Rd.x))
-# assert Rd.x > Rd.u, 'Link resistance uncertainty > value!'
+assert Rd.x < RLINK_MAX, 'High link resistance! {} Ohm'.format(str(Rd.x))
 log.write('\nRlink = {} +/- {}, dof = {}'.format(Rd.x, Rd.u, Rd.df))
 
 # ##__________End of Rd section___________## #
@@ -602,12 +604,14 @@ while Data_row <= Data_stop_row:
 
     R2 = R2_0*(1 + R2alpha * dT2 + R2beta * dT2 ** 2 + R2gamma * dV2) + Rd
     print('R2 = {} +/- {}, dof = {}'.format(R2.x, R2.u, R2.df))
-    assert abs(R2.x-R2val)/R2val < PPM_TOLERANCE['R2'], 'R2 > 100 ppm from nominal! R2 = {0}'.format(R2.x)
+    frac_err = abs(R2.x-R2val) / R2val
+    assert frac_err < FRAC_TOLERANCE['R2'], 'R2 > 100 ppm from nominal! R2 ({})'.format(frac_err)
 
     # calculate R1
     R1 = R2*vrc*V1av*delta_Vd/(Vdav*delta_V2 - V2av*delta_Vd)
     print('R1 = {} +/- {}, dof = {}'.format(R1.x, R1.u, R1.df))
-    assert abs(R1.x-R1val)/R1val < PPM_TOLERANCE['R1'], 'R1 > 1000 ppm from nominal!'
+    frac_err = abs(R1.x-R1val) / R1val
+    assert frac_err < FRAC_TOLERANCE['R1'], 'R1 > 1000 ppm from nominal ({})!'.format(frac_err)
 
     T1 = T1_av + T_def1
     print('{} at temperature {}'.format(R1, T1))
@@ -706,7 +710,7 @@ summary_row += 1
 ws_Summary['R'+str(summary_row)] = alpha.x
 ws_Summary['S'+str(summary_row)] = alpha.u
 
-if math.isinf(alpha.df):
+if math.isinf(alpha.df) or math.isnan(alpha.df):
     # print'alpha.df is',alpha.df
     ws_Summary['T'+str(summary_row)] = str(alpha.df)
 else:
@@ -715,7 +719,7 @@ else:
 
 ws_Summary['V'+str(summary_row)] = gamma.x
 ws_Summary['W'+str(summary_row)] = gamma.u
-if math.isinf(gamma.df):
+if math.isinf(gamma.df) or math.isnan(alpha.df):
     # print'gamma.df is',gamma.df
     ws_Summary['X'+str(summary_row)] = str(gamma.df)
 else:

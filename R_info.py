@@ -14,7 +14,6 @@ import math
 import xlrd
 from openpyxl.styles import Font, colors, PatternFill, Border, Side
 import GTC
-# from numbers import Number
 
 RL_SEARCH_LIMIT = 500
 
@@ -68,7 +67,9 @@ def get_r_val(name):
     assert mult != 0, 'Error parsing comment - unkown multiplier!'
 
     # return numeric part of last word, multiplied by 1, 10^3, 10^6 or 10^9:
-    return mult*int(name.strip(name.split(name)[-1]), string.ascii_letters)
+    # return mult*int(name.strip(name.split(name)[-1]), string.ascii_letters)
+    r_val_str = name.split()[-1]
+    return mult * int(r_val_str.strip(string.ascii_letters))
 
 
 def get_rlink_startrow(sheet, id, jump, log):
@@ -244,11 +245,23 @@ def write_budget(sheet, row, budget):
     return row
 
 
+def add_if_unique(item, lst):
+    """
+    Append 'item' to 'lst' only if it is not already present.
+    """
+    if item not in lst:
+        lst.append(item)
+    return lst
+
+
 def write_R1_T_fit(results, sheet, row, log):
     """
     Weighted least-squares fit (R1-T).
     """
     T_data = [T for T in [result['T'] for result in results]]  # All T values
+    unique_T_data = []
+    for T in T_data:
+        add_if_unique(T, unique_T_data)
     T_av = GTC.fn.mean(T_data)
     # print'write_R1_T_fit():u(T_av)=',T_av.u,'dof(T_av)=',T_av.df
     T_rel = [t_k - T_av for t_k in T_data]  # x-vals shifted by T_av
@@ -257,7 +270,7 @@ def write_R1_T_fit(results, sheet, row, log):
     y = [R for R in [result['R'] for result in results]]  # All R values
     u_y = [R.u for R in [result['R'] for result in results]] # All R uncerts
 
-    if len(set(T_data)) <= 1: # No temperature variation recorded, so can't fit to T
+    if len(unique_T_data) <= 1: # No temperature variation recorded, so can't fit to T
         R1 = GTC.fn.mean(y)
         print('R1_LV (av, not fit):', R1)
         log.write('\nR1_LV (av, not fit): ' + str(R1))
@@ -313,7 +326,7 @@ def update_R_Info(name, params, data, sheet, row, Id, v):
         if param not in ('date', 'T_sensor'):  # GTC.ureal params
             sheet['C'+str(row)] = R_dict[param].x
             sheet['D'+str(row)] = R_dict[param].u
-            if math.isinf(R_dict[param].df):
+            if math.isinf(R_dict[param].df) or math.isnan(R_dict[param].df):
                 sheet['E'+str(row)] = str(R_dict[param].df)
             else:
                 sheet['E'+str(row)] = round(R_dict[param].df)

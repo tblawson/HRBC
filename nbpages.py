@@ -52,7 +52,7 @@ class SetupPage(wx.Panel):
         self.SRC_COMBO_CHOICE = ['none']
         self.DVM_COMBO_CHOICE = ['none']
         self.GMH_COMBO_CHOICE = ['none']
-        self.SB_COMBO_CHOICE = devices.SWITCH_CONFIGS.keys()
+        self.SB_COMBO_CHOICE = list(devices.SWITCH_CONFIGS.keys())
         self.T_SENSOR_CHOICE = devices.T_Sensors
         self.cbox_addr_COM = []
         self.cbox_addr_GPIB = []
@@ -138,7 +138,7 @@ class SetupPage(wx.Panel):
         self.cbox_instr_GMH.append(self.GMHroomProbes)
 
         switchbox_lbl = wx.StaticText(self, label='Switchbox configuration:',
-                                     id=wx.ID_ANY)
+                                      id=wx.ID_ANY)
         self.Switchbox = wx.ComboBox(self, wx.ID_ANY,
                                      choices=self.SB_COMBO_CHOICE,
                                      style=wx.CB_DROPDOWN)
@@ -202,7 +202,7 @@ class SetupPage(wx.Panel):
         file_lbl = wx.StaticText(self, label='Excel file full path:',
                                  id=wx.ID_ANY)
         self.XLFile = wx.TextCtrl(self, id=wx.ID_ANY,
-                                  value=self.GetTopLevelParent().ExcelPath)
+                                  value=self.GetTopLevelParent().excelpath)
 
         # Resistors
         self.R1Name = wx.TextCtrl(self, id=wx.ID_ANY, value='R1 Name')
@@ -544,7 +544,7 @@ class SetupPage(wx.Panel):
         if 'GMH' in r:  # Changed from d to r
             # create and open a GMH instrument instance
             print('\nnbpages.SetupPage.CreateInstr(): Creating GMH device ({} -> {}).'.format(d, r))
-            devices.ROLES_INSTR.update({r: devices.GMHSensor(d)})
+            devices.ROLES_INSTR.update({r: devices.GMHDevice(d)})
         else:
             # create a visa instrument instance
             print('\nnbpages.SetupPage.CreateInstr(): Creating VISA device ({} -> {}).'.format(d, r))
@@ -552,15 +552,16 @@ class SetupPage(wx.Panel):
             devices.ROLES_INSTR[r].open()
         self.set_instr(d, r)
 
-    def set_instr(self, d, r):
+    @staticmethod
+    def set_instr(d, r):
         """
         Called by create_instr().
         Updates internal info (INSTR_DATA) and Enables/disables testbuttons
         as necessary.
         """
         # print 'nbpages.SetupPage.SetInstr():',d,'assigned to role',r,'demo mode:',devices.ROLES_INSTR[r].demo
-        assert devices.INSTR_DATA.has_key(d), 'Unknown instrument: {} - check Excel file is loaded.'.format(d)
-        assert devices.INSTR_DATA[d].has_key('role'),\
+        assert d in devices.INSTR_DATA, 'Unknown instrument: {} - check Excel file is loaded.'.format(d)
+        assert 'role' in devices.INSTR_DATA[d],\
             'Unknown instrument parameter - check Excel Parameters sheet is populated.'
         devices.INSTR_DATA[d]['role'] = r  # update default role
         
@@ -579,7 +580,7 @@ class SetupPage(wx.Panel):
         """
         d = 'none'
         r = ''
-        addr = ''
+        addr = 0
         acb = e.GetEventObject()  # 'a'ddress 'c'ombo 'b'ox
         for r in devices.ROLES_WIDGETS.keys():
             if devices.ROLES_WIDGETS[r]['acb'] == acb:
@@ -589,10 +590,10 @@ class SetupPage(wx.Panel):
         if (a not in self.GPIBAddressList) or (a not in self.COMAddressList):  # Ignore dummy values, like 'NO_ADDRESS'
             devices.INSTR_DATA[d]['str_addr'] = a
             devices.ROLES_INSTR[r].str_addr = a
-            addr = a.lstrip('COMGPIB0:')  # leave only numeric part of address string
-            devices.INSTR_DATA[d]['addr'] = int(addr)
-            devices.ROLES_INSTR[r].addr = int(addr)
-        print('UpdateAddr(): {} using {} set to addr {} ({})'.format(r, d, addr, a))
+            addr = int(a.lstrip('COMGPIB0:'))  # leave only numeric part of address string
+            devices.INSTR_DATA[d]['addr'] = addr
+            devices.ROLES_INSTR[r].addr = addr
+        print('update_addr(): {} using {} set to addr {} ({})'.format(r, d, addr, a))
 
     def on_test(self, e):
         """Called when a 'test' button is clicked"""
@@ -602,12 +603,12 @@ class SetupPage(wx.Panel):
             if devices.ROLES_WIDGETS[r]['tbtn'] == e.GetEventObject():
                 d = devices.ROLES_WIDGETS[r]['icb'].GetValue()
                 break  # stop looking when find the right instrument descr
-        print('\nnbpages.SetupPage.OnTest():',d)
+        print('\nnbpages.SetupPage.OnTest():', d)
         assert 'test' in devices.INSTR_DATA[d], 'No test exists for this device.'
-        test = devices.INSTR_DATA[d]['test']  # test string
-        print('\tTest string:', test)
-        self.Response.SetValue(str(devices.ROLES_INSTR[r].test(test)))
-        self.status.SetStatusText('Testing %s with cmd %s' % (d, test), 0)
+        test_str = devices.INSTR_DATA[d]['test']  # test string
+        print('\tTest string:', test_str)
+        self.Response.SetValue(str(devices.ROLES_INSTR[r].test(test_str)))
+        self.status.SetStatusText('Testing %s with cmd %s' % (d, test_str), 0)
 
     def on_switch_test(self, e):
         resource = self.SwitchboxAddr.GetValue()
@@ -701,12 +702,12 @@ class RunPage(wx.Panel):
         self.Comment.Bind(wx.EVT_TEXT, self.on_comment)
         comtip_a = 'This is auto-generated from data on the Setup page.'
         comtip_b = ' Other notes may be added manually.'
-        self.Comment.SetToolTipString(comtip_a + comtip_b)
+        self.Comment.SetToolTip(comtip_a + comtip_b)  # changed from deprecated SetToolTipString()
 
         self.NewRunIDBtn = wx.Button(self, id=wx.ID_ANY,
                                      label='Create new run id')
         idcomtip = 'New id used to link subsequent Rlink and measurement data.'
-        self.NewRunIDBtn.SetToolTipString(idcomtip)
+        self.NewRunIDBtn.SetToolTip(idcomtip)  # changed from deprecated SetToolTipString()
         self.NewRunIDBtn.Bind(wx.EVT_BUTTON, self.on_new_run_id)
         self.RunID = wx.TextCtrl(self, id=wx.ID_ANY, size=(500, 20))
 
@@ -914,14 +915,14 @@ class RunPage(wx.Panel):
         if e.flag in 'EF':  # finished
             self.RunThread = None
             self.StartBtn.Enable(True)
-            self.Progress.SetToolTipString(str(0)+'%')
+            self.Progress.SetToolTip(str(0)+'%')  # Changed from deprecated SetToolTipString()
         else:
             self.Time.SetValue(str(e.t))
             self.Vav.SetValue(str(e.Vm))
             self.Vsd.SetValue(str(e.Vsd))
             self.Row.SetValue(str(e.r))
             self.Progress.SetValue(e.P)
-            self.Progress.SetToolTipString(str(e.P)+'%')
+            self.Progress.SetToolTip(str(e.P)+'%')  # Changed from deprecated SetToolTipString()
 
     def update_dels(self, e):
         # Triggered by an 'update delays' event
@@ -995,13 +996,12 @@ class RunPage(wx.Panel):
             self.RunThread = acq.AqnThread(self)
 
     def on_abort(self, e):
+        self.StartBtn.Enable(True)
+        self.StopBtn.Enable(False)  # Disable Stop button
+        self.RLinkBtn.Enable(True)  # Enable Start button
         if self.RunThread:
-            self.StartBtn.Enable(True)
-            self.StopBtn.Enable(False)  # Disable Stop button
             self.RunThread.abort()
         elif self.RLinkThread:
-            self.RLinkBtn.Enable(True)  # Enable Start button
-            self.StopBtn.Enable(False)  # Disable Stop button
             self.RLinkThread.abort()
 
     def on_rlink(self, e):

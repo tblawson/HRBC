@@ -21,7 +21,7 @@ import numpy as np
 import os
 import ctypes as ct
 import visa
-import GMHstuff as GMH  # GMH probe coms are handled by low-level routines in GMH3x32E.dll.
+import GMHstuff as Gmh  # GMH probe coms are handled by low-level routines in GMH3x32E.dll.
 
 INSTR_DATA = {}  # Dict of instrument parameter dicts, keyed by description
 DESCR = []
@@ -43,14 +43,15 @@ SWITCH_CONFIGS = {'V1': 'A', 'Vd1': 'C', 'Vd2': 'D', 'V2': 'B'}
 T_Sensors = ('none', 'Pt', 'SR104t', 'thermistor')
 
 
-class GMHSensor(GMH.GMHSensor):
+class GMHDevice(Gmh.GMHSensor):
     """
     A derived class of GMHstuff.GMHSensor with additional functionality.
-    On creation, an instance needs a description string, descr.
+    On creation, an instance needs a description string 'descr'.
     """
     def __init__(self, descr):
         self.descr = descr
-        self.port = int(INSTR_DATA[self.descr]['addr'])
+        self.addr = int(INSTR_DATA[self.descr]['addr'])
+        super().__init__(self.addr)
         self.demo = True
 
     def test(self, meas):
@@ -62,9 +63,16 @@ class GMHSensor(GMH.GMHSensor):
 
         :returns measurement tuple: (<value>, <unit string>)
         """
-        print('\ndevices.GMH_Sensor.Test()...')
+        print('\ndevices.GMHDvice.Test()...')
         result = self.measure(meas)
         return result
+
+    def init(self):
+        """
+        A dummy method - mirrors the init method of Instrument class,
+        but not needed for GMH sensors.
+        """
+        pass
 
 
 class Device(object):

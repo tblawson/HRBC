@@ -278,4 +278,4 @@ class RLThread(Thread):
     #     accept_str = u'-0.12345678eE9'
     #     return char in accept_str  # Returns 'True' or 'False'
 
-"""--------------End of Thread class definition-------------------"""
+""" -------------End of Thread class definition------------------ """

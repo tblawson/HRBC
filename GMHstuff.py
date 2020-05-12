@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 GMHstuff.py - required to access dll functions for GMH probes
 Created on Wed Jul 29 13:21:22 2015
@@ -9,12 +10,9 @@ import os
 import ctypes as ct
 
 
-# os.path.join('C:', 'Users', 't.lawson', 'PycharmProjects', 'GMHstuff2')
-# Change PATH to wherever you keep GMH3x32E.dll:
-gmhlibpath = 'I:/MSL/Private/Electricity/Ongoing/OHM/Temperature_PRTs/GMHdll'
-os.environ['GMHPATH'] = gmhlibpath
-GMHpath = os.environ['GMHPATH']
-GMHLIB = ct.windll.LoadLibrary(os.path.join('GMHdll', 'GMH3x32E'))  # (os.path.join(GMHpath, 'GMH3x32E'))
+GMHpath = os.getenv('GMH_PATH')
+print(GMHpath)
+GMHLIB = ct.windll.LoadLibrary(os.path.join(GMHpath, 'GMH3x32E'))  # (os.path.join(GMHpath, 'GMH3x32E'))
 
 # A (useful) subset of Transmit() function calls:
 TRANSMIT_CALLS = {'GetValue': 0, 'GetStatus': 3, 'GetTypeCode': 12, 'GetMinRange': 176, 'GetMaxRange': 177,
@@ -49,8 +47,8 @@ class GMHSensor:
             * not associated with an open COM port.
         """
         self.demo = demo
-        self.port = port
-        self.com_open = False
+        self.addr = port
+        self.com_is_open = False
         self.error_msg = '-'
         self.status_msg = '-'
         self.error_code = 0
@@ -101,21 +99,24 @@ class GMHSensor:
         one COM port (but requires special hardware fan-out).
 
         :returns:
-            1 for success,
+            1 for success, (or 0 for no action taken),
             -1 for failure.
         """
+        if self.com_is_open:
+            return 0
         try:
-            c_rtn_code = ct.c_int16(GMHLIB.GMH_OpenCom(self.port))
+            c_rtn_code = ct.c_int16(GMHLIB.GMH_OpenCom(self.addr))
             self.error_code = c_rtn_code.value
             self.error_msg = self.rtncode_to_errmsg(c_rtn_code.value)
             assert self.error_code >= 0, 'GMHLIB.GMH_OpenCom() failed'
         except AssertionError as msg:
             print('open_port()_except:', msg, '{} "{}"'.format(self.error_code, self.error_msg))
-            self.com_open = False
+            print('port={}, type(port)={}'.format(self.addr, type(self.addr)))
+            self.com_is_open = False
             return -1
         else:
             self.error_code = c_rtn_code.value
-            self.com_open = True
+            self.com_is_open = True
             # print('open_port(): calling get_sensor_info()...')
             self.get_sensor_info()
             return 1
@@ -128,7 +129,7 @@ class GMHSensor:
         :returns
             1 if successful, 0 if no action taken (port already closed), -1 otherwise.
         """
-        if self.com_open is False:
+        if self.com_is_open is False:
             return 0
         else:
             try:
@@ -136,10 +137,10 @@ class GMHSensor:
                 assert rtn >= 0, 'GMH_CloseCom() error.'
             except AssertionError as msg:
                 print(msg)
-                self.com_open = True
+                self.com_is_open = True
                 return -1
             else:
-                self.com_open = False
+                self.com_is_open = False
                 return 1
 
     def transmit(self, chan, func_name):
@@ -206,6 +207,8 @@ class GMHSensor:
             print('No channels found!')
         else:
             self.chan_count = self.c_intData.value
+            print('{} channels found: {}'.format(self.chan_count, self.rtncode_to_errmsg(self.error_code)))
+        return self.chan_count
 
     def get_status(self, chan):
         """
@@ -456,9 +459,10 @@ class GMHSensor:
 
         :returns a tuple: (<measurement as float>, <unit as unicode string>)
         """
+        self.open_port()
         if len(self._info) == 0:
             meas = (0, 'NO UNIT')
-            print('Measure(): No measurement info available! ')
+            print('measure(): No measurement info available! ')
         elif meas not in MEAS_ALIAS.keys():
             meas = (0, 'NO UNIT')
             print('Unknown function "{}"'.format(meas))
@@ -472,6 +476,10 @@ class GMHSensor:
                 meas = (0, 'NO UNIT')
                 print('Measurement value not found!- Check sensor is connected and ON.')
             else:
-                meas = (self.c_flData.value, self._info[MEAS_ALIAS[meas]][1])
+                chan = self._info[MEAS_ALIAS[meas]][0]
+                unit_str = self._info[MEAS_ALIAS[meas]][1]
+                meas = (self.c_flData.value, unit_str)
+                print('Measured {} from port {}, chan: {}.'.format(meas, self.addr, chan))
+                print(self._info)
+        self.close()
         return meas
-
