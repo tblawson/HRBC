@@ -234,8 +234,12 @@ Excel Parameters sheet.'
             return -1
 
     def Transmille_V_str(self, V):
-        ranges = [0.2, 2, 20, 200, 1000]
-        v_str = str(V)
+        """
+        A function specifically for constructing the voltage-setting
+        command-string for Transmille calibrators.
+        """
+        ranges = (0.2, 2, 20, 200, 1000)
+        v_str = ''
         r_str = ''
         for i, r in enumerate(ranges):
             if i == 0:  # Lowest range - convert to mV
@@ -247,7 +251,7 @@ Excel Parameters sheet.'
             else:
                 r_str = 'R'+str(i+1)
                 break
-        cmd_seq = [r_str, 'O'+v_str, 'S0']
+        cmd_seq = [r_str, 'O'+v_str]  # <set range>/<set output V>
         return self.CmdSep.join(cmd_seq)
 
     def set_fn(self):
