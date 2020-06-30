@@ -144,12 +144,12 @@ Excel Parameters sheet.'
         else:
             self.V_str = ''
 
-        if 'range_str' in INSTR_DATA[self.descr]:
+        if 'range_str' in INSTR_DATA[self.descr]:  # Unique to Transmille calibrators.
             self.RangeStr = INSTR_DATA[self.descr]['range_str']
         else:
             self.RangeStr = ''
 
-        if 'cmd_sep' in INSTR_DATA[self.descr]:
+        if 'cmd_sep' in INSTR_DATA[self.descr]:  # Unique to Transmille calibrators.
             self.CmdSep = INSTR_DATA[self.descr]['cmd_sep']
         else:
             self.CmdSep = ''
@@ -212,7 +212,10 @@ Excel Parameters sheet.'
             return 1
         elif 'SRC:' in self.descr:
             # Set voltage-source to V
-            s = str(V).join(self.V_str)
+            if 'T3310A' in self.descr:  # Transmille calibrator
+                s = self.Transmille_V_str(V)
+            else:
+                s = str(V).join(self.V_str)
             print('devices.instrument.SetV():', self.descr, 's=', s)
             try:
                 self.instr.write(s)
@@ -229,6 +232,23 @@ Excel Parameters sheet.'
         else:  # 'none' in self.Descr, (or something odd has happened)
             print('Invalid function for instrument {}.'.format(self.descr))
             return -1
+
+    def Transmille_V_str(self, V):
+        ranges = [0.2, 2, 20, 200, 1000]
+        v_str = str(V)
+        r_str = ''
+        for i, r in enumerate(ranges):
+            if i == 0:  # Lowest range - convert to mV
+                v_str = str(1000*V)
+            else:
+                v_str = str(V)
+            if V > r:
+                continue
+            else:
+                r_str = 'R'+str(i+1)
+                break
+        cmd_seq = [r_str, 'O'+v_str, 'S0']
+        return self.CmdSep.join(cmd_seq)
 
     def set_fn(self):
         # Set DVM function
