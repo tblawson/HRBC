@@ -239,19 +239,24 @@ Excel Parameters sheet.'
         command-string for Transmille calibrators.
         """
         ranges = (0.2, 2, 20, 200, 1000)
-        v_str = ''
         r_str = ''
+        v_str = ''
+        s_str = ''
         for i, r in enumerate(ranges):
-            if i == 0:  # Lowest range - convert to mV
+            if i == 0:  # Lowest range - convert to mV.
                 v_str = str(1000*V)
             else:
                 v_str = str(V)
-            if V > r:
+            if V == 0:
+                s_str = 'S1'  # Standby if zero volts.
+            else:
+                s_str = 'S0'
+            if abs(V) > r:
                 continue
             else:
                 r_str = 'R'+str(i+1)
                 break
-        cmd_seq = [r_str, 'O'+v_str]  # <set range>/<set output V>
+        cmd_seq = [r_str, 'O'+v_str, s_str]  # <set range>/<set output V>/<set standby state>.
         return self.CmdSep.join(cmd_seq)
 
     def set_fn(self):
