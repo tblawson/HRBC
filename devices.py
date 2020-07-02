@@ -401,7 +401,7 @@ Excel Parameters sheet.'
             return 1
         elif 'SRC:' in self.Descr:
             # Set voltage-source to V
-            if 'T3310A' in self.descr:  # Transmille calibrator
+            if 'T3310A' in self.Descr:  # Transmille calibrator
                 s = self.Transmille_V_str(V)
             else:
                 s = str(V).join(self.VStr)
