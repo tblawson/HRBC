@@ -618,7 +618,7 @@ class AqnThread(Thread):
 
     def Standby(self):
         # Set sources to 0V and disable outputs
-        devices.ROLES_INSTR['SRC1'].SendCmd('R0=')
+        # devices.ROLES_INSTR['SRC1'].SendCmd('R0=')
         self.RunPage.V1Setting.SetValue(str(0))
         self.RunPage.V2Setting.SetValue(str(0))
 
