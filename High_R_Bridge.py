@@ -1,7 +1,7 @@
 #!python
 # -*- coding: utf-8 -*-
 """
-WORKING VERSION
+Python3 development version
 
 Created on Mon Jun 29 11:36:13 2015
 
@@ -33,7 +33,7 @@ import nbpages as page
 import HighRes_events as evts
 import devices
 
-VERSION = "2.0"
+VERSION = "2.0"  # 1st Python 3 version.
 
 print('HRBC', VERSION)
 

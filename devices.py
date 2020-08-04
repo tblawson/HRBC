@@ -195,8 +195,8 @@ Excel Parameters sheet.'
             return 1
         else:
             reply = 1
-            for s in self.InitStr:
-                if s != '':  # instrument has an initiation string.
+            if s != '':  # instrument has an initiation string.
+                for s in self.InitStr:
                     try:
                         self.instr.write(s)
                     except visa.VisaIOError:

@@ -3,7 +3,7 @@
 """
 Created on Wed Jun 24 09:36:42 2015
 
-WORKING VERSION
+Python3 development version
 
 @author: t.lawson
 

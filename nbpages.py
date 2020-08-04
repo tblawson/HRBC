@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """ nbpages.py - Defines individual notebook pages as panel-like objects
 
-WORKING VERSION
+Python3 development version
 
 Created on Tue Jun 30 10:10:16 2015
 
@@ -504,14 +504,14 @@ class SetupPage(wx.Panel):
         Choose from instrument descriptions listed in devices.DESCR
         (Uses address assignments in devices.INSTR_DATA)
         """
-        self.instrument_choice = {'SRC1': 'SRC: D4808',
-                                  'SRC2': 'SRC: F5520A',
+        self.instrument_choice = {'SRC1': 'SRC: T3310A,s/nU3213I18',
+                                  'SRC2': 'SRC: T3310A,s/nU3212I18',
                                   'DVM12': 'DVM: HP3458A, s/n452',
                                   'DVMd': 'DVM: HP3458A, s/n382',
                                   'DVMT1': 'none',  # 'DVM: HP34401A, s/n976'
                                   'DVMT2': 'none',  # 'DVM: HP34420A, s/n130'
-                                  'GMH1': 'GMH: s/n627',
-                                  'GMH2': 'GMH: s/n628',
+                                  'GMH1': 'GMH: s/n628',
+                                  'GMH2': 'GMH: s/n627',
                                   'GMHroom': 'GMH: s/n367',
                                   'switchbox': 'V1'}
         for r in self.instrument_choice.keys():
