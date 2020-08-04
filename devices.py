@@ -195,16 +195,16 @@ Excel Parameters sheet.'
             return 1
         else:
             reply = 1
-            if s != '':  # instrument has an initiation string.
-                for s in self.InitStr:
+            for s in self.InitStr:
+                if s != '':  # instrument has initiation string(s).
                     try:
                         self.instr.write(s)
+                        print(m, self.descr, 'initiated with cmd: {}'.format(s))
                     except visa.VisaIOError:
                         print('Failed to write "{}" to {}'.format(s, self.descr))
                         reply = -1
                         return reply
-            print(m, self.descr, 'initiated with cmd: {}'.format(s))
-        return reply
+            return reply
 
     def set_V(self, V):
         # set output voltage (SRC) or input range (DVM)
