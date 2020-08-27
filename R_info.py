@@ -33,7 +33,7 @@ Vgain_codes_fixed = {0.1: 'Vgain_0.5r1', 0.5: 'Vgain_0.5r1', 0.9: 'Vgain_1r1',
 # ______________________________Useful funtions:______________________________
 
 def make_log_name(v):
-    return 'HRBAv{}_{}.log'.format(str(v), str(dt.date.today()))
+    return f'HRBAv{str(v)}_{str(dt.date.today())}.log'
 
 
 def extract_names(comment):
@@ -198,8 +198,8 @@ def write_this_result(sheet, row, result):
     """
     Write measurement summary
     """
-    sheet['A'+str(row)].font = Font(color=colors.YELLOW)
-    sheet['A'+str(row)].fill = PatternFill(patternType='solid', fgColor=colors.RED)
+    sheet['A'+str(row)].font = Font(color=colors.Color(indexed=5))  # Yellow
+    sheet['A'+str(row)].fill = PatternFill(patternType='solid', fgColor=colors.Color(indexed=2))  # Red
     sheet['A'+str(row)] = str(result['name'])
 
     sheet['B'+str(row)] = result['V'].x

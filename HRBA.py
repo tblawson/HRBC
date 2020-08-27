@@ -33,88 +33,132 @@ import sys
 import datetime as dt
 import math
 
-from openpyxl import load_workbook, utils  # cell
+# from openpyxl import load_workbook, utils  # cell
 # from openpyxl.cell import get_column_letter #column_index_from_string
 # from openpyxl.utils import get_column_letter
 
 import GTC
+import sqlite3
 
 import R_info  # useful functions
 
 VERSION = 2.1  # 2nd Python 3 version.
 
 # DVM, GMH Correction factors, etc.
-
 ZERO = GTC.ureal(0, 0)
 FRAC_TOLERANCE = {'R2': 2e-2, 'G': 0.01, 'R1': 1}  # {'R2': 2e-4, 'G': 0.01, 'R1': 5e-2}
 RLINK_MAX = 2000  # Ohms
 
-datadir = input('Path to data directory:')
-xlname = input('Excel filename:')
-xlfile = os.path.join(datadir, xlname)
+datadir = r'G:\My Drive'
 
 logname = R_info.make_log_name(VERSION)
 logfile = os.path.join(datadir, logname)
 log = open(logfile, 'a')
 
 now_tup = dt.datetime.now()
-now_fmt = now_tup.strftime('%d/%m/%Y %H:%M:%S')
+now_fmt = now_tup.strftime('%Y-%m-%d %H:%M:%S')
 log.write(now_fmt + '\n' + xlfile + '\n')
 
-# open existing workbook
-print(str(xlfile))
-wb_io = load_workbook(xlfile, data_only=True)  # data-only option added for validation
-ws_Data = wb_io['Data']  # wb_io.get_sheet_by_name('Data') deprecated
-ws_Rlink = wb_io['Rlink']
-ws_Summary = wb_io['Results']
-ws_Params = wb_io['Parameters']
+# Connect to Resistors.db database:
+db_path = input('Full Resistors.db path? (press "d" for default location) >')
+if db_path == 'd':
+    db_path = r'G:\My Drive\Resistors.db'  # Default location.
+db_connection = sqlite3.connect(db_path)
+curs = db_connection.cursor()
 
-# Get local parameters
-Data_start_row = ws_Data['B1'].value
-Data_stop_row = ws_Data['B2'].value
-assert Data_start_row <= Data_stop_row, 'Stop row must follow start row!'
+runid = input('Run_id to analyse? > ')
 
-# Get instrument assignments
-N_ROLES = 10  # 10 roles in total
-role_descr = {}
-range_mode = ''
-for row in range(Data_start_row, Data_start_row + N_ROLES):
-    # Read {role:description}
-    key = ws_Data['AC' + str(row)].value
-    val = ws_Data['AD' + str(row)].value
-    assert key is not None, 'Instrument assignment: Missing role!'
-    assert val is not None, 'Instrument assignment: Missing description!'
-    temp_dict = {key: val}
-    role_descr.update(temp_dict)
-    if ws_Data['AC'+str(row)].value == u'DVM12':
-        range_mode = ws_Data['AE'+str(row)].value
-        print('Range mode:', range_mode)
+# Get run info:
+q_run = f"SELECT * FROM Runs WHERE Run_Id='{runid}';"
+curs.execute(q_run)
+rows = curs.fetchall() # Should only be one row
+assert len(rows) == 1, 'Error. Run_Id not unique or not found!'
+for row in rows:
+    comment = row[1]
+    Rs_name = row[2]
+    Rx_name = row[3]
+    range_mode = row[4]
+    SRC1 = row[5]
+    SRC2 = row[6]
+    DVMd = row[7]
+    DVM12 = row[8]
+    GMH1 = row[9]
+    GMH2 = row[10]
+    GMHroom = row[11]
+
+# ## __________Get Rd value__________## #
+
+'''
+Read all raw Rlink data for this run
+'''
+q_link_data = f"SELECT * FROM Raw_Rlink_Data WHERE Run_Id='{runid}';"
+curs.execute(q_link_data)
+rows = curs.fetchall()
+Vpos_lst = []
+Vneg_lst = []
+for row in rows:
+    n = row[1]
+    V1 = row[2]
+    V2 = row[3]
+    Vpos_lst.append(row[4])
+    Vneg_lst.append(row[5])
+
+"""
+-----------------------------------------------------------
+Define nom_R, abs_V quantities
+Assume all 'nominal' values have 100 ppm std.uncert. with 8 dof.
+-----------------------------------------------------------
+"""
+val1 = R_info.get_r_val(Rx_name)
+nom_R1 = GTC.ureal(val1, val1/1e4, 8, label='nom_R1')  # don't >know< uncertainty of nominal values
+val2 = R_info.get_r_val(Rs_name)
+nom_R2 = GTC.ureal(val2, val2/1e4, 8, label='nom_R2')  # don't >know< uncertainty of nominal values
+abs_V1 = GTC.ureal(V1, V1/1e4, 8, label='abs_V1')  # don't >know< uncertainty of nominal values
+abs_V2 = GTC.ureal(V2, V2/1e4, 8, label='abs_V2')  # don't >know< uncertainty of nominal values
+
+# Calculate I
+I = GTC.result((abs_V1 + abs_V2) / (nom_R1 + nom_R2), 'Rd_I ' + Run_Id)
+
+# Average all +Vs and -Vs
+av_dV_p = GTC.result(GTC.ta.estimate(Vpos_lst), 'av_dV_p ' + Run_Id)
+av_dV_n = GTC.result(GTC.ta.estimate(Vneg_lst), 'av_dV_n ' + Run_Id)
+av_dV = GTC.result(0.5*GTC.magnitude(av_dV_p - av_dV_n), 'Rd_dV ' + Run_Id)
+
+# Finally, calculate Rd
+Rd = GTC.result(av_dV/I, label='Rlink ' + Run_Id)
+print(f'\nRlink = {Rd.x} +/- {Rd.u}, dof = {Rd.df}')
+assert Rd.x < RLINK_MAX, f'High link resistance! {Rd.x} Ohm'
+log.write(f'\nRlink = {Rd.x} +/- {Rd.u}, dof = {Rd.df}')
+
+# ##__________End of Rd section___________## #
+
+
 
 # ------------------------------------------------------------------- #
 # _____________Extract resistor and instrument parameters____________ #
 
-print('Reading parameters...')
-log.write('Reading parameters...')
-headings = (u'Resistor Info:', u'Instrument Info:',
-            u'description', u'parameter', u'value',
-            u'uncert', u'dof', u'label', u'Comment / Reference')
+# print('Reading parameters...')
+# log.write('Reading parameters...')
+# headings = (u'Resistor Info:', u'Instrument Info:',
+#             u'description', u'parameter', u'value',
+#             u'uncert', u'dof', u'label', u'Comment / Reference')
 
 # Determine colummn indices from column letters:
-col_A = utils.cell.column_index_from_string('A') - 1
-col_B = utils.cell.column_index_from_string('B') - 1
-col_C = utils.cell.column_index_from_string('C') - 1
-col_D = utils.cell.column_index_from_string('D') - 1
-col_E = utils.cell.column_index_from_string('E') - 1
-col_F = utils.cell.column_index_from_string('F') - 1
-col_G = utils.cell.column_index_from_string('G') - 1
-
-col_I = utils.cell.column_index_from_string('I') - 1
-col_J = utils.cell.column_index_from_string('J') - 1
-col_K = utils.cell.column_index_from_string('K') - 1
-col_L = utils.cell.column_index_from_string('L') - 1
-col_M = utils.cell.column_index_from_string('M') - 1
-col_N = utils.cell.column_index_from_string('N') - 1
-col_O = utils.cell.column_index_from_string('O') - 1
+# col_A = utils.cell.column_index_from_string('A') - 1
+# col_B = utils.cell.column_index_from_string('B') - 1
+# col_C = utils.cell.column_index_from_string('C') - 1
+# col_D = utils.cell.column_index_from_string('D') - 1
+# col_E = utils.cell.column_index_from_string('E') - 1
+# col_F = utils.cell.column_index_from_string('F') - 1
+# col_G = utils.cell.column_index_from_string('G') - 1
+#
+# col_I = utils.cell.column_index_from_string('I') - 1
+# col_J = utils.cell.column_index_from_string('J') - 1
+# col_K = utils.cell.column_index_from_string('K') - 1
+# col_L = utils.cell.column_index_from_string('L') - 1
+# col_M = utils.cell.column_index_from_string('M') - 1
+# col_N = utils.cell.column_index_from_string('N') - 1
+# col_O = utils.cell.column_index_from_string('O') - 1
 
 R_params = []
 R_row_items = []
@@ -248,73 +292,6 @@ if R2_name not in R_INFO:
     sys.exit('ERROR - Unknown Rs: {}'.format(R2_name))
 
 
-# ## __________Get Rd value__________## #
-# 1st, detetermine data format
-N_revs = ws_Rlink['B2'].value  # Number of reversals = number of columns
-assert N_revs is not None and N_revs > 0, 'Missing or no reversals!'
-N_reads = ws_Rlink['B3'].value  # Number of readings = number of rows
-assert N_reads is not None and N_reads > 0, 'Missing or no reads!'
-head_height = 6  # Rows of header before each block of data
-jump = head_height + N_reads  # rows to jump between starts of each header
-
-# Find correct RLink data-header
-RL_start_row = R_info.get_rlink_startrow(ws_Rlink, Run_Id, jump, log)
-assert RL_start_row > 1, 'Unable to find matching Rlink data!'
-
-# Next, define nom_R, abs_V quantities
-"""
-!!-----------------------------------------------------------!!
-Assume all 'nominal' values have 100 ppm std.uncert. with 8 dof.
-!!-----------------------------------------------------------!!
-"""
-val1 = ws_Rlink['C'+str(RL_start_row+2)].value
-assert val1 is not None, 'Missing nominal R1 value!'
-nom_R1 = GTC.ureal(val1, val1/1e4, 8, label='nom_R1')  # don't >know< uncertainty of nominal values
-val2 = ws_Rlink['C'+str(RL_start_row+3)].value
-assert val2 is not None, 'Missing nominal R2 value!'
-nom_R2 = GTC.ureal(val2, val2/1e4, 8, label='nom_R2')  # don't >know< uncertainty of nominal values
-val1 = ws_Rlink['D'+str(RL_start_row+2)].value
-assert val1 is not None, 'Missing nominal V1 value!'
-abs_V1 = GTC.ureal(val1, val1/1e4, 8, label='abs_V1')  # don't >know< uncertainty of nominal values
-val2 = ws_Rlink['D'+str(RL_start_row+3)].value
-assert val2 is not None, 'Missing nominal V2 value!'
-abs_V2 = GTC.ureal(val2, val2/1e4, 8, label='abs_V2')  # don't >know< uncertainty of nominal values
-
-# Calculate I
-I = GTC.result((abs_V1 + abs_V2) / (nom_R1 + nom_R2), 'Rd_I' + Run_Id)
-# i_label =
-# print("Setting label to '{}':".format(i_label))
-# I.label = i_label
-
-# Average all +Vs and -Vs
-Vp = []  # Positive polarity measurements
-Vn = []  # Negative polarity measurements
-for Vrow in range(RL_start_row+5, RL_start_row+5+N_reads):
-
-    col = 1
-    while col <= N_revs:  # cycle through cols 1 to N_revs
-        Vp.append(ws_Rlink[utils.get_column_letter(col)+str(Vrow)].value)
-        assert Vp[-1] is not None, 'Missing Vp value!'
-        col += 1
-
-        Vn.append(ws_Rlink[utils.get_column_letter(col)+str(Vrow)].value)
-        assert Vn[-1] is not None, 'Missing Vn value!'
-        col += 1
-
-av_dV_p = GTC.result(GTC.ta.estimate(Vp), 'av_dV_p' + Run_Id)
-# av_dV_p.label =
-av_dV_n = GTC.result(GTC.ta.estimate(Vn), 'av_dV_n' + Run_Id)
-# av_dV_n.label =
-av_dV = GTC.result(0.5*GTC.magnitude(av_dV_p - av_dV_n), 'Rd_dV' + Run_Id)
-# av_dV.label =
-
-# Finally, calculate Rd
-Rd = GTC.result(av_dV/I, label='Rlink ' + Run_Id)
-print('\nRlink = {} +/- {}, dof = {}'.format(Rd.x, Rd.u, Rd.df))
-assert Rd.x < RLINK_MAX, 'High link resistance! {} Ohm'.format(str(Rd.x))
-log.write('\nRlink = {} +/- {}, dof = {}'.format(Rd.x, Rd.u, Rd.df))
-
-# ##__________End of Rd section___________## #
 
 raw_gmh1 = []
 raw_gmh2 = []
