@@ -17,6 +17,8 @@ import GTC
 
 RL_SEARCH_LIMIT = 500
 
+DT_FORMAT = '%Y-%m-%d %H:%M:%S'
+
 INF = 1e6  # 'inf' dof
 ZERO = GTC.ureal(0, 0)
 
@@ -129,12 +131,30 @@ def R_to_T(alpha, beta, R, R0, T0):
     return T
 
 
+def av_t_dt(t_str_lst):
+    """
+    Calculate mean time from a list of strings.
+    Return a string.
+    :param t_str_lst: list of time strings.
+    :return: a datetime object.
+    """
+    t_av = 0.0
+    n = float(len(t_str_lst))
+    for s in t_str_lst:
+        t_dt = dt.datetime.strptime(s, DT_FORMAT)
+        t_tup = dt.datetime.timetuple(t_dt)
+        t_av += time.mktime(t_tup)
+    t_av /= n  # av. time as float (seconds from epoch)
+    t_av_fl = dt.datetime.fromtimestamp(t_av)
+    return t_av_fl.strftime(DT_FORMAT)  # av. time as string
+
+
 def av_t_string(t_list, switch):
     """
     Return average of a list of time-strings ("%d/%m/%Y %H:%M:%S")
     as a time string (switch='str') or float (switch='fl').
     """
-    assert switch in ('fl', 'str'), 'Unknown switch for function av_t_strin()!'
+    assert switch in ('fl', 'str'), 'Unknown switch for function av_t_string()!'
     throwaway = dt.datetime.strptime('20110101', '%Y%m%d')  # known bug fix
     n = float(len(t_list))
     t_av = 0.0

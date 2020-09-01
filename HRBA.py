@@ -33,19 +33,15 @@ import sys
 import datetime as dt
 import math
 
-# from openpyxl import load_workbook, utils  # cell
-# from openpyxl.cell import get_column_letter #column_index_from_string
-# from openpyxl.utils import get_column_letter
-
-import GTC
+import GTC as gtc
 import sqlite3
 
 import R_info  # useful functions
 
 VERSION = 2.1  # 2nd Python 3 version.
-
+DT_FORMAT = R_info.DT_FORMAT  # '%Y-%m-%d %H:%M:%S'
 # DVM, GMH Correction factors, etc.
-ZERO = GTC.ureal(0, 0)
+ZERO = gtc.ureal(0, 0)
 FRAC_TOLERANCE = {'R2': 2e-2, 'G': 0.01, 'R1': 1}  # {'R2': 2e-4, 'G': 0.01, 'R1': 5e-2}
 RLINK_MAX = 2000  # Ohms
 
@@ -55,9 +51,9 @@ logname = R_info.make_log_name(VERSION)
 logfile = os.path.join(datadir, logname)
 log = open(logfile, 'a')
 
-now_tup = dt.datetime.now()
-now_fmt = now_tup.strftime('%Y-%m-%d %H:%M:%S')
-log.write(now_fmt + '\n' + xlfile + '\n')
+# now_tup = dt.datetime.now()
+# now_fmt = now_tup.strftime('%Y-%m-%d %H:%M:%S')
+# log.write(now_fmt + '\n' + xlfile + '\n')
 
 # Connect to Resistors.db database:
 db_path = input('Full Resistors.db path? (press "d" for default location) >')
@@ -71,227 +67,205 @@ runid = input('Run_id to analyse? > ')
 # Get run info:
 q_run = f"SELECT * FROM Runs WHERE Run_Id='{runid}';"
 curs.execute(q_run)
-rows = curs.fetchall() # Should only be one row
-assert len(rows) == 1, 'Error. Run_Id not unique or not found!'
-for row in rows:
-    comment = row[1]
-    Rs_name = row[2]
-    Rx_name = row[3]
-    range_mode = row[4]
-    SRC1 = row[5]
-    SRC2 = row[6]
-    DVMd = row[7]
-    DVM12 = row[8]
-    GMH1 = row[9]
-    GMH2 = row[10]
-    GMHroom = row[11]
-
-# ## __________Get Rd value__________## #
+row = curs.fetchone()  # Should only be one row
+assert row != None, 'Error! Run_Id not found!'
+comment = row[1]
+Rs_name = row[2]
+Rx_name = row[3]
+range_mode = row[4]
+SRC1 = row[5]
+SRC2 = row[6]
+DVMd = row[7]
+DVM12 = row[8]
+GMH1 = row[9]
+GMH2 = row[10]
+GMHroom = row[11]
 
 '''
-Read all raw Rlink data for this run
+-----------------------------------------------------------
+Get R_link value (Rd):
+-----------------------------------------------------------
 '''
-q_link_data = f"SELECT * FROM Raw_Rlink_Data WHERE Run_Id='{runid}';"
-curs.execute(q_link_data)
+# Read all raw Rlink data for this run:
+q_rlink_data = f"SELECT * FROM Raw_Rlink_Data WHERE Run_Id='{runid}';"
+curs.execute(q_rlink_data)
 rows = curs.fetchall()
 Vpos_lst = []
 Vneg_lst = []
+V1 = 0
+V2 = 0
 for row in rows:
-    n = row[1]
+    n_reads = row[1]
     V1 = row[2]
     V2 = row[3]
     Vpos_lst.append(row[4])
     Vneg_lst.append(row[5])
 
-"""
------------------------------------------------------------
-Define nom_R, abs_V quantities
-Assume all 'nominal' values have 100 ppm std.uncert. with 8 dof.
------------------------------------------------------------
-"""
+'''
+Define nom_R, abs_V quantities. Assume all 'nominal' values
+have 100 ppm std.uncert. with 8 dof.
+'''
 val1 = R_info.get_r_val(Rx_name)
-nom_R1 = GTC.ureal(val1, val1/1e4, 8, label='nom_R1')  # don't >know< uncertainty of nominal values
+nom_R1 = gtc.ureal(val1, val1/1e4, 8, label='nom_R1')  # don't >know< uncertainty of nominal values
 val2 = R_info.get_r_val(Rs_name)
-nom_R2 = GTC.ureal(val2, val2/1e4, 8, label='nom_R2')  # don't >know< uncertainty of nominal values
-abs_V1 = GTC.ureal(V1, V1/1e4, 8, label='abs_V1')  # don't >know< uncertainty of nominal values
-abs_V2 = GTC.ureal(V2, V2/1e4, 8, label='abs_V2')  # don't >know< uncertainty of nominal values
+nom_R2 = gtc.ureal(val2, val2/1e4, 8, label='nom_R2')  # don't >know< uncertainty of nominal values
+abs_V1 = gtc.ureal(V1, V1/1e4, 8, label='abs_V1')  # don't >know< uncertainty of nominal values
+abs_V2 = gtc.ureal(V2, V2/1e4, 8, label='abs_V2')  # don't >know< uncertainty of nominal values
 
 # Calculate I
-I = GTC.result((abs_V1 + abs_V2) / (nom_R1 + nom_R2), 'Rd_I ' + Run_Id)
+I = gtc.result((abs_V1 + abs_V2) / (nom_R1 + nom_R2), 'Rd_I ' + runid)
 
 # Average all +Vs and -Vs
-av_dV_p = GTC.result(GTC.ta.estimate(Vpos_lst), 'av_dV_p ' + Run_Id)
-av_dV_n = GTC.result(GTC.ta.estimate(Vneg_lst), 'av_dV_n ' + Run_Id)
-av_dV = GTC.result(0.5*GTC.magnitude(av_dV_p - av_dV_n), 'Rd_dV ' + Run_Id)
+av_dV_p = gtc.result(gtc.ta.estimate(Vpos_lst), 'av_dV_p ' + runid)
+av_dV_n = gtc.result(gtc.ta.estimate(Vneg_lst), 'av_dV_n ' + runid)
+av_dV = gtc.result(0.5*gtc.magnitude(av_dV_p - av_dV_n), 'Rd_dV ' + runid)
 
 # Finally, calculate Rd
-Rd = GTC.result(av_dV/I, label='Rlink ' + Run_Id)
+Rd = gtc.result(av_dV/I, label='Rlink ' + runid)
 print(f'\nRlink = {Rd.x} +/- {Rd.u}, dof = {Rd.df}')
 assert Rd.x < RLINK_MAX, f'High link resistance! {Rd.x} Ohm'
 log.write(f'\nRlink = {Rd.x} +/- {Rd.u}, dof = {Rd.df}')
+'''
+-----------------------------------------------------------
+End of R_link section.
+-----------------------------------------------------------
+'''
 
-# ##__________End of Rd section___________## #
+'''
+-----------------------------------------------------------
+Get Rs 'book value':
+-----------------------------------------------------------
+'''
+Rs_0 = {}  # Dict to hold all Rs info.
+q_Rs = f"SELECT * FROM Res_Info WHERE R_Name='{Rs_name}';"
+curs.execute(q_Rs)
+Rs_rows = curs.fetchall()
+for r in Rs_rows:
+    param = r[1]
+    val = r[2]
+    unc = r[3]
+    df = r[4]
+    lbl = r[5]
+    if param == 'Cal_Date':
+        Rs_0.update({param: val})
+    elif df is None:
+        Rs_0.update({param: gtc.ureal(val, unc, label=lbl)})
+    else:
+        Rs_0.update({param: gtc.ureal(val, unc, df, label=lbl)})
 
+# Some resistors have no 2nd-order TCo (beta) listed in database, so
+# need to account for that by manually adding a zero-valued beta to
+# Rs_0 dictionary:
 
+if 'beta' not in Rs_0:
+    Rs_0.update({'beta': gtc.ureal(0, 0, label=f'{Rs_name}_beta')})
 
-# ------------------------------------------------------------------- #
-# _____________Extract resistor and instrument parameters____________ #
+'''
+-----------------------------------------------------------
+End of Rs section.
+-----------------------------------------------------------
+'''
 
-# print('Reading parameters...')
-# log.write('Reading parameters...')
-# headings = (u'Resistor Info:', u'Instrument Info:',
-#             u'description', u'parameter', u'value',
-#             u'uncert', u'dof', u'label', u'Comment / Reference')
+'''
+-----------------------------------------------------------
+Loop over measurements.
+- Process raw data for all 4 reversals in each measurement,
+- Calculate result,
+- Write result to 'Results' table.
+-----------------------------------------------------------
+'''
+# Determine number of measurements in this run:
+q_get_n_meas = ("SELECT DISTINCT Meas_No FROM Raw_Data WHERE "
+                f"Run_Id='{runid}' ORDER BY Meas_No DESC LIMIT 1;")
+curs.execute(q_get_n_meas)
+row = curs.fetchone()
+n_meas = row[0]
 
-# Determine colummn indices from column letters:
-# col_A = utils.cell.column_index_from_string('A') - 1
-# col_B = utils.cell.column_index_from_string('B') - 1
-# col_C = utils.cell.column_index_from_string('C') - 1
-# col_D = utils.cell.column_index_from_string('D') - 1
-# col_E = utils.cell.column_index_from_string('E') - 1
-# col_F = utils.cell.column_index_from_string('F') - 1
-# col_G = utils.cell.column_index_from_string('G') - 1
-#
-# col_I = utils.cell.column_index_from_string('I') - 1
-# col_J = utils.cell.column_index_from_string('J') - 1
-# col_K = utils.cell.column_index_from_string('K') - 1
-# col_L = utils.cell.column_index_from_string('L') - 1
-# col_M = utils.cell.column_index_from_string('M') - 1
-# col_N = utils.cell.column_index_from_string('N') - 1
-# col_O = utils.cell.column_index_from_string('O') - 1
+# Loop over measurements:
+for meas_no in range(1, n_meas+1):  # 1 to <max meas_no>
+    # Return the 4 reversals for this measurement, in order:
+    q_get_revs = (f"SELECT * FROM Raw_Data WHERE Run_Id='{runid}' "
+                  f"AND Meas_No={meas_no} ORDER BY Rev_No ASC;")
+    curs.execute(q_get_revs)
+    rows = curs.fetchall()
 
-R_params = []
-R_row_items = []
-I_params = []
-I_row_items = []
-R_values = []
-I_values = []
-R_DESCR = []
-I_DESCR = []
-R_sublist = []
-I_sublist = []
-last_I_row = last_R_row = 0
+    V1_times = []
+    V1_lst = []  # list of ureals
+    V2_times = []
+    V2_lst = []  # list of ureals
+    Vd_times = []
+    Vd_lst = []  # list of ureals
+    T1_lst = []
+    T2_lst = []
+    T_room_lst = []
+    P_room_lst = []
+    RH_room_lst = []
+    # Loop over reversals in this measurement:
+    for rev in rows:
+        rev_no = rev[2]
+        V1set = row[3]
+        V2set = row[4]
+        n = row[5]
+        V1_times.append(row[9])
+        V1_lst.append(gtc.ureal(row[10], row[11], n_reads - 1,
+                                label=f'V1_{rev_no}_meas{meas_no}_{runid}'))
+        Vd_times.append(row[12])
+        Vd_lst.append(gtc.ureal(row[13], row[14], n_reads - 1,
+                                label=f'Vd_{rev_no}_meas{meas_no}_{runid}'))
+        V2_times.append(row[15])
+        V2_lst.append(gtc.ureal(row[16], row[17], n_reads - 1,
+                                label=f'V2_{rev_no}_meas{meas_no}_{runid}'))
+        T1_lst.append(row[18])
+        T2_lst.append(row[19])
+        T_room_lst.append(row[20])
+        P_room_lst.append(row[21])
+        RH_room_lst.append(row[22])
 
-for r in ws_Params.rows:  # a tuple of row objects
-    R_end = 0
+    '''
+    -----------------------------------------------------------
+     Calculate Rx (= R1)...
+    -----------------------------------------------------------
+    '''
+    # ... start by calculating Rs influences:
 
-    # description, parameter, value, uncert, dof, label:
-    R_row_items = [r[col_A].value, r[col_B].value, r[col_C].value,
-                   r[col_D].value, r[col_E].value, r[col_F].value,
-                   r[col_G].value]
+    # T offset:
+    T_av2 = gtc.ta.estimate(T2_lst)  # Seq of raw data -> ureal.
+    dT = T_av2 - Rs_0['TRef']
+    # V offset:
+    V_av2 = gtc.fn.mean(V2_lst)  # seq of ureals -> ureal.
+    dV = V_av2 - Rs_0['VRef']
+    # Time offset:
+    t_av_dt = R_info.av_t_dt(V1_times + V2_times + Vd_times)
+    Rs_0_dt = dt.datetime.strptime(Rs_0['Cal_Date'], DT_FORMAT)  # Convert string to datetime obj.
+    diff = t_av_dt - Rs_0_dt  # A timedelta obj.
+    dt_days = diff.days + diff.seconds/86400
+    # Now we can calculate Rs:
+    Rs = Rs_0['R0']*(1 + Rs_0['alpha']*dT +
+                     Rs_0['beta']*dT**2 +
+                     Rs_0['gamma']*dV +
+                     Rs_0['tau']*dt_days)
 
-    I_row_items = [r[col_I].value, r[col_J].value, r[col_K].value,
-                   r[col_L].value, r[col_M].value, r[col_N].value,
-                   r[col_O].value]
+    # Next, calculate Rx influences:
+    # Define drift
+    drift_unc = abs(Vd_lst[2].x - (Vd_lst[0].x + ((Vd_lst[3].x - Vd_lst[2].x)/(V2_lst[3].x - V2_lst[2].x))*(V2_lst[2].x - V2_lst[0].x))) / 4
+    Vdrift1 = gtc.ureal(0, gtc.tb.distribution['gaussian'](drift_unc), 8,
+                        label='Vdrift_pert ' + runid)
+    Vdrift2 = gtc.ureal(0, gtc.tb.distribution['gaussian'](drift_unc), 8,
+                        label='Vdrift_Vdav ' + runid)
 
-    if R_row_items[0] is None:  # end of R_list
-        R_end = 1
+    Vdrift = {'pert': Vdrift1, 'Vdav': Vdrift2}
+    # influencies.extend([Vdrift['pert'], Vdrift['Vdav']])  # R2 dependancies
 
-    # check this row for heading text
-    if any(i in I_row_items for i in headings):
-        continue  # Skip headings
+    # Mean voltages
+    V1av = (V1[0] - 2 * V1[1] + V1[2]) / 4
+    V2av = (V2[0] - 2 * V2[1] + V2[2]) / 4
+    Vdav = (Vd[0] - 2 * Vd[1] + Vd[2]) / 4 + Vlin_Vdav + Vdrift['Vdav']
 
-    else:  # not header - main data
-        # Get instrument parameters first...
-        last_I_row = r[col_I].row
-        I_params.append(I_row_items[1])
-        I_values.append(R_info.uncertainize(I_row_items))
-        if I_row_items[1] == u'test':  # last parameter for this description
-            I_DESCR.append(I_row_items[0])  # build description list
-            I_sublist.append(dict(zip(I_params,I_values)))  # add parameter dictionary to sublist
-            del I_params[:]
-            del I_values[:]
+    # Effect of v2 perturbation
+    delta_Vd = Vd[3] - Vd[2] + Vlin_pert + Vdrift['pert']
+    delta_V2 = V2[3] - V2[2]
 
-        # Now attend to resistor parameters...
-        if R_end == 0:  # Check we're not at the end of resistor data-block
-            last_R_row = r[col_A].row  # Need to know this if we write more data, post-analysis
-            R_params.append(R_row_items[1])
-            R_values.append(R_info.uncertainize(R_row_items))
-            if R_row_items[1] == u'T_sensor':  # last parameter for this description
-                R_DESCR.append(R_row_items[0])  # build description list
-                R_sublist.append(dict(zip(R_params, R_values)))  # add parameter dictionary to sublist
-                del R_params[:]
-                del R_values[:] 
-
-# Compile into dictionaries
-"""
-There are two dictionaries; one for instruments (I_INFO) and one for resistors
-(R_INFO). Each dictionary item is keyed by the description (name) of the
-instrument (resistor). Each dictionary value is itself a dictionary, keyed by
-parameter, such as 'address' (for an instrument) or 'R_LV' (for a resistor
-value, measured at 'Low Voltage').
-
-"""
-
-I_INFO = dict(zip(I_DESCR, I_sublist))
-print('Found {} instruments ({} rows)'.format(len(I_INFO), last_I_row))
-log.write('\nFound {} instruments ({} rows)'.format(len(I_INFO), last_I_row))
-
-R_INFO = dict(zip(R_DESCR, R_sublist))
-print('Found {} resistors ({} rows)'.format(len(R_INFO), last_R_row))
-log.write('\nFound {} resistors ({} rows)'.format(len(R_INFO), last_R_row))
-
-# -------------End of parameter extraction-------------- #
-# ###################################################### #
-
-
-# Determine the meanings of 'LV' and 'HV'
-V1set_a = abs(ws_Data['A'+str(Data_start_row)].value)
-assert V1set_a is not None, 'Missing initial V1 value!'
-V1set_b = abs(ws_Data['A'+str(Data_start_row+4)].value)
-assert V1set_b is not None, 'Missing fifth V1 value!'
-
-if V1set_a < V1set_b:
-    LV = V1set_a
-    HV = V1set_b
-elif V1set_b < V1set_a:
-    LV = V1set_b
-    HV = V1set_a
-else:  # 'HV' and 'LV'  are equal.
-    LV = HV = V1set_a
-print('LV = {}; HV = {}'.format(LV, HV))
-
-# Set up reading of Data sheet
-Data_row = Data_start_row
-
-# Get start_row on Summary sheet
-summary_start_row = ws_Summary['B1'].value
-assert summary_start_row is not None, 'Missing start row on Results sheet!'
-
-# Get run identifier and copy to Summary sheet
-Run_Id = ws_Data['B'+str(Data_start_row-1)].value
-assert Run_Id is not None, 'Missing Run Id!'
-
-ws_Summary['C'+str(summary_start_row)] = 'Run Id:'
-ws_Summary['D'+str(summary_start_row)] = str(Run_Id)
-
-# Get run comment and extract R names & R values
-Data_comment = ws_Data['Z'+str(Data_row)].value
-assert Data_comment is not None, 'Missing Comment!'
-
-print(Data_comment)
-log.write('\n' + Data_comment)
-print('Run Id:', Run_Id)
-log.write('\nRun Id: ' + Run_Id)
-
-# Write headings
-summary_row = R_info.write_headings(ws_Summary, summary_start_row, VERSION)
-
-# Lists of dictionaries...
-# ...(with name,time,Resistance,Temperature,Voltage entries).
-results_HV = []  # High voltage measurements
-results_LV = []  # Low voltage measurements
-
-# Get resistor names and values
-R1_name, R2_name = R_info.extract_names(Data_comment)
-R1val = R_info.get_r_val(R1_name)
-R2val = R_info.get_r_val(R2_name)
-
-# Check for knowledge of R2:
-if R2_name not in R_INFO:
-    sys.exit('ERROR - Unknown Rs: {}'.format(R2_name))
-
-
+# #     sys.exit('ERROR - Unknown Rs: {}'.format(R2_name))
 
 raw_gmh1 = []
 raw_gmh2 = []
@@ -304,32 +278,30 @@ RHs = []
 Ps = []
 Ts = []
 
-##############################
-# ___Loop over data rows ___ #
-print('\nLooping over data rows {} to {}...'.format(Data_start_row,Data_stop_row))
-log.write('\nLooping over data rows {} to {}...'.format(Data_start_row,Data_stop_row))
-while Data_row <= Data_stop_row:
-    # R2 parameters:
-    V2set = ws_Data['B'+str(Data_row)].value  # Changed from Data_start_row!
-    assert V2set is not None, 'Missing V2 setting!'
-    V1set = ws_Data['A'+str(Data_row)].value  # Changed from Data_start_row!
-    assert V1set is not None, 'Missing V1 setting!'
-
-    # Select R2 info based on applied voltage ('LV' or 'HV')
-    Vdif_LV = abs(abs(V2set)-R_INFO[R2_name]['VRef_LV'])
-    Vdif_HV = abs(abs(V2set)-R_INFO[R2_name]['VRef_HV'])
-    if Vdif_LV < Vdif_HV:
-        R2_0 = R_INFO[R2_name]['R0_LV']
-        R2TRef = R_INFO[R2_name]['TRef_LV']
-        R2VRef = R_INFO[R2_name]['VRef_LV']
-    elif Vdif_LV > Vdif_HV:
-        R2_0 = R_INFO[R2_name]['R0_HV']
-        R2TRef = R_INFO[R2_name]['TRef_HV']
-        R2VRef = R_INFO[R2_name]['VRef_HV']
-    else:
-        R2_0 = R_INFO[R2_name]['R0_LV']
-        R2TRef = R_INFO[R2_name]['TRef_LV']
-        R2VRef = R_INFO[R2_name]['VRef_LV']
+# print('\nLooping over data rows {} to {}...'.format(Data_start_row,Data_stop_row))
+# log.write('\nLooping over data rows {} to {}...'.format(Data_start_row,Data_stop_row))
+# while Data_row <= Data_stop_row:
+#     # R2 parameters:
+#     V2set = ws_Data['B'+str(Data_row)].value  # Changed from Data_start_row!
+#     assert V2set is not None, 'Missing V2 setting!'
+#     V1set = ws_Data['A'+str(Data_row)].value  # Changed from Data_start_row!
+#     assert V1set is not None, 'Missing V1 setting!'
+#
+#     # Select R2 info based on applied voltage ('LV' or 'HV')
+#     Vdif_LV = abs(abs(V2set)-R_INFO[R2_name]['VRef_LV'])
+#     Vdif_HV = abs(abs(V2set)-R_INFO[R2_name]['VRef_HV'])
+#     if Vdif_LV < Vdif_HV:
+#         R2_0 = R_INFO[R2_name]['R0_LV']
+#         R2TRef = R_INFO[R2_name]['TRef_LV']
+#         R2VRef = R_INFO[R2_name]['VRef_LV']
+#     elif Vdif_LV > Vdif_HV:
+#         R2_0 = R_INFO[R2_name]['R0_HV']
+#         R2TRef = R_INFO[R2_name]['TRef_HV']
+#         R2VRef = R_INFO[R2_name]['VRef_HV']
+#     else:
+#         R2_0 = R_INFO[R2_name]['R0_LV']
+#         R2TRef = R_INFO[R2_name]['TRef_LV']
+#         R2VRef = R_INFO[R2_name]['VRef_LV']
 
 
     # Select appropriate value of VRC, etc.
@@ -348,10 +320,18 @@ while Data_row <= Data_stop_row:
     V2rnd = math.pow(10, round(math.log10(abs(V2set))))  # Rnd to nearest 10-pwr
     V1rnd = math.pow(10, round(math.log10(abs(V1set))))
     if 'AUTO' in range_mode:
+        '''
+        Set ranges = to rounded V setting.
+        I.e: V1range = V1rnd; V2range = V2rnd
+        '''
         G2_code = R_info.Vgain_codes_auto[V2rnd]
         G1_code = R_info.Vgain_codes_auto[V1rnd]
     else:  # 'FIXED'
-        if round(V1set) >= round(abs(V2set)):
+        '''
+        Set both ranges = to highest V setting.
+        I.e: V1range = V2range = max(V1rnd, v2rnd)
+        '''
+        if round(abs(V1set)) >= round(abs(V2set)):
             G1_code = R_info.Vgain_codes_auto[V1rnd]
             G2_code = R_info.Vgain_codes_fixed[V2rnd]
         else:
@@ -547,10 +527,10 @@ while Data_row <= Data_stop_row:
     influencies.extend(V1+V2+Vd)  # R2 dependancies - raw measurements
 
     # Define drift
-    uncert = abs(Vd[2]-(Vd[0]+((Vd[3]-Vd[2])/(V2[3]-V2[2]))*(V2[2]-V2[0])))/4
-    Vdrift1 = GTC.ureal(0, GTC.tb.distribution['gaussian'](uncert), 8,
+    drift_unc = abs(Vd[2] - (Vd[0] + ((Vd[3] - Vd[2]) / (V2[3] - V2[2])) * (V2[2] - V2[0]))) / 4
+    Vdrift1 = GTC.ureal(0, GTC.tb.distribution['gaussian'](drift_unc), 8,
                         label='Vdrift_pert ' + Run_Id)
-    Vdrift2 = GTC.ureal(0, GTC.tb.distribution['gaussian'](uncert), 8,
+    Vdrift2 = GTC.ureal(0, GTC.tb.distribution['gaussian'](drift_unc), 8,
                         label='Vdrift_Vdav ' + Run_Id)
 
     Vdrift = {'pert': Vdrift1, 'Vdav': Vdrift2}
