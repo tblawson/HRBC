@@ -27,6 +27,7 @@ This branch started: Tues Aug 18 21:48 2020
 """
 
 import os
+import logging
 import sys
 # sys.path.append("C:\Python27\Lib\site-packages\GTC")
 
@@ -47,8 +48,12 @@ RLINK_MAX = 2000  # Ohms
 
 datadir = r'G:\My Drive'
 
+# _________________Set up logging:_________________
+
 logname = R_info.make_log_name(VERSION)
-logfile = os.path.join(datadir, logname)
+logging.basicConfig(logname, format='%(asctime)s %(levelname)s: %(message)s', level=logging.INFO)
+logging.info('Starting...')
+# logfile = os.path.join(datadir, logname)
 log = open(logfile, 'a')
 
 # _________________Connect to Resistors.db database:________________
@@ -72,6 +77,7 @@ GMH2_correction = R_info.get_GMH_correction(curs, run_info['GMH2'])
 Rd = R_info.get_Rlink(curs, runid, run_info)  # ***** R1 INFLUENCE! *****
 print(f'\nRlink = {Rd.x} +/- {Rd.u}, dof = {Rd.df}')
 assert Rd.x < RLINK_MAX, f'High link resistance! {Rd.x} Ohm'
+logging.info(f'\nRlink = {Rd.x} +/- {Rd.u}, dof = {Rd.df}')
 log.write(f'\nRlink = {Rd.x} +/- {Rd.u}, dof = {Rd.df}')
 
 # ________Start list of R1-influence variables (for budget)_______
@@ -240,12 +246,16 @@ for meas_no in range(1, n_meas+1):  # 1 to <max meas_no>
     # _____________________Calculate R1:_____________________
     R1 = Rs*vrc*V1av* delta_Vd / (Vdav*delta_V2 - V2av*delta_Vd)
     print('R1 = {} +/- {}, dof = {}'.format(R1.x, R1.u, R1.df))
-    # frac_err = abs(R1.x - R1val) / R1val
-    # assert frac_err < FRAC_TOLERANCE['R1'], 'R1 > 1000 ppm from nominal ({})!'.format(frac_err)
+    logging.info(f'R1 = {R1.x} +/- {R1.u}, dof = {R1.df}')
+
+    R1val = R_info.get_r_val(run_info['Rx_name'])
+    frac_err = abs(R1.x - R1val) / R1val
+    assert frac_err < FRAC_TOLERANCE['R1'], f'R1 > 1000 ppm from nominal ({frac_err})!'
 
     # ____Corrected R1 temperature, including definition uncert.:____
     T1 = T_av1 + T_def
     print(f"{R1} at temperature {T1}")
+    logging.info(f'{R1} at temperature {T1}')
     calc_note = (f"Processed with HRBA v{VERSION} on "
                  f"{dt.datetime.now().strftime('%A, %d. %B %Y %I:%M%p')}")
 
@@ -278,7 +288,6 @@ db_connection.commit()
 curs.close()
 
 print('_____________HRBA DONE_______________')
+logging.info('_____________HRBA DONE_______________')
 
 
-log.write('\n_____________HRBA DONE_______________\n\n')
-log.close()

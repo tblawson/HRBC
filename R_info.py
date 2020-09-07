@@ -14,6 +14,7 @@ import math
 import xlrd
 from openpyxl.styles import Font, colors, PatternFill, Border, Side
 import GTC as gtc
+import logging
 
 RL_SEARCH_LIMIT = 500
 
@@ -80,7 +81,6 @@ def get_Rlink(curs, runid, run_info):
         V2 = row[3]
         Vpos_lst.append(row[4])
         Vneg_lst.append(row[5])
-
     '''
     Define nom_R, abs_V quantities. Assume all 'nominal' values
     have 100 ppm std.uncert. with 8 dof.
@@ -205,21 +205,21 @@ def write_budget_line(curs, i, R1, result):
     curs.execute(q_write_budget)
 
 
-def get_rlink_startrow(sheet, id, jump, log):
-    search_row = 1
-    while search_row < RL_SEARCH_LIMIT:  # Don't search forever.
-        result = sheet['A'+str(search_row)].value  # scan down column A
-        if result == 'Run Id:':
-            RL_Id = sheet['B'+str(search_row)].value  # Find a run Id
-            if RL_Id == id:  # Found the right data, so we're done.
-                RL_start = search_row + 1  # 1st line of Rlink data's header (excl Id)
-                return RL_start
-            else:  # Jump to just before start of next data-block
-                search_row += jump
-        search_row += 1
-    print('No matching Rlink data!')
-    log.write('GetRLstartrow(): No matching Rlink data!\n')
-    return -1
+# def get_rlink_startrow(sheet, id, jump, log):
+#     search_row = 1
+#     while search_row < RL_SEARCH_LIMIT:  # Don't search forever.
+#         result = sheet['A'+str(search_row)].value  # scan down column A
+#         if result == 'Run Id:':
+#             RL_Id = sheet['B'+str(search_row)].value  # Find a run Id
+#             if RL_Id == id:  # Found the right data, so we're done.
+#                 RL_start = search_row + 1  # 1st line of Rlink data's header (excl Id)
+#                 return RL_start
+#             else:  # Jump to just before start of next data-block
+#                 search_row += jump
+#         search_row += 1
+#     print('No matching Rlink data!')
+#     log.write('GetRLstartrow(): No matching Rlink data!\n')
+#     return -1
 
 
 def uncertainize(row_items):
@@ -241,25 +241,25 @@ def uncertainize(row_items):
         return v
 
 
-def R_to_T(alpha, beta, R, R0, T0):
-    """
-    Convert a resistive T-sensor reading from resistance to temperature.
-
-    :parameter alpha (ureal) - temperature coefficient.
-    :parameter beta (ureal) - second-order temperature coefficient.
-    :parameter r (ureal) - resistance reading.
-    :parameter r0 (ureal) - calibration value of resistance.
-    :parameter T0 (ureal) - calibration value of temperature.
-    :return T (ureal) - temperature (deg C)
-    """
-    if beta == 0:  # no 2nd-order T-Co
-        T = (R / R0 - 1) / alpha + T0
-    else:
-        a = beta
-        b = alpha-2*T0
-        c = 1-alpha*T0 + beta*T0**2 - (R / R0)
-        T = (-b + gtc.sqrt(b**2-4*a*c))/(2*a)
-    return T
+# def R_to_T(alpha, beta, R, R0, T0):
+#     """
+#     Convert a resistive T-sensor reading from resistance to temperature.
+#
+#     :parameter alpha (ureal) - temperature coefficient.
+#     :parameter beta (ureal) - second-order temperature coefficient.
+#     :parameter r (ureal) - resistance reading.
+#     :parameter r0 (ureal) - calibration value of resistance.
+#     :parameter T0 (ureal) - calibration value of temperature.
+#     :return T (ureal) - temperature (deg C)
+#     """
+#     if beta == 0:  # no 2nd-order T-Co
+#         T = (R / R0 - 1) / alpha + T0
+#     else:
+#         a = beta
+#         b = alpha-2*T0
+#         c = 1-alpha*T0 + beta*T0**2 - (R / R0)
+#         T = (-b + gtc.sqrt(b**2-4*a*c))/(2*a)
+#     return T
 
 
 def av_t_dt(t_str_lst):
@@ -308,101 +308,101 @@ def av_t_string(t_list, switch):
         return t_av_fl.strftime('%d/%m/%Y %H:%M:%S')  # av. time as string
 
 
-def write_headings(sheet, row, version):
-    """
-    Write headings on Summary sheet.
-    """
-    now = dt.datetime.now()
-    sheet['A'+str(row-1)].font = Font(b=True)
-    sheet['A'+str(row-1)] = 'Processed with HRBA v'+str(version)+' on '+now.strftime("%A, %d. %B %Y %I:%M%p")
-    sheet['J'+str(row)] = 'Uncertainty Budget'
-
-    sheet['R'+str(row)] = 'R1(T)'
-    sheet['U'+str(row)] = 'exp. U(95%)'
-    sheet['V'+str(row)] = 'av T'
-    sheet['Y'+str(row)] = 'av date/time'
-    sheet['Z'+str(row)] = 'av V'
-    row += 1
-    sheet['A'+str(row)] = 'Name'
-    sheet['B'+str(row)] = 'Test V'
-    sheet['C'+str(row)] = 'Date'
-    sheet['D'+str(row)] = 'T'
-    sheet['E'+str(row)] = 'R1'
-    sheet['F'+str(row)] = 'std u.'
-    sheet['G'+str(row)] = 'dof'
-    sheet['H'+str(row)] = 'exp. U(95%)'
-    sheet['J'+str(row)] = 'Quantity (Label)'
-    sheet['K'+str(row)] = 'Value'
-    sheet['L'+str(row)] = 'Std u'
-    sheet['M'+str(row)] = 'dof'
-    sheet['N'+str(row)] = 'sens. coef.'
-    sheet['O'+str(row)] = 'u contrib.'
-
-    sheet['Q'+str(row)] = 'LV'
-    row += 1
-    sheet['Q'+str(row)] = 'HV'
-
-    return row
-
-
-def write_this_result(sheet, row, result):
-    """
-    Write measurement summary
-    """
-    sheet['A'+str(row)].font = Font(color=colors.Color(indexed=5))  # Yellow
-    sheet['A'+str(row)].fill = PatternFill(patternType='solid', fgColor=colors.Color(indexed=2))  # Red
-    sheet['A'+str(row)] = str(result['name'])
-
-    sheet['B'+str(row)] = result['V'].x
-    sheet['B'+str(row+1)] = result['V'].u
-    sheet['B'+str(row+2)] = result['V'].df
-
-    sheet['C'+str(row)] = str(result['time_str'])
-
-    sheet['D'+str(row)] = result['T'].x
-    sheet['D'+str(row+1)] = result['T'].u
-    sheet['D'+str(row+2)] = result['T'].df
-
-    sheet['E'+str(row)] = result['R'].x
-
-    sheet['F'+str(row)] = result['R'].u
-
-    if math.isinf(result['R'].df):
-        sheet['G'+str(row)] = str(result['R'].df)
-    else:
-        sheet['G'+str(row)] = round(result['R'].df)
-
-    # Exp Uncert:
-    sheet['H'+str(row)] = result['R_expU']
+# def write_headings(sheet, row, version):
+#     """
+#     Write headings on Summary sheet.
+#     """
+#     now = dt.datetime.now()
+#     sheet['A'+str(row-1)].font = Font(b=True)
+#     sheet['A'+str(row-1)] = 'Processed with HRBA v'+str(version)+' on '+now.strftime("%A, %d. %B %Y %I:%M%p")
+#     sheet['J'+str(row)] = 'Uncertainty Budget'
+#
+#     sheet['R'+str(row)] = 'R1(T)'
+#     sheet['U'+str(row)] = 'exp. U(95%)'
+#     sheet['V'+str(row)] = 'av T'
+#     sheet['Y'+str(row)] = 'av date/time'
+#     sheet['Z'+str(row)] = 'av V'
+#     row += 1
+#     sheet['A'+str(row)] = 'Name'
+#     sheet['B'+str(row)] = 'Test V'
+#     sheet['C'+str(row)] = 'Date'
+#     sheet['D'+str(row)] = 'T'
+#     sheet['E'+str(row)] = 'R1'
+#     sheet['F'+str(row)] = 'std u.'
+#     sheet['G'+str(row)] = 'dof'
+#     sheet['H'+str(row)] = 'exp. U(95%)'
+#     sheet['J'+str(row)] = 'Quantity (Label)'
+#     sheet['K'+str(row)] = 'Value'
+#     sheet['L'+str(row)] = 'Std u'
+#     sheet['M'+str(row)] = 'dof'
+#     sheet['N'+str(row)] = 'sens. coef.'
+#     sheet['O'+str(row)] = 'u contrib.'
+#
+#     sheet['Q'+str(row)] = 'LV'
+#     row += 1
+#     sheet['Q'+str(row)] = 'HV'
+#
+#     return row
 
 
-def by_u_cont(line):
-    """Sorting helper function - sort by uncert. contribution"""
-    return line[5]
+# def write_this_result(sheet, row, result):
+#     """
+#     Write measurement summary
+#     """
+#     sheet['A'+str(row)].font = Font(color=colors.Color(indexed=5))  # Yellow
+#     sheet['A'+str(row)].fill = PatternFill(patternType='solid', fgColor=colors.Color(indexed=2))  # Red
+#     sheet['A'+str(row)] = str(result['name'])
+#
+#     sheet['B'+str(row)] = result['V'].x
+#     sheet['B'+str(row+1)] = result['V'].u
+#     sheet['B'+str(row+2)] = result['V'].df
+#
+#     sheet['C'+str(row)] = str(result['time_str'])
+#
+#     sheet['D'+str(row)] = result['T'].x
+#     sheet['D'+str(row+1)] = result['T'].u
+#     sheet['D'+str(row+2)] = result['T'].df
+#
+#     sheet['E'+str(row)] = result['R'].x
+#
+#     sheet['F'+str(row)] = result['R'].u
+#
+#     if math.isinf(result['R'].df):
+#         sheet['G'+str(row)] = str(result['R'].df)
+#     else:
+#         sheet['G'+str(row)] = round(result['R'].df)
+#
+#     # Exp Uncert:
+#     sheet['H'+str(row)] = result['R_expU']
 
 
-def write_budget(sheet, row, budget):
-    for line in budget:
-        sheet['J'+str(row)] = line[0]  # Quantity (label)
-        sheet['K'+str(row)] = line[1]  # Value
-        sheet['L'+str(row)] = line[2]  # Uncert.
-        if math.isinf(line[3]):
-            sheet['M'+str(row)] = str(line[3])  # dof
-        else:
-            sheet['M'+str(row)] = round(line[3])  # dof
-        sheet['N'+str(row)] = line[4]  # Sens. coef.
-        sheet['O'+str(row)] = line[5]  # Uncert. contrib.
-        row += 1
-    return row
+# def by_u_cont(line):
+#     """Sorting helper function - sort by uncert. contribution"""
+#     return line[5]
 
 
-def add_if_unique(item, lst):
-    """
-    Append 'item' to 'lst' only if it is not already present.
-    """
-    if item not in lst:
-        lst.append(item)
-    return lst
+# def write_budget(sheet, row, budget):
+#     for line in budget:
+#         sheet['J'+str(row)] = line[0]  # Quantity (label)
+#         sheet['K'+str(row)] = line[1]  # Value
+#         sheet['L'+str(row)] = line[2]  # Uncert.
+#         if math.isinf(line[3]):
+#             sheet['M'+str(row)] = str(line[3])  # dof
+#         else:
+#             sheet['M'+str(row)] = round(line[3])  # dof
+#         sheet['N'+str(row)] = line[4]  # Sens. coef.
+#         sheet['O'+str(row)] = line[5]  # Uncert. contrib.
+#         row += 1
+#     return row
+
+
+# def add_if_unique(item, lst):
+#     """
+#     Append 'item' to 'lst' only if it is not already present.
+#     """
+#     if item not in lst:
+#         lst.append(item)
+#     return lst
 
 
 def write_R1_T_fit(results, sheet, row, log):
