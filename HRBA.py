@@ -14,11 +14,11 @@ the 'Raw_Rlink_Data' table for a block of Rlink data that has a matching
 run ID and uses this information to calculate the link resistance Rd.
 
 The temperature definition uncertainty of GMH readings of resistor
-temperatures defaults to 0 +/- 0.01 C with 4degrees of freedom.
+temperatures defaults to 0 +/- 0.05 C with 4 degrees of freedom.
 
 The multiple results from one analysis run are added to the 'Results'
 table. For each result record, an uncertainty budget is compiled and
-recorded in the 'Uncert_Contribs' table.
+recorded in the 'Uncert_Contribs' table - one record for each contribution.
 
 Created on Fri Sep 18 14:01:18 2015
 This branch started: Tues Aug 18 21:48 2020
@@ -38,7 +38,7 @@ import sqlite3
 
 import R_info  # useful functions
 
-VERSION = 2.1  # 2nd Python 3 version.
+VERSION = 2.1  # 2nd Python 3 version, 1st db-based version.
 DT_FORMAT = R_info.DT_FORMAT  # '%Y-%m-%d %H:%M:%S'
 # DVM, GMH Correction factors, etc.
 ZERO = gtc.ureal(0, 0)
@@ -51,121 +51,38 @@ logname = R_info.make_log_name(VERSION)
 logfile = os.path.join(datadir, logname)
 log = open(logfile, 'a')
 
-# now_tup = dt.datetime.now()
-# now_fmt = now_tup.strftime('%Y-%m-%d %H:%M:%S')
-# log.write(now_fmt + '\n' + xlfile + '\n')
-
-# Connect to Resistors.db database:
+# _________________Connect to Resistors.db database:________________
 db_path = input('Full Resistors.db path? (press "d" for default location) >')
 if db_path == 'd':
     db_path = r'G:\My Drive\Resistors.db'  # Default location.
 db_connection = sqlite3.connect(db_path)
 curs = db_connection.cursor()
 
+# _________________________Get run info:___________________________
 runid = input('Run_id to analyse? > ')
+run_info = R_info.get_run_info(curs, runid)
 
-# Get run info:
-q_run = f"SELECT * FROM Runs WHERE Run_Id='{runid}';"
-curs.execute(q_run)
-row = curs.fetchone()  # Should only be one row
-assert row != None, 'Error! Run_Id not found!'
-comment = row[1]
-Rs_name = row[2]
-Rx_name = row[3]
-range_mode = row[4]
-SRC1 = row[5]
-SRC2 = row[6]
-DVMd = row[7]
-DVM12 = row[8]
-GMH1 = row[9]
-GMH2 = row[10]
-GMHroom = row[11]
+# _____Import corrections for assigned DVMs and GMH probes:_____
+DVMd_params = R_info.get_DVM_corrections(curs, run_info['DVMd'])
+DVM12_params = R_info.get_DVM_corrections(curs, run_info['DVM12'])
+GMH1_correction = R_info.get_GMH_correction(curs, run_info['GMH1'])
+GMH2_correction = R_info.get_GMH_correction(curs, run_info['GMH2'])
 
-'''
------------------------------------------------------------
-Get R_link value (Rd):
------------------------------------------------------------
-'''
-# Read all raw Rlink data for this run:
-q_rlink_data = f"SELECT * FROM Raw_Rlink_Data WHERE Run_Id='{runid}';"
-curs.execute(q_rlink_data)
-rows = curs.fetchall()
-Vpos_lst = []
-Vneg_lst = []
-V1 = 0
-V2 = 0
-for row in rows:
-    n_reads = row[1]
-    V1 = row[2]
-    V2 = row[3]
-    Vpos_lst.append(row[4])
-    Vneg_lst.append(row[5])
-
-'''
-Define nom_R, abs_V quantities. Assume all 'nominal' values
-have 100 ppm std.uncert. with 8 dof.
-'''
-val1 = R_info.get_r_val(Rx_name)
-nom_R1 = gtc.ureal(val1, val1/1e4, 8, label='nom_R1')  # don't >know< uncertainty of nominal values
-val2 = R_info.get_r_val(Rs_name)
-nom_R2 = gtc.ureal(val2, val2/1e4, 8, label='nom_R2')  # don't >know< uncertainty of nominal values
-abs_V1 = gtc.ureal(V1, V1/1e4, 8, label='abs_V1')  # don't >know< uncertainty of nominal values
-abs_V2 = gtc.ureal(V2, V2/1e4, 8, label='abs_V2')  # don't >know< uncertainty of nominal values
-
-# Calculate I
-I = gtc.result((abs_V1 + abs_V2) / (nom_R1 + nom_R2), 'Rd_I ' + runid)
-
-# Average all +Vs and -Vs
-av_dV_p = gtc.result(gtc.ta.estimate(Vpos_lst), 'av_dV_p ' + runid)
-av_dV_n = gtc.result(gtc.ta.estimate(Vneg_lst), 'av_dV_n ' + runid)
-av_dV = gtc.result(0.5*gtc.magnitude(av_dV_p - av_dV_n), 'Rd_dV ' + runid)
-
-# Finally, calculate Rd
-Rd = gtc.result(av_dV/I, label='Rlink ' + runid)
+# _______________________Calculate R_link:_______________________
+Rd = R_info.get_Rlink(curs, runid, run_info)  # ***** R1 INFLUENCE! *****
 print(f'\nRlink = {Rd.x} +/- {Rd.u}, dof = {Rd.df}')
 assert Rd.x < RLINK_MAX, f'High link resistance! {Rd.x} Ohm'
 log.write(f'\nRlink = {Rd.x} +/- {Rd.u}, dof = {Rd.df}')
-'''
------------------------------------------------------------
-End of R_link section.
------------------------------------------------------------
-'''
 
-'''
------------------------------------------------------------
-Get Rs 'book value':
------------------------------------------------------------
-'''
-Rs_0 = {}  # Dict to hold all Rs info.
-q_Rs = f"SELECT * FROM Res_Info WHERE R_Name='{Rs_name}';"
-curs.execute(q_Rs)
-Rs_rows = curs.fetchall()
-for r in Rs_rows:
-    param = r[1]
-    val = r[2]
-    unc = r[3]
-    df = r[4]
-    lbl = r[5]
-    if param == 'Cal_Date':
-        Rs_0.update({param: val})
-    elif df is None:
-        Rs_0.update({param: gtc.ureal(val, unc, label=lbl)})
-    else:
-        Rs_0.update({param: gtc.ureal(val, unc, df, label=lbl)})
+# ________Start list of R1-influence variables (for budget)_______
+influences = [Rd]
 
-# Some resistors have no 2nd-order TCo (beta) listed in database, so
-# need to account for that by manually adding a zero-valued beta to
-# Rs_0 dictionary:
+# _____________________Get Rs 'book value':______________________
+Rs_0 = R_info.get_Rs0(curs, run_info['Rs_Name'])  # Dict to hold all Rs info.
 
-if 'beta' not in Rs_0:
-    Rs_0.update({'beta': gtc.ureal(0, 0, label=f'{Rs_name}_beta')})
-
-'''
------------------------------------------------------------
-End of Rs section.
------------------------------------------------------------
-'''
-
+# ____________Include influences from Rs book value:____________
+influences.extend([Rs_0['R0'], Rs_0['TRef'], Rs_0['VRef'], Rs_0['alpha'],
+                   Rs_0['beta'], Rs_0['gamma'], Rs_0['tau']])
 '''
 -----------------------------------------------------------
 Loop over measurements.
@@ -174,20 +91,17 @@ Loop over measurements.
 - Write result to 'Results' table.
 -----------------------------------------------------------
 '''
-# Determine number of measurements in this run:
-q_get_n_meas = ("SELECT DISTINCT Meas_No FROM Raw_Data WHERE "
-                f"Run_Id='{runid}' ORDER BY Meas_No DESC LIMIT 1;")
-curs.execute(q_get_n_meas)
-row = curs.fetchone()
-n_meas = row[0]
 
-# Loop over measurements:
+# ________Determine number of measurements in this run:_________
+n_meas = R_info.get_n_meas(curs, runid)
+
+# _____________Loop over measurements in this run:_____________
 for meas_no in range(1, n_meas+1):  # 1 to <max meas_no>
     # Return the 4 reversals for this measurement, in order:
     q_get_revs = (f"SELECT * FROM Raw_Data WHERE Run_Id='{runid}' "
                   f"AND Meas_No={meas_no} ORDER BY Rev_No ASC;")
     curs.execute(q_get_revs)
-    rows = curs.fetchall()
+    revs = curs.fetchall()
 
     V1_times = []
     V1_lst = []  # list of ureals
@@ -200,126 +114,97 @@ for meas_no in range(1, n_meas+1):  # 1 to <max meas_no>
     T_room_lst = []
     P_room_lst = []
     RH_room_lst = []
-    # Loop over reversals in this measurement:
-    for rev in rows:
-        rev_no = rev[2]
+    # ___________________4* reversals loop________________
+    for row in revs:
+        rev_no = row[2]
         V1set = row[3]
         V2set = row[4]
         n = row[5]
         V1_times.append(row[9])
-        V1_lst.append(gtc.ureal(row[10], row[11], n_reads - 1,
+        V1_lst.append(gtc.ureal(row[10], row[11], n - 1,
                                 label=f'V1_{rev_no}_meas{meas_no}_{runid}'))
         Vd_times.append(row[12])
-        Vd_lst.append(gtc.ureal(row[13], row[14], n_reads - 1,
+        Vd_lst.append(gtc.ureal(row[13], row[14], n - 1,
                                 label=f'Vd_{rev_no}_meas{meas_no}_{runid}'))
         V2_times.append(row[15])
-        V2_lst.append(gtc.ureal(row[16], row[17], n_reads - 1,
+        V2_lst.append(gtc.ureal(row[16], row[17], n - 1,
                                 label=f'V2_{rev_no}_meas{meas_no}_{runid}'))
         T1_lst.append(row[18])
         T2_lst.append(row[19])
         T_room_lst.append(row[20])
         P_room_lst.append(row[21])
         RH_room_lst.append(row[22])
+    # ___________________4* reversals loop________________
 
-    '''
-    -----------------------------------------------------------
-     Calculate Rx (= R1)...
-    -----------------------------------------------------------
-    '''
-    # ... start by calculating Rs influences:
-
-    # T offset:
-    T_av2 = gtc.ta.estimate(T2_lst)  # Seq of raw data -> ureal.
-    dT = T_av2 - Rs_0['TRef']
-    # V offset:
-    V_av2 = gtc.fn.mean(V2_lst)  # seq of ureals -> ureal.
-    dV = V_av2 - Rs_0['VRef']
-    # Time offset:
-    t_av_dt = R_info.av_t_dt(V1_times + V2_times + Vd_times)
-    Rs_0_dt = dt.datetime.strptime(Rs_0['Cal_Date'], DT_FORMAT)  # Convert string to datetime obj.
-    diff = t_av_dt - Rs_0_dt  # A timedelta obj.
-    dt_days = diff.days + diff.seconds/86400
-    # Now we can calculate Rs:
-    Rs = Rs_0['R0']*(1 + Rs_0['alpha']*dT +
-                     Rs_0['beta']*dT**2 +
-                     Rs_0['gamma']*dV +
-                     Rs_0['tau']*dt_days)
-
-    # Next, calculate Rx influences:
-    # Define drift
-    drift_unc = abs(Vd_lst[2].x - (Vd_lst[0].x + ((Vd_lst[3].x - Vd_lst[2].x)/(V2_lst[3].x - V2_lst[2].x))*(V2_lst[2].x - V2_lst[0].x))) / 4
+    # _________________Define drift:_________________
+    Vd_shift = Vd_lst[3].x - Vd_lst[2].x
+    V2_shift = V2_lst[3].x - V2_lst[2].x
+    V2_drift = V2_lst[2].x - V2_lst[0].x
+    Vd_drift = Vd_lst[2].x - Vd_lst[0].x
+    drift_unc = abs(Vd_drift + (Vd_shift/V2_shift)*V2_drift)/4
     Vdrift1 = gtc.ureal(0, gtc.tb.distribution['gaussian'](drift_unc), 8,
                         label='Vdrift_pert ' + runid)
     Vdrift2 = gtc.ureal(0, gtc.tb.distribution['gaussian'](drift_unc), 8,
                         label='Vdrift_Vdav ' + runid)
 
     Vdrift = {'pert': Vdrift1, 'Vdav': Vdrift2}
-    # influencies.extend([Vdrift['pert'], Vdrift['Vdav']])  # R2 dependancies
+    influences.extend([Vdrift['pert'], Vdrift['Vdav']])
 
-    # Mean voltages
-    V1av = (V1[0] - 2 * V1[1] + V1[2]) / 4
-    V2av = (V2[0] - 2 * V2[1] + V2[2]) / 4
-    Vdav = (Vd[0] - 2 * Vd[1] + Vd[2]) / 4 + Vlin_Vdav + Vdrift['Vdav']
+    # ________________Mean voltages:________________
+    V1av = (V1_lst[0] - 2 * V1_lst[1] + V1_lst[2]) / 4
+    V2av = (V2_lst[0] - 2 * V2_lst[1] + V2_lst[2]) / 4
+    Vlin_Vdav = DVMd_params['linearity_Vdav']
+    Vdav = (Vd_lst[0] - 2 * Vd_lst[1] + Vd_lst[2]) / 4 + Vlin_Vdav + Vdrift['Vdav']
 
-    # Effect of v2 perturbation
-    delta_Vd = Vd[3] - Vd[2] + Vlin_pert + Vdrift['pert']
-    delta_V2 = V2[3] - V2[2]
+    # _______________Effect of v2 perturbation:______________
+    Vlin_pert = DVMd_params['linearity_pert']
+    delta_Vd = Vd_lst[3] - Vd_lst[2] + Vlin_pert + Vdrift['pert']
+    delta_V2 = V2_lst[3] - V2_lst[2]
 
-# #     sys.exit('ERROR - Unknown Rs: {}'.format(R2_name))
+    influences.extend([Vlin_pert, Vlin_Vdav] + V1_lst[0:3] + V2_lst + Vd_lst)  # V1_lst[3] not used.
 
-raw_gmh1 = []
-raw_gmh2 = []
-T_dvm1 = []
-T_dvm2 = []
-R_dvm1 = []
-R_dvm2 = []
-times = []
-RHs = []
-Ps = []
-Ts = []
+    # ________________Calculate Rx (= R1)...______________
+    # ... Start by calculating Rs:
 
-# print('\nLooping over data rows {} to {}...'.format(Data_start_row,Data_stop_row))
-# log.write('\nLooping over data rows {} to {}...'.format(Data_start_row,Data_stop_row))
-# while Data_row <= Data_stop_row:
-#     # R2 parameters:
-#     V2set = ws_Data['B'+str(Data_row)].value  # Changed from Data_start_row!
-#     assert V2set is not None, 'Missing V2 setting!'
-#     V1set = ws_Data['A'+str(Data_row)].value  # Changed from Data_start_row!
-#     assert V1set is not None, 'Missing V1 setting!'
-#
-#     # Select R2 info based on applied voltage ('LV' or 'HV')
-#     Vdif_LV = abs(abs(V2set)-R_INFO[R2_name]['VRef_LV'])
-#     Vdif_HV = abs(abs(V2set)-R_INFO[R2_name]['VRef_HV'])
-#     if Vdif_LV < Vdif_HV:
-#         R2_0 = R_INFO[R2_name]['R0_LV']
-#         R2TRef = R_INFO[R2_name]['TRef_LV']
-#         R2VRef = R_INFO[R2_name]['VRef_LV']
-#     elif Vdif_LV > Vdif_HV:
-#         R2_0 = R_INFO[R2_name]['R0_HV']
-#         R2TRef = R_INFO[R2_name]['TRef_HV']
-#         R2VRef = R_INFO[R2_name]['VRef_HV']
-#     else:
-#         R2_0 = R_INFO[R2_name]['R0_LV']
-#         R2TRef = R_INFO[R2_name]['TRef_LV']
-#         R2VRef = R_INFO[R2_name]['VRef_LV']
+    # ______________Temperature offsets:________________
+    # Mean temperature from GMH probes.
+    # Define temperature definition of +/- 0.05 C to account for typical
+    # ...separation between resistor element and GMH probe:
+    T_def = gtc.ureal(0, gtc.type_b.distribution['gaussian'](0.05), 3,
+                          label='T_def ' + runid)
 
+    # Data are plain numbers (with digitization rounding),
+    # so use ta.estimate_digitized() to return a ureal...
+    T_av1 = gtc.result(gtc.ta.estimate_digitized(T1_lst, 0.01) + GMH1_correction + T_def,
+                       label='T1_av_gmh ' + runid)
+    T_av2 = gtc.result(gtc.ta.estimate_digitized(T2_lst, 0.01) + GMH2_correction + T_def,
+                       label=f'T2_av_gmh {runid}')
 
-    # Select appropriate value of VRC, etc.
-    """
-    #################################################################
-    NOTE: Now replace VRCs with individual gain factors for
-    each test-V (at mid- or top-of-range), on each instrument. Since
-    this matches available info in DMM cal. cert. and minimises the
-    number of possible values (ie: No. of test-Vs] < [No. of possible
-    voltage ratios]).
-    #################################################################
-    """
-#    G1_code = R_info.Vgain_codes_auto[round(V1set,1)]
-#    G1 = I_INFO[role_descr['DVM12']][G1_code]
+    dT = T_av2 - Rs_0['TRef']
 
+    influences.extend([T_av2, T_def])
+
+    # ____________________Time offset:____________________
+    t_av_dt = R_info.av_t_dt(V1_times + V2_times + Vd_times)  # Av time as datetime obj.
+    t_av_string = t_av_dt.strftime(DT_FORMAT)  # av. time as string
+    Rs_0_dt = dt.datetime.strptime(Rs_0['Cal_Date'], DT_FORMAT)  # Convert string to datetime obj.
+    diff = t_av_dt - Rs_0_dt  # A timedelta obj.
+    dt_days = diff.days + diff.seconds / 86400
+
+    # ___________V offset - define mean test-V:____________
+    # V_av2 = gtc.fn.mean(V2_lst)  # seq of ureals -> ureal.
+    dV = abs(V2av - Rs_0['VRef'])  # dV must be positive.
+
+    # ______Now we can calculate Rs (includes R_link):_______
+    Rs = Rd + Rs_0['R0']*(1 + Rs_0['alpha']*dT +
+                     Rs_0['beta']*dT**2 +
+                     Rs_0['gamma']*abs(dV) +
+                     Rs_0['tau']*dt_days)
+
+    # Next, calculate Rx influences:
     V2rnd = math.pow(10, round(math.log10(abs(V2set))))  # Rnd to nearest 10-pwr
     V1rnd = math.pow(10, round(math.log10(abs(V1set))))
-    if 'AUTO' in range_mode:
+    if 'AUTO' in run_info['range_mode']:
         '''
         Set ranges = to rounded V setting.
         I.e: V1range = V1rnd; V2range = V2rnd
@@ -338,365 +223,62 @@ Ts = []
             G2_code = R_info.Vgain_codes_auto[V2rnd]
             G1_code = R_info.Vgain_codes_fixed[V1rnd]
 
-    G1 = I_INFO[role_descr['DVM12']][G1_code]
-    G2 = I_INFO[role_descr['DVM12']][G2_code]
-
-    vrc = GTC.result(G2/G1, label='vrc ' + Run_Id)
-
-    Vlin_pert = I_INFO[role_descr['DVMd']]['linearity_pert']  # linearity used in G calculation
-    Vlin_Vdav = I_INFO[role_descr['DVMd']]['linearity_Vdav']  # linearity used in Vd calculation
-
-    # Start list of influence variables
-    influencies = [Rd, G1, G2, Vlin_pert,
-                   Vlin_Vdav, R2TRef, R2VRef]  # R2 dependancies
-
-    R2alpha = R_INFO[R2_name]['alpha']
-    R2beta = R_INFO[R2_name]['beta']
-    R2gamma = R_INFO[R2_name]['gamma']
-    R2Tsensor = R_INFO[R2_name]['T_sensor']
-    influencies.extend([R2_0, R2alpha, R2beta, R2gamma])  # R2 dependancies
-
-    if R1_name not in R_INFO:
-        R1Tsensor = 'Pt 100r'  # assume a Pt sensor in unknown resistor
-    else:
-        R1Tsensor = R_INFO[R1_name]['T_sensor']
-
-    # GMH correction factors
-    GMH1_cor = I_INFO[role_descr['GMH1']]['T_correction']
-    GMH2_cor = I_INFO[role_descr['GMH2']]['T_correction']
-
-    # Temperature measurement, RH and times:
-    del raw_gmh1[:]  # list for 4 corrected T1 gmh readings
-    del raw_gmh2[:]  # list for 4 corrected T2 gmh readings
-    del T_dvm1[:]  # list for 4 corrected T1(dvm) readings
-    del T_dvm2[:]  # list for 4 corrected T2(dvm) readings
-    del R_dvm1[:]  # list for 4 corrected dvm readings
-    del R_dvm2[:]  # list for 4 corrected dvm readings
-    del times[:]  # list for 3*4 mean measurement time-strings
-    del RHs[:]  # list for 4 RH values
-    del Ps[:]  # list for 4 room pressure values
-    del Ts[:]  # list for 4 room Temp values
-
-    # Process times, RH and temperature data in this 4-row block:
-    for r in range(Data_row, Data_row+4): # build list of 4 gmh / T-probe dvm readings
-        assert ws_Data['U'+str(r)].value is not None, 'No R1 GMH temperature data!'
-        assert ws_Data['V'+str(r)].value is not None, 'No R2 GMH temperature data!'
-        raw_gmh1.append(ws_Data['U'+str(r)].value)
-        raw_gmh2.append(ws_Data['V'+str(r)].value)
-
-        assert ws_Data['G'+str(r)].value is not None, 'No V2 timestamp!'
-        assert ws_Data['M'+str(r)].value is not None, 'No Vd1 timestamp!'
-        assert ws_Data['P'+str(r)].value is not None, 'No V1 timestamp!'
-        times.append(ws_Data['G'+str(r)].value)
-        times.append(ws_Data['M'+str(r)].value)
-        times.append(ws_Data['P'+str(r)].value)
-
-        assert ws_Data['S'+str(r)].value is not None, 'No R1 raw DVM (temperature) data!'
-        raw_dvm1 = ws_Data['S'+str(r)].value
-
-        assert ws_Data['T'+str(r)].value is not None, 'No R2 raw DVM (temperature) data!'
-        raw_dvm2 = ws_Data['T'+str(r)].value
-
-        # Check corrections for range-dependant values...
-        # and apply appropriate corrections
-        assert raw_dvm1 > 0, 'DVMT1: Negative resistance value!'
-        assert raw_dvm2 > 0, 'DVMT2: Negative resistance value!'
-        if raw_dvm1 < 120:
-            T1DVM_cor = I_INFO[role_descr['DVMT1']]['correction_100r']
-        elif raw_dvm1 < 12e3:
-            T1DVM_cor = I_INFO[role_descr['DVMT1']]['correction_10k']
-        else:
-            T1DVM_cor = I_INFO[role_descr['DVMT1']]['correction_100k']
-        R_dvm1.append(raw_dvm1*(1+T1DVM_cor))
-
-        if raw_dvm2 < 120:
-            T2DVM_cor = I_INFO[role_descr['DVMT2']]['correction_100r']
-        elif raw_dvm2 < 12e3:
-            T2DVM_cor = I_INFO[role_descr['DVMT2']]['correction_10k']
-        else:
-            T2DVM_cor = I_INFO[role_descr['DVMT2']]['correction_100k']
-        R_dvm2.append(raw_dvm2*(1+T2DVM_cor))
-
-    # Mean temperature from GMH
-    # Data are plain numbers (with digitization rounding),
-    # so use ta.estimate_digitized() to return a ureal.
-    assert len(raw_gmh1) > 1, 'Not enough GMH1 temperatures to average!'
-    T1_av_gmh = GTC.result(GTC.ta.estimate_digitized(raw_gmh1, 0.01) + GMH1_cor,
-                              label='T1_av_gmh ' + Run_Id)
-
-    assert len(raw_gmh2) > 1, 'Not enough GMH2 temperatures to average!'
-    T2_av_gmh = GTC.result(GTC.ta.estimate_digitized(raw_gmh2, 0.01) + GMH2_cor,
-                              label='T2_av_gmh ' + Run_Id) 
-
-    assert len(times) > 1, 'Not enough timestamps to average!'
-    times_av_str = R_info.av_t_string(times, 'str')  # mean time(as a time string)
-    times_av_fl = R_info.av_t_string(times, 'fl')  # mean time(as a float)
-
+    # __________Voltage ratio correction:___________
     """
-    TO DO: Incorporate ambient T, P, %RH readings into final reported results...
-    
-    assert len(RHs) > 1,'Not enough RH values to average!'
-    # Digitization could be 2 or 3 decimal places, depending on RH probe:
-    RH_av = GTC.ar.result(GTC.ta.estimate_digitized(RHs,R_info.GetDigi(RHs)),label = 'RH_av')
-    
-    ... (and same for T, P) ...
-
+    NOTE: Now replace VRCs with individual gain factors for
+    each test-V (at mid- or top-of-range), on each instrument. Since
+    this matches available info in DMM cal. cert. and minimises the
+    number of possible values (ie: No. of test-Vs] < [No. of possible
+    voltage ratios]).
     """
+    G1 = R_info.get_vgain(curs, G1_code)
+    G2 = R_info.get_vgain(curs, G2_code)
+    vrc = gtc.result(G2 / G1, label='vrc ' + runid)
 
-    # Build lists of 4 temperatures (calculated from T-probe dvm readings)...
-    # ... and calculate mean temperatures
-    if R1Tsensor in ('none', 'any'):  # no or unknown T-sensor (Tinsleys or T-sensor itelf)
-        T_dvm1 = [ZERO, ZERO, ZERO, ZERO]
-    else:
-        assert len(R_dvm1) > 1, 'Not enough R_dvm1 values to average!'
-        for R in R_dvm1:  # convert resistance measurement to a temperature
-            T_dvm1.append(R_info.R_to_T(R_INFO[R1Tsensor]['alpha'],
-                                        R_INFO[R1Tsensor]['beta'], R,
-                                        R_INFO[R1Tsensor]['R0_LV'],
-                                        R_INFO[R1Tsensor]['TRef_LV']))
-    if R2Tsensor in ('none', 'any'):
-        T_dvm2 = [ZERO, ZERO, ZERO, ZERO]
-    else:
-        assert len(R_dvm2) > 1, 'Not enough R_dvm2 values to average!'
-        for R in R_dvm2:  # convert resistance measurement to a temperature
-            T_dvm2.append(R_info.R_to_T(R_INFO[R2Tsensor]['alpha'],
-                                        R_INFO[R2Tsensor]['beta'], R,
-                                        R_INFO[R2Tsensor]['R0_LV'],
-                                        R_INFO[R2Tsensor]['TRef_LV']))
+    influences.extend([G1, G2])
 
-    # Mean temperature from T-probe dvm
-    # Data are high-precision plain numbers,
-    # so use ta.estimate() to return a ureal.
-    # T1_av_dvm = GTC.result(GTC.ta.estimate(T_dvm1),
-    #                           label='T1_av_dvm' + Run_Id)
-    # T2_av_dvm = GTC.result(GTC.ta.estimate(T_dvm2),
-    #                           label='T2_av_dvm' + Run_Id)
-
-    # Mean temperatures and temperature definitions
-#    if role_descr['DVMT1']=='none':  # No aux. T sensor or DVM not associated with R1 (just GMH)
-    T1_av = T1_av_gmh
-    T1_av_dvm = GTC.ureal(0, 0)  # ignore any dvm data
-    Diff_T1 = GTC.ureal(0, 0)  # No temperature disparity (GMH only)
-#    else:
-#        T1_av = GTC.ar.result(GTC.fn.mean((T1_av_dvm,T1_av_gmh)),label='T1_av'+ Run_Id)
-#        Diff_T1 = GTC.magnitude(T1_av_dvm-T1_av_gmh)
-
-#    if role_descr['DVMT2']=='none':  # No aux. T sensor or DVM not associated with R2 (just GMH)
-    T2_av = T2_av_gmh
-    T2_av_dvm = GTC.ureal(0, 0)  # ignore any dvm data
-    Diff_T2 = GTC.ureal(0, 0)  # No temperature disparity (GMH only)
-    influencies.append(T2_av_gmh)  # R2 dependancy
-#    else:
-#        T2_av = GTC.ar.result( GTC.fn.mean((T2_av_dvm,T2_av_gmh)),label='T2_av' + Run_Id)
-#        Diff_T2 = GTC.ar.result(GTC.magnitude(T2_av_dvm-T2_av_gmh),label='Diff_T2' + Run_Id)
-#        influencies.append(T2_av_dvm,T2_av_gmh) # R2 dependancy
-
-    # Default T definition arises from imperfect positioning of sensors wrt resistor:
-    T_def = GTC.ureal(0, GTC.type_b.distribution['gaussian'](0.01), 3,
-                      label='T_def ' + Run_Id)
-
-    # T-definition arises from imperfect positioning of both probes AND their disagreement:
-    T_def1 = GTC.result(GTC.ureal(0, Diff_T1.u/2, 7) + T_def,
-                           label='T_def1 ' + Run_Id)    
-    T_def2 = GTC.result(GTC.ureal(0, Diff_T2.u/2, 7) + T_def,
-                           label='T_def2 ' + Run_Id)
-    influencies.append(T_def2)  # R2 dependancy
-
-    # Raw voltage measurements: V: [Vp,Vm,Vpp,Vppp]
-    # All readings are precise enough not to worry about digitization error...
-    V1 = []
-    V2 = []
-    Vd = []
-    for line in range(4):
-
-        V1.append(GTC.ureal(ws_Data['Q'+str(Data_row+line)].value,
-                            ws_Data['R'+str(Data_row+line)].value,
-                            ws_Data['C'+str(Data_row+line)].value-1,
-                            label='V1_'+str(line) + ' ' + Run_Id))
-        V2.append(GTC.ureal(ws_Data['H'+str(Data_row+line)].value,
-                            ws_Data['I'+str(Data_row+line)].value,
-                            ws_Data['C'+str(Data_row+line)].value-1,
-                            label='V2_'+str(line) + ' ' + Run_Id))
-        Vd.append(GTC.ureal(ws_Data['N'+str(Data_row+line)].value,
-                            ws_Data['O'+str(Data_row+line)].value,
-                            ws_Data['C'+str(Data_row+line)].value-1,
-                            label='Vd_'+str(line) + ' ' + Run_Id))
-        assert V1[-1] is not None, 'Missing V1 data!'
-        assert V2[-1] is not None, 'Missing V2 data!'
-        assert Vd[-1] is not None, 'Missing Vd data!'
-    influencies.extend(V1+V2+Vd)  # R2 dependancies - raw measurements
-
-    # Define drift
-    drift_unc = abs(Vd[2] - (Vd[0] + ((Vd[3] - Vd[2]) / (V2[3] - V2[2])) * (V2[2] - V2[0]))) / 4
-    Vdrift1 = GTC.ureal(0, GTC.tb.distribution['gaussian'](drift_unc), 8,
-                        label='Vdrift_pert ' + Run_Id)
-    Vdrift2 = GTC.ureal(0, GTC.tb.distribution['gaussian'](drift_unc), 8,
-                        label='Vdrift_Vdav ' + Run_Id)
-
-    Vdrift = {'pert': Vdrift1, 'Vdav': Vdrift2}
-    influencies.extend([Vdrift['pert'], Vdrift['Vdav']])  # R2 dependancies
-
-    # Mean voltages
-    V1av = (V1[0]-2*V1[1]+V1[2])/4
-    V2av = (V2[0]-2*V2[1]+V2[2])/4
-    Vdav = (Vd[0]-2*Vd[1]+Vd[2])/4 + Vlin_Vdav + Vdrift['Vdav']
-
-    # Effect of v2 perturbation
-    delta_Vd = Vd[3] - Vd[2] + Vlin_pert + Vdrift['pert']
-    delta_V2 = V2[3] - V2[2]
-
-    # Calculate R2 (corrected for T and V)
-    dT2 = T2_av - R2TRef + T_def2
-
-    # NOTE: NEED TWO abs() TO ENSURE NON-NEGATIVE DIFFERENCE:
-    dV2 = abs(abs(V2av) - R2VRef)
-
-    R2 = R2_0*(1 + R2alpha * dT2 + R2beta * dT2 ** 2 + R2gamma * dV2) + Rd
-    print('R2 = {} +/- {}, dof = {}'.format(R2.x, R2.u, R2.df))
-    frac_err = abs(R2.x-R2val) / R2val
-    assert frac_err < FRAC_TOLERANCE['R2'], 'R2 > 100 ppm from nominal! R2 ({})'.format(frac_err)
-
-    # calculate R1
-    R1 = R2*vrc*V1av*delta_Vd/(Vdav*delta_V2 - V2av*delta_Vd)
+    # _____________________Calculate R1:_____________________
+    R1 = Rs*vrc*V1av* delta_Vd / (Vdav*delta_V2 - V2av*delta_Vd)
     print('R1 = {} +/- {}, dof = {}'.format(R1.x, R1.u, R1.df))
-    frac_err = abs(R1.x-R1val) / R1val
-    assert frac_err < FRAC_TOLERANCE['R1'], 'R1 > 1000 ppm from nominal ({})!'.format(frac_err)
+    # frac_err = abs(R1.x - R1val) / R1val
+    # assert frac_err < FRAC_TOLERANCE['R1'], 'R1 > 1000 ppm from nominal ({})!'.format(frac_err)
 
-    T1 = T1_av + T_def1
-    print('{} at temperature {}'.format(R1, T1))
+    # ____Corrected R1 temperature, including definition uncert.:____
+    T1 = T_av1 + T_def
+    print(f"{R1} at temperature {T1}")
+    calc_note = (f"Processed with HRBA v{VERSION} on "
+                 f"{dt.datetime.now().strftime('%A, %d. %B %Y %I:%M%p')}")
 
-    # Combine data for this measurement: name,time,R,T,V and write to Summary sheet:
-    this_result = {'name': R1_name, 'time_str': times_av_str,
-                   'time_fl': times_av_fl, 'V': V1av, 'R': R1, 'T': T1,
-                   'R_expU': R1.u*GTC.rp.k_factor(R1.df)}  # 'quick=False' arg deprecated.
+    R1_k = gtc.rp.k_factor(R1.df)
+    R1_EU = R1.u*R1_k
+    this_result_R = {'Run_Id': runid, 'Meas_Date': t_av_string, 'Analysis_Note': calc_note,
+                     'Meas_No': meas_no, 'Parameter': 'R',
+                     'Value': R1.x, 'Uncert': R1.u, 'DoF': R1.df, 'ExpU': R1_EU, 'k': R1_k}
 
-    R_info.write_this_result(ws_Summary, summary_row, this_result)
+    V1_k = gtc.rp.k_factor(V1av.df)
+    V1_EU = V1av.u*V1_k
+    this_result_V = {'Run_Id': runid, 'Meas_Date': t_av_string, 'Analysis_Note': calc_note,
+                     'Meas_No': meas_no, 'Parameter': 'V',
+                     'Value': V1av.x, 'Uncert': V1av.u, 'DoF': V1av.df, 'ExpU': V1_EU, 'k': V1_k}
 
-    # build uncertainty budget table
-    budget_table =[]
-    for i in influencies:  # rp.u_component(R1_gmh,i) gives + or - values
-        if i.u > 0:
-            sensitivity = GTC.rp.sensitivity(R1, i)
-        else:
-            sensitivity = 0
-        budget_table.append([i.label, i.x, i.u, i.df, sensitivity,
-                             GTC.component(R1, i)])
+    T1_k = gtc.rp.k_factor(T_av1.df)
+    T1_EU = T_av1.u*V1_k
+    this_result_T = {'Run_Id': runid, 'Meas_Date': t_av_string, 'Analysis_Note': calc_note,
+                     'Meas_No': meas_no, 'Parameter': 'T',
+                     'Value': T_av1.x, 'Uncert': T_av1.u, 'DoF': T_av1.df, 'ExpU': T1_EU, 'k': T1_k}
 
-    budget_table_sorted = sorted(budget_table, key=R_info.by_u_cont,
-                                 reverse=True)
+    R_info.write_this_result_to_db(curs, [this_result_R, this_result_V, this_result_T])
 
-    # write budget to Summary sheet
-    summary_row = R_info.write_budget(ws_Summary, summary_row,
-                                      budget_table_sorted)
-    summary_row += 1  # Add a blank line between each measurement for ease of reading
+    for i in influences:
+        R_info.write_budget_line(curs, i, R1, this_result_R)
+# _____________End of measurements loop._____________
 
-    # Separate results by voltage (V1av) if different
-    if HV == LV:
-        results_LV.append(this_result)
-        results_HV.append(this_result)
-    elif abs(V1av.x - LV) < 1:
-        results_LV.append(this_result)
-    else:
-        results_HV.append(this_result)
+# ______________Tidy up:______________
+db_connection.commit()
+curs.close()
 
-    del influencies[:]
-    Data_row += 4  # Move to next measurement
-
-# ----- End of data-row loop ---- #
-# ############################### #
-
-
-# At this point the summary row has reached its maximum for this analysis run
-# ...so make a note of it, for use as the next run's starting row:
-ws_Summary['B1'] = summary_row + 1  # Add extra row between runs
-
-# Go back to the top of summary block, ready for writing run results
-summary_row = summary_start_row + 1
-
-########################################################################
-
-"""
-In the next section values of R1 are derived from fits to Temperature.
-The Temperature data are offset so the mean is at ~zero, then the fits
-are used to calculate R1 at the mean Temperature. LV and HV values are
-obtained separately. The mean time, Temperature and Voltage values are
-also reported.
-"""
-
-# Weighted total least-squares fit (R1-T), LV
-print('\nLV:')
-log.write('\nLV:')
-R1_LV, Ohm_per_C_LV, T_LV, V_LV, date = R_info.write_R1_T_fit(results_LV,
-                                                              ws_Summary,
-                                                              summary_row, log)
-alpha_LV = Ohm_per_C_LV/R1_LV
-
-summary_row += 1
-
-# Weighted total least-squares fit (R1-T), HV
-print('\nHV:')
-log.write('\nHV:')
-R1_HV, Ohm_per_C_HV, T_HV, V_HV, date = R_info.write_R1_T_fit(results_HV,
-                                                              ws_Summary,
-                                                              summary_row, log)
-alpha_HV = Ohm_per_C_HV/R1_HV
-
-alpha = GTC.fn.mean([alpha_LV, alpha_HV])
-beta = GTC.ureal(0, 0)  # assume no beta
-
-if HV == LV:  # Can't estimate gamma
-    gamma = GTC.ureal(0, 0)
-else:
-    gamma = ((R1_HV-R1_LV)/(V_HV-V_LV))/R1_LV
-
-summary_row += 2
-
-ws_Summary['R'+str(summary_row)] = 'alpha (/C)'
-ws_Summary['V'+str(summary_row)] = 'gamma (/V)'
-
-summary_row += 1
-
-ws_Summary['R'+str(summary_row)] = alpha.x
-ws_Summary['S'+str(summary_row)] = alpha.u
-
-if math.isinf(alpha.df) or math.isnan(alpha.df):
-    # print'alpha.df is',alpha.df
-    ws_Summary['T'+str(summary_row)] = str(alpha.df)
-else:
-    # print'alpha.df =',alpha.df
-    ws_Summary['T'+str(summary_row)] = round(alpha.df)
-
-ws_Summary['V'+str(summary_row)] = gamma.x
-ws_Summary['W'+str(summary_row)] = gamma.u
-if math.isinf(gamma.df) or math.isnan(alpha.df):
-    # print'gamma.df is',gamma.df
-    ws_Summary['X'+str(summary_row)] = str(gamma.df)
-else:
-    # print'gamma.df =',gamma.df
-    ws_Summary['X'+str(summary_row)] = round(gamma.df)
-
-#######################################################################
-
-"""
-Finally, if R1 is a resistor that is not included in the 'parameters'
-sheet it should be added to the 'current knowledge'...
-"""
-
-params = ['R0_LV', 'TRef_LV', 'VRef_LV', 'R0_HV', 'TRef_HV', 'VRef_HV',
-          'alpha', 'beta', 'gamma', 'date', 'T_sensor']
-
-R_data = [R1_LV, T_LV, V_LV, R1_HV, T_HV, V_HV, alpha, beta, gamma, date,
-          'none']
-
-if R1_name not in R_INFO:
-    print('Adding {} to resistor info...'.format(R1_name))
-    last_R_row = R_info.update_R_Info(R1_name, params, R_data, ws_Params,
-                                      last_R_row, Run_Id, VERSION)
-else:
-    print('\nAlready know about', R1_name)
-
-# Save workbook
-wb_io.save(xlfile)
 print('_____________HRBA DONE_______________')
+
+
 log.write('\n_____________HRBA DONE_______________\n\n')
 log.close()

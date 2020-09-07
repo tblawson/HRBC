@@ -13,14 +13,14 @@ import time
 import math
 import xlrd
 from openpyxl.styles import Font, colors, PatternFill, Border, Side
-import GTC
+import GTC as gtc
 
 RL_SEARCH_LIMIT = 500
 
 DT_FORMAT = '%Y-%m-%d %H:%M:%S'
 
 INF = 1e6  # 'inf' dof
-ZERO = GTC.ureal(0, 0)
+ZERO = gtc.ureal(0, 0)
 
 # Use for G1 & G2 in AUTO mode:
 Vgain_codes_auto = {0.1: 'Vgain_0.1r0.1', 0.5: 'Vgain_0.5r1', 0.9: 'Vgain_1r1',
@@ -33,6 +33,118 @@ Vgain_codes_fixed = {0.1: 'Vgain_0.5r1', 0.5: 'Vgain_0.5r1', 0.9: 'Vgain_1r1',
 
 
 # ______________________________Useful funtions:______________________________
+def get_run_info(curs, runid):
+    q_run = f"SELECT * FROM Runs WHERE Run_Id='{runid}';"
+    curs.execute(q_run)
+    row = curs.fetchone()  # Should only be one row
+    assert row != None, 'Error! Run_Id not found!'
+    run_info = {'comment': row[1], 'Rs_name': row[2], 'Rx_name': row[3], 'range_mode': row[4],
+                'SRC1': row[5], 'SRC2': row[6], 'DVMd': row[7], 'DVM12': row[8],
+                'GMH1': row[9], 'GMH2': row[10], 'GMHroom': row[11]}
+    return run_info
+
+
+def get_DVM_corrections(curs, DVM_name):
+    dict = {}
+    q_I_info = (f"SELECT * FROM Instr_Info WHERE I_Name='{DVM_name}' AND "
+                "Parameter LIKE 'Vgain%' OR Parameter LIKE 'linearity%';")
+    curs.execute(q_I_info)
+    rows = curs.fetchall()
+    for row in rows:
+        param = row[1]
+        cor = uncertainize(row)
+        dict.update({param, cor})
+    return dict
+
+
+def get_GMH_correction(curs, GMH_name):
+    q_T_cor = (f"SELECT * FROM Instr_Info WHERE I_Name='{GMH_name}' "
+               "AND Parameter='T_Correction';")
+    curs.execute(q_T_cor)
+    row = curs.fetchone()
+    return uncertainize(row)
+
+
+def get_Rlink(curs, runid, run_info):
+    # Read all raw Rlink data for this run:
+    q_rlink_data = f"SELECT * FROM Raw_Rlink_Data WHERE Run_Id='{runid}';"
+    curs.execute(q_rlink_data)
+    rows = curs.fetchall()
+    Vpos_lst = []
+    Vneg_lst = []
+    V1 = 0
+    V2 = 0
+    for row in rows:
+        n_reads = row[1]
+        V1 = row[2]
+        V2 = row[3]
+        Vpos_lst.append(row[4])
+        Vneg_lst.append(row[5])
+
+    '''
+    Define nom_R, abs_V quantities. Assume all 'nominal' values
+    have 100 ppm std.uncert. with 8 dof.
+    '''
+    val1 = get_r_val(run_info['Rx_name'])
+    nom_R1 = gtc.ureal(val1, val1 / 1e4, 8, label='nom_R1')  # don't >know< uncertainty of nominal values
+    val2 = get_r_val(run_info['Rs_name'])
+    nom_R2 = gtc.ureal(val2, val2 / 1e4, 8, label='nom_R2')  # don't >know< uncertainty of nominal values
+    abs_V1 = gtc.ureal(V1, V1 / 1e4, 8, label='abs_V1')  # don't >know< uncertainty of nominal values
+    abs_V2 = gtc.ureal(V2, V2 / 1e4, 8, label='abs_V2')  # don't >know< uncertainty of nominal values
+
+    # Calculate I
+    I = gtc.result((abs_V1 + abs_V2) / (nom_R1 + nom_R2), f'Rd_I {runid}')
+
+    # Average all +Vs and -Vs
+    av_dV_p = gtc.result(gtc.ta.estimate(Vpos_lst), f'av_dV_p {runid}')
+    av_dV_n = gtc.result(gtc.ta.estimate(Vneg_lst), f'av_dV_n {runid}')
+    av_dV = gtc.result(0.5*gtc.magnitude(av_dV_p - av_dV_n), f'Rd_dV {runid}')
+
+    # Finally, calculate Rd
+    return gtc.result(av_dV/I, label=f'Rlink {runid}')
+
+
+def get_Rs0(curs, Rs_name):
+    Rs_0 = {}
+    q_Rs = f"SELECT * FROM Res_Info WHERE R_Name='{Rs_name}';"
+    curs.execute(q_Rs)
+    Rs_rows = curs.fetchall()
+    for r in Rs_rows:
+        param = r[1]
+        val = r[2]
+        unc = r[3]
+        df = r[4]
+        lbl = r[5]
+        if param == 'Cal_Date':
+            Rs_0.update({param: val})
+        elif df is None:
+            Rs_0.update({param: gtc.ureal(val, unc, label=lbl)})
+        else:
+            Rs_0.update({param: gtc.ureal(val, unc, df, label=lbl)})
+
+    # Some resistors have no 2nd-order TCo (beta) listed in database, so
+    # need to account for that by manually adding a zero-valued beta to
+    # Rs_0 dictionary:
+    if 'beta' not in Rs_0:
+        Rs_0.update({'beta': gtc.ureal(0, 0, label=f'{Rs_name}_beta')})
+
+    return Rs_0
+
+
+def get_n_meas(curs, runid):
+    q_get_n_meas = ("SELECT DISTINCT Meas_No FROM Raw_Data WHERE "
+                    f"Run_Id='{runid}' ORDER BY Meas_No DESC LIMIT 1;")
+    curs.execute(q_get_n_meas)
+    row = curs.fetchone()
+    return row[0]
+
+
+def get_vgain(curs, param):
+    q_Vgain = f"SELECT * FROM Instr_Info WHERE I_Name='{DVM12}'AND Parameter ='{param}';"
+    curs.execute(q_Vgain)
+    row = curs.fetchone()
+    return gtc.ureal(row[2], row[3], row[4], label=row[5])
+
 
 def make_log_name(v):
     return f'HRBAv{str(v)}_{str(dt.date.today())}.log'
@@ -74,6 +186,25 @@ def get_r_val(name):
     return mult * int(r_val_str.strip(string.ascii_letters))
 
 
+def write_this_result_to_db(curs, result_lst):
+    headings = "Run_Id, Meas_Date, Analysis_Note, Meas_No, Parameter, Value, Uncert, DoF, ExpU, k"
+    for r in result_lst:
+        values = (f"'{r['Run_Id']}','{r['Meas_Date']}','{r['Analysis_Date']}',{r['Meas_No']},"
+                  f"'{r['Parameter']}',{r['Value']},{r['Uncert']},{r['DoF']},{r['ExpU']},{r['k']}")
+        q_write_res = f"INSERT OR REPLACE INTO Results ({headings}) VALUES ({values});"
+        curs.execute(q_write_res)
+
+
+def write_budget_line(curs, i, R1, result):
+    headings = "Run_Id, Meas_No, Quantity_Label, Value, Uncert, DoF, Sens_Co, U_Contrib"
+    sensitivity = gtc.rp.sensitivity(R1, i)
+    component = gtc.rp.u_component(R1, i)
+    values = (f"'{result['Run_Id']}','{result['Meas_No']}','{i.label}',{i.x},{i.u},{i.df},"
+              f"{sensitivity},{component}")
+    q_write_budget = f"INSERT OR REPLACE INTO Uncert_Contribs ({headings}) VALUES ({values});"
+    curs.execute(q_write_budget)
+
+
 def get_rlink_startrow(sheet, id, jump, log):
     search_row = 1
     while search_row < RL_SEARCH_LIMIT:  # Don't search forever.
@@ -102,9 +233,9 @@ def uncertainize(row_items):
     l = row_items[5]
     if (u is not None) and isinstance(v, (int, float)):  # Number
         if d == u'inf':
-            un_num = GTC.ureal(v, u, label=l)  # default dof = inf
+            un_num = gtc.ureal(v, u, label=l)  # default dof = inf
         else:
-            un_num = GTC.ureal(v, u, d, l)
+            un_num = gtc.ureal(v, u, d, l)
         return un_num
     else:  # non-numeric value
         return v
@@ -127,7 +258,7 @@ def R_to_T(alpha, beta, R, R0, T0):
         a = beta
         b = alpha-2*T0
         c = 1-alpha*T0 + beta*T0**2 - (R / R0)
-        T = (-b + GTC.sqrt(b**2-4*a*c))/(2*a)
+        T = (-b + gtc.sqrt(b**2-4*a*c))/(2*a)
     return T
 
 
@@ -145,8 +276,8 @@ def av_t_dt(t_str_lst):
         t_tup = dt.datetime.timetuple(t_dt)
         t_av += time.mktime(t_tup)
     t_av /= n  # av. time as float (seconds from epoch)
-    t_av_fl = dt.datetime.fromtimestamp(t_av)
-    return t_av_fl.strftime(DT_FORMAT)  # av. time as string
+    t_av_dt = dt.datetime.fromtimestamp(t_av)  # datetime obj.
+    return t_av_dt  #.strftime(DT_FORMAT)  # av. time as string
 
 
 def av_t_string(t_list, switch):
@@ -282,22 +413,22 @@ def write_R1_T_fit(results, sheet, row, log):
     unique_T_data = []
     for T in T_data:
         add_if_unique(T, unique_T_data)
-    T_av = GTC.fn.mean(T_data)
+    T_av = gtc.fn.mean(T_data)
     # print'write_R1_T_fit():u(T_av)=',T_av.u,'dof(T_av)=',T_av.df
     T_rel = [t_k - T_av for t_k in T_data]  # x-vals shifted by T_av
-    alpha = GTC.ureal(0,0)
+    alpha = gtc.ureal(0,0)
 
     y = [R for R in [result['R'] for result in results]]  # All R values
     u_y = [R.u for R in [result['R'] for result in results]] # All R uncerts
 
     if len(unique_T_data) <= 1: # No temperature variation recorded, so can't fit to T
-        R1 = GTC.fn.mean(y)
+        R1 = gtc.fn.mean(y)
         print('R1_LV (av, not fit):', R1)
         log.write('\nR1_LV (av, not fit): ' + str(R1))
     else:
         # a_ta,b_ta = GTC.ta.line_fit_wls(T_rel,y,u_y).a_b
         # Assume uncert of individual measurements dominate uncert of fit
-        R1, alpha = GTC.ta.line_fit_wls(T_rel, y, u_y).a_b  # GTC.ta.line_fit_wls(T_rel, y).a_b
+        R1, alpha = gtc.ta.line_fit_wls(T_rel, y, u_y).a_b  # GTC.ta.line_fit_wls(T_rel, y).a_b
         print('Fit params:\t intercept={}+/-{},dof={}. Slope={}+/-{},dof={}'.format(R1.x, R1.u, R1.df, alpha.x,
                                                                                     alpha.u, alpha.df))
         log.write('Fit params:\t intercept={}+/-{},dof={}. Slope={}+/-{},dof={}'.format(R1.x, R1.u, R1.df, alpha.x,
@@ -310,7 +441,7 @@ def write_R1_T_fit(results, sheet, row, log):
     else:
         sheet['T'+str(row)] = round(R1.df)
 
-    sheet['U'+str(row)] = R1.u*GTC.rp.k_factor(R1.df)
+    sheet['U'+str(row)] = R1.u*gtc.rp.k_factor(R1.df)
 
     sheet['V'+str(row)] = T_av.x
     sheet['W'+str(row)] = T_av.u
@@ -320,12 +451,12 @@ def write_R1_T_fit(results, sheet, row, log):
         sheet['X'+str(row)] = round(T_av.df)
 
     t = [result['time_fl'] for result in results]  # x data (time,s from epoch)
-    t_av = GTC.ta.estimate(t)
+    t_av = gtc.ta.estimate(t)
     time_av = dt.datetime.fromtimestamp(t_av.x)  # A Python datetime object
     sheet['Y'+str(row)] = time_av.strftime('%d/%m/%Y %H:%M:%S')  # string-formatted for display
 
     V1 = [V for V in [result['V'] for result in results]]
-    V_av = GTC.fn.mean(V1)
+    V_av = gtc.fn.mean(V1)
     sheet['Z'+str(row)] = V_av.x
     sheet['AA'+str(row)] = V_av.u
     if math.isinf(V_av.df):
