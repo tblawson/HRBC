@@ -35,6 +35,12 @@ Vgain_codes_fixed = {0.1: 'Vgain_0.5r1', 0.5: 'Vgain_0.5r1', 0.9: 'Vgain_1r1',
 
 # ______________________________Useful funtions:______________________________
 def get_run_info(curs, runid):
+    '''
+    Read one record from 'Runs' table.
+    :param curs: Database cursor object.
+    :param runid: (str) Run ID.
+    :return: (dict) run info.
+    '''
     q_run = f"SELECT * FROM Runs WHERE Run_Id='{runid}';"
     curs.execute(q_run)
     row = curs.fetchone()  # Should only be one row
@@ -45,9 +51,15 @@ def get_run_info(curs, runid):
     return run_info
 
 
-def get_DVM_corrections(curs, DVM_name):
+def get_DVM_corrections(curs, dvm_name):
+    '''
+    Read records from Instr_Info table.
+    :param curs: Database cursor object.
+    :param dvm_name: (str) Meter name.
+    :return: (dict) containing gain and linearity info.
+    '''
     dict = {}
-    q_I_info = (f"SELECT * FROM Instr_Info WHERE I_Name='{DVM_name}' AND "
+    q_I_info = (f"SELECT * FROM Instr_Info WHERE I_Name='{dvm_name}' AND "
                 "Parameter LIKE 'Vgain%' OR Parameter LIKE 'linearity%';")
     curs.execute(q_I_info)
     rows = curs.fetchall()
@@ -58,8 +70,14 @@ def get_DVM_corrections(curs, DVM_name):
     return dict
 
 
-def get_GMH_correction(curs, GMH_name):
-    q_T_cor = (f"SELECT * FROM Instr_Info WHERE I_Name='{GMH_name}' "
+def get_GMH_correction(curs, gmh_name):
+    '''
+    Read one record from Instr_Info table.
+    :param curs: Database cursor object.
+    :param gmh_name: GMH probe name.
+    :return: Temperature correction (gtc.ureal).
+    '''
+    q_T_cor = (f"SELECT * FROM Instr_Info WHERE I_Name='{gmh_name}' "
                "AND Parameter='T_Correction';")
     curs.execute(q_T_cor)
     row = curs.fetchone()
@@ -67,6 +85,13 @@ def get_GMH_correction(curs, GMH_name):
 
 
 def get_Rlink(curs, runid, run_info):
+    '''
+    Calculate link resistance.
+    :param curs: Database cursor object.
+    :param runid: (str) Run ID.
+    :param run_info: (dict) Run info.
+    :return: Rlink (gtc.ureal).
+    '''
     # Read all raw Rlink data for this run:
     q_rlink_data = f"SELECT * FROM Raw_Rlink_Data WHERE Run_Id='{runid}';"
     curs.execute(q_rlink_data)
@@ -104,6 +129,17 @@ def get_Rlink(curs, runid, run_info):
     return gtc.result(av_dV/I, label=f'Rlink {runid}')
 
 
+def ureal_to_str(un):
+    '''
+    Encode a ureal as ASCII string.
+    :param un: Ureal.
+    :return: (str) an ASCII representation of ureal.
+    '''
+    archive = gtc.pr.Archive()
+    archive.add(std=un)
+    return gtc.pr.dumps(archive, protocol=0)
+
+
 def get_Rs0(curs, Rs_name):
     Rs_0 = {}
     q_Rs = f"SELECT * FROM Res_Info WHERE R_Name='{Rs_name}';"
@@ -118,9 +154,13 @@ def get_Rs0(curs, Rs_name):
         if param == 'Cal_Date':
             Rs_0.update({param: val})
         elif df is None:
-            Rs_0.update({param: gtc.ureal(val, unc, label=lbl)})
+            un = gtc.ureal(val, unc, label=lbl)
+            Rs_0.update({param: un})
+            Rs_0.update({f'{param}_repr': ureal_to_str(un)})
         else:
-            Rs_0.update({param: gtc.ureal(val, unc, df, label=lbl)})
+            un = gtc.ureal(val, unc, label=lbl)
+            Rs_0.update({param: un})
+            Rs_0.update({f'{param}_repr': ureal_to_str(un)})
 
     # Some resistors have no 2nd-order TCo (beta) listed in database, so
     # need to account for that by manually adding a zero-valued beta to
@@ -187,10 +227,12 @@ def get_r_val(name):
 
 
 def write_this_result_to_db(curs, result_lst):
-    headings = "Run_Id, Meas_Date, Analysis_Note, Meas_No, Parameter, Value, Uncert, DoF, ExpU, k"
+    headings = ("Run_Id, Meas_Date, Analysis_Note, Meas_No,"
+                "Parameter, Value, Uncert, DoF, ExpU, k, Ureal_Str")
     for r in result_lst:
-        values = (f"'{r['Run_Id']}','{r['Meas_Date']}','{r['Analysis_Date']}',{r['Meas_No']},"
-                  f"'{r['Parameter']}',{r['Value']},{r['Uncert']},{r['DoF']},{r['ExpU']},{r['k']}")
+        values = (f"'{r['Run_Id']}','{r['Meas_Date']}','{r['Analysis_Date']}',"
+                  f"{r['Meas_No']},'{r['Parameter']}',"
+                  f"{r['Value']},{r['Uncert']},{r['DoF']},{r['ExpU']},{r['k']},'{r['repr']}'")
         q_write_res = f"INSERT OR REPLACE INTO Results ({headings}) VALUES ({values});"
         curs.execute(q_write_res)
 

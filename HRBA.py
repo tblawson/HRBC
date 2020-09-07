@@ -51,10 +51,10 @@ datadir = r'G:\My Drive'
 # _________________Set up logging:_________________
 
 logname = R_info.make_log_name(VERSION)
-logging.basicConfig(logname, format='%(asctime)s %(levelname)s: %(message)s', level=logging.INFO)
+logging.basicConfig(filename=logname, format='%(asctime)s %(levelname)s: %(message)s', level=logging.INFO)
 logging.info('Starting...')
 # logfile = os.path.join(datadir, logname)
-log = open(logfile, 'a')
+# log = open(logfile, 'a')
 
 # _________________Connect to Resistors.db database:________________
 db_path = input('Full Resistors.db path? (press "d" for default location) >')
@@ -74,35 +74,35 @@ GMH1_correction = R_info.get_GMH_correction(curs, run_info['GMH1'])
 GMH2_correction = R_info.get_GMH_correction(curs, run_info['GMH2'])
 
 # _______________________Calculate R_link:_______________________
-Rd = R_info.get_Rlink(curs, runid, run_info)  # ***** R1 INFLUENCE! *****
+Rd = R_info.get_Rlink(curs, runid, run_info)
 print(f'\nRlink = {Rd.x} +/- {Rd.u}, dof = {Rd.df}')
 assert Rd.x < RLINK_MAX, f'High link resistance! {Rd.x} Ohm'
 logging.info(f'\nRlink = {Rd.x} +/- {Rd.u}, dof = {Rd.df}')
-log.write(f'\nRlink = {Rd.x} +/- {Rd.u}, dof = {Rd.df}')
 
 # ________Start list of R1-influence variables (for budget)_______
 influences = [Rd]
 
-# _____________________Get Rs 'book value':______________________
+# _____________________Get Rs 'book value'...:____________________
 Rs_0 = R_info.get_Rs0(curs, run_info['Rs_Name'])  # Dict to hold all Rs info.
-
-# ____________Include influences from Rs book value:____________
+logging.info(f"'Rs_0 = {Rs_0['R0'].x} +/- {Rs_0['R0'].u}")
+# __________________... and include influences :__________________
 influences.extend([Rs_0['R0'], Rs_0['TRef'], Rs_0['VRef'], Rs_0['alpha'],
                    Rs_0['beta'], Rs_0['gamma'], Rs_0['tau']])
-'''
------------------------------------------------------------
-Loop over measurements.
-- Process raw data for all 4 reversals in each measurement,
-- Calculate result,
-- Write result to 'Results' table.
------------------------------------------------------------
-'''
 
 # ________Determine number of measurements in this run:_________
 n_meas = R_info.get_n_meas(curs, runid)
 
 # _____________Loop over measurements in this run:_____________
 for meas_no in range(1, n_meas+1):  # 1 to <max meas_no>
+    '''
+    -----------------------------------------------------------
+    Loop over measurements.
+    - Process raw data for all 4 reversals in each measurement,
+    - Calculate result,
+    - Write result to 'Results' table.
+    - Write uncertainty contributions to 'Uncert_Contribs' table.
+    -----------------------------------------------------------
+    '''
     # Return the 4 reversals for this measurement, in order:
     q_get_revs = (f"SELECT * FROM Raw_Data WHERE Run_Id='{runid}' "
                   f"AND Meas_No={meas_no} ORDER BY Rev_No ASC;")
@@ -127,14 +127,17 @@ for meas_no in range(1, n_meas+1):  # 1 to <max meas_no>
         V2set = row[4]
         n = row[5]
         V1_times.append(row[9])
-        V1_lst.append(gtc.ureal(row[10], row[11], n - 1,
-                                label=f'V1_{rev_no}_meas{meas_no}_{runid}'))
+        un = gtc.ureal(row[10], row[11], n - 1,
+                       label=f'V1_{rev_no}_meas{meas_no}_{runid}')
+        V1_lst.append(un)
         Vd_times.append(row[12])
-        Vd_lst.append(gtc.ureal(row[13], row[14], n - 1,
-                                label=f'Vd_{rev_no}_meas{meas_no}_{runid}'))
+        un = gtc.ureal(row[13], row[14], n - 1,
+                       label=f'Vd_{rev_no}_meas{meas_no}_{runid}')
+        Vd_lst.append(un)
         V2_times.append(row[15])
-        V2_lst.append(gtc.ureal(row[16], row[17], n - 1,
-                                label=f'V2_{rev_no}_meas{meas_no}_{runid}'))
+        un = gtc.ureal(row[16], row[17], n - 1,
+                       label=f'V2_{rev_no}_meas{meas_no}_{runid}')
+        V2_lst.append(un)
         T1_lst.append(row[18])
         T2_lst.append(row[19])
         T_room_lst.append(row[20])
@@ -152,8 +155,8 @@ for meas_no in range(1, n_meas+1):  # 1 to <max meas_no>
                         label='Vdrift_pert ' + runid)
     Vdrift2 = gtc.ureal(0, gtc.tb.distribution['gaussian'](drift_unc), 8,
                         label='Vdrift_Vdav ' + runid)
+    Vdrift = {'pert': Vdrift1,  'Vdav': Vdrift2}
 
-    Vdrift = {'pert': Vdrift1, 'Vdav': Vdrift2}
     influences.extend([Vdrift['pert'], Vdrift['Vdav']])
 
     # ________________Mean voltages:________________
@@ -177,7 +180,7 @@ for meas_no in range(1, n_meas+1):  # 1 to <max meas_no>
     # Define temperature definition of +/- 0.05 C to account for typical
     # ...separation between resistor element and GMH probe:
     T_def = gtc.ureal(0, gtc.type_b.distribution['gaussian'](0.05), 3,
-                          label='T_def ' + runid)
+                      label='T_def ' + runid)
 
     # Data are plain numbers (with digitization rounding),
     # so use ta.estimate_digitized() to return a ureal...
@@ -185,7 +188,6 @@ for meas_no in range(1, n_meas+1):  # 1 to <max meas_no>
                        label='T1_av_gmh ' + runid)
     T_av2 = gtc.result(gtc.ta.estimate_digitized(T2_lst, 0.01) + GMH2_correction + T_def,
                        label=f'T2_av_gmh {runid}')
-
     dT = T_av2 - Rs_0['TRef']
 
     influences.extend([T_av2, T_def])
@@ -203,9 +205,10 @@ for meas_no in range(1, n_meas+1):  # 1 to <max meas_no>
 
     # ______Now we can calculate Rs (includes R_link):_______
     Rs = Rd + Rs_0['R0']*(1 + Rs_0['alpha']*dT +
-                     Rs_0['beta']*dT**2 +
-                     Rs_0['gamma']*abs(dV) +
-                     Rs_0['tau']*dt_days)
+                          Rs_0['beta']*dT**2 +
+                          Rs_0['gamma']*abs(dV) +
+                          Rs_0['tau']*dt_days)
+    logging.info(f"\tMeas_no. {meas_no}: Rs = {Rs.x} +/- {Rs.u}, dof = {Rs.df}")
 
     # Next, calculate Rx influences:
     V2rnd = math.pow(10, round(math.log10(abs(V2set))))  # Rnd to nearest 10-pwr
@@ -246,7 +249,7 @@ for meas_no in range(1, n_meas+1):  # 1 to <max meas_no>
     # _____________________Calculate R1:_____________________
     R1 = Rs*vrc*V1av* delta_Vd / (Vdav*delta_V2 - V2av*delta_Vd)
     print('R1 = {} +/- {}, dof = {}'.format(R1.x, R1.u, R1.df))
-    logging.info(f'R1 = {R1.x} +/- {R1.u}, dof = {R1.df}')
+    logging.info(f"\tR1 = {R1.x} +/- {R1.u}, dof = {R1.df}")
 
     R1val = R_info.get_r_val(run_info['Rx_name'])
     frac_err = abs(R1.x - R1val) / R1val
@@ -254,8 +257,8 @@ for meas_no in range(1, n_meas+1):  # 1 to <max meas_no>
 
     # ____Corrected R1 temperature, including definition uncert.:____
     T1 = T_av1 + T_def
-    print(f"{R1} at temperature {T1}")
-    logging.info(f'{R1} at temperature {T1}')
+    print(f"{R1.x} at temperature {T1.x} and test-voltage {V1av.x}")
+    logging.info(f"{R1.x} at temperature {T1.x} and test-voltage {V1av.x}")
     calc_note = (f"Processed with HRBA v{VERSION} on "
                  f"{dt.datetime.now().strftime('%A, %d. %B %Y %I:%M%p')}")
 
@@ -263,19 +266,22 @@ for meas_no in range(1, n_meas+1):  # 1 to <max meas_no>
     R1_EU = R1.u*R1_k
     this_result_R = {'Run_Id': runid, 'Meas_Date': t_av_string, 'Analysis_Note': calc_note,
                      'Meas_No': meas_no, 'Parameter': 'R',
-                     'Value': R1.x, 'Uncert': R1.u, 'DoF': R1.df, 'ExpU': R1_EU, 'k': R1_k}
+                     'Value': R1.x, 'Uncert': R1.u, 'DoF': R1.df,
+                     'ExpU': R1_EU, 'k': R1_k, 'repr': R_info.ureal_to_str(R1)}
 
     V1_k = gtc.rp.k_factor(V1av.df)
     V1_EU = V1av.u*V1_k
     this_result_V = {'Run_Id': runid, 'Meas_Date': t_av_string, 'Analysis_Note': calc_note,
                      'Meas_No': meas_no, 'Parameter': 'V',
-                     'Value': V1av.x, 'Uncert': V1av.u, 'DoF': V1av.df, 'ExpU': V1_EU, 'k': V1_k}
+                     'Value': V1av.x, 'Uncert': V1av.u, 'DoF': V1av.df,
+                     'ExpU': V1_EU, 'k': V1_k, 'repr': R_info.ureal_to_str(V1av)}
 
     T1_k = gtc.rp.k_factor(T_av1.df)
     T1_EU = T_av1.u*V1_k
     this_result_T = {'Run_Id': runid, 'Meas_Date': t_av_string, 'Analysis_Note': calc_note,
                      'Meas_No': meas_no, 'Parameter': 'T',
-                     'Value': T_av1.x, 'Uncert': T_av1.u, 'DoF': T_av1.df, 'ExpU': T1_EU, 'k': T1_k}
+                     'Value': T_av1.x, 'Uncert': T_av1.u, 'DoF': T_av1.df,
+                     'ExpU': T1_EU, 'k': T1_k, 'repr': R_info.ureal_to_str(T_av1)}
 
     R_info.write_this_result_to_db(curs, [this_result_R, this_result_V, this_result_T])
 
