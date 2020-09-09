@@ -53,8 +53,6 @@ datadir = r'G:\My Drive'
 logname = R_info.make_log_name(VERSION)
 logging.basicConfig(filename=logname, format='%(asctime)s %(levelname)s: %(message)s', level=logging.INFO)
 logging.info('Starting...')
-# logfile = os.path.join(datadir, logname)
-# log = open(logfile, 'a')
 
 # _________________Connect to Resistors.db database:________________
 db_path = input('Full Resistors.db path? (press "d" for default location) >')
@@ -84,13 +82,20 @@ influences = [Rd]
 
 # _____________________Get Rs 'book value'...:____________________
 Rs_0 = R_info.get_Rs0(curs, run_info['Rs_Name'])  # Dict to hold all Rs info.
-logging.info(f"'Rs_0 = {Rs_0['R0'].x} +/- {Rs_0['R0'].u}")
+logging.info(f"'Rs_0 = {Rs_0['R0'].x} +/- {Rs_0['R0'].u}, dof = {Rs_0['R0'].df}")
+print(f"'Rs 'book-value' = {Rs_0['R0'].x} +/- {Rs_0['R0'].u}, dof = {Rs_0['R0'].df}")
 # __________________... and include influences :__________________
 influences.extend([Rs_0['R0'], Rs_0['TRef'], Rs_0['VRef'], Rs_0['alpha'],
                    Rs_0['beta'], Rs_0['gamma'], Rs_0['tau']])
 
 # ________Determine number of measurements in this run:_________
 n_meas = R_info.get_n_meas(curs, runid)
+
+# _________Write analysis note to Runs table:_________
+analysis_note = (f"Processed with HRBA v{VERSION} on "
+                 f"{dt.datetime.now().strftime('%A, %d. %B %Y %I:%M%p')}")
+q_a_note = f"UPDATE Runs SET Analysis_Note = '{analysis_note}' WHERE Run_id = '{runid}';"
+curs.execute(q_a_note)
 
 # _____________Loop over measurements in this run:_____________
 for meas_no in range(1, n_meas+1):  # 1 to <max meas_no>
@@ -160,7 +165,8 @@ for meas_no in range(1, n_meas+1):  # 1 to <max meas_no>
     influences.extend([Vdrift['pert'], Vdrift['Vdav']])
 
     # ________________Mean voltages:________________
-    V1av = (V1_lst[0] - 2 * V1_lst[1] + V1_lst[2]) / 4
+    V1av = gtc.result((V1_lst[0] - 2 * V1_lst[1] + V1_lst[2]) / 4,
+                      label=f"{run_info['Rx_Name']}_V_{runid}")
     V2av = (V2_lst[0] - 2 * V2_lst[1] + V2_lst[2]) / 4
     Vlin_Vdav = DVMd_params['linearity_Vdav']
     Vdav = (Vd_lst[0] - 2 * Vd_lst[1] + Vd_lst[2]) / 4 + Vlin_Vdav + Vdrift['Vdav']
@@ -185,9 +191,9 @@ for meas_no in range(1, n_meas+1):  # 1 to <max meas_no>
     # Data are plain numbers (with digitization rounding),
     # so use ta.estimate_digitized() to return a ureal...
     T_av1 = gtc.result(gtc.ta.estimate_digitized(T1_lst, 0.01) + GMH1_correction + T_def,
-                       label='T1_av_gmh ' + runid)
+                       label=f"{run_info['Rx_Name']}_T_{runid}")
     T_av2 = gtc.result(gtc.ta.estimate_digitized(T2_lst, 0.01) + GMH2_correction + T_def,
-                       label=f'T2_av_gmh {runid}')
+                       label=f'T_av2 {runid}')
     dT = T_av2 - Rs_0['TRef']
 
     influences.extend([T_av2, T_def])
@@ -213,7 +219,7 @@ for meas_no in range(1, n_meas+1):  # 1 to <max meas_no>
     # Next, calculate Rx influences:
     V2rnd = math.pow(10, round(math.log10(abs(V2set))))  # Rnd to nearest 10-pwr
     V1rnd = math.pow(10, round(math.log10(abs(V1set))))
-    if 'AUTO' in run_info['range_mode']:
+    if 'AUTO' in run_info['Range_Mode']:
         '''
         Set ranges = to rounded V setting.
         I.e: V1range = V1rnd; V2range = V2rnd
@@ -240,18 +246,19 @@ for meas_no in range(1, n_meas+1):  # 1 to <max meas_no>
     number of possible values (ie: No. of test-Vs] < [No. of possible
     voltage ratios]).
     """
-    G1 = R_info.get_vgain(curs, G1_code)
-    G2 = R_info.get_vgain(curs, G2_code)
+    G1 = R_info.get_vgain(curs, run_info['DVM12'], G1_code)
+    G2 = R_info.get_vgain(curs, run_info['DVM12'], G2_code)
     vrc = gtc.result(G2 / G1, label='vrc ' + runid)
 
     influences.extend([G1, G2])
 
     # _____________________Calculate R1:_____________________
-    R1 = Rs*vrc*V1av* delta_Vd / (Vdav*delta_V2 - V2av*delta_Vd)
+    R1 = gtc.result(Rs*vrc*V1av* delta_Vd / (Vdav*delta_V2 - V2av*delta_Vd),
+                    label=f"{run_info['Rx_Name']}_R_{runid}")
     print('R1 = {} +/- {}, dof = {}'.format(R1.x, R1.u, R1.df))
     logging.info(f"\tR1 = {R1.x} +/- {R1.u}, dof = {R1.df}")
 
-    R1val = R_info.get_r_val(run_info['Rx_name'])
+    R1val = R_info.get_r_val(run_info['Rx_Name'])
     frac_err = abs(R1.x - R1val) / R1val
     assert frac_err < FRAC_TOLERANCE['R1'], f'R1 > 1000 ppm from nominal ({frac_err})!'
 
@@ -259,26 +266,25 @@ for meas_no in range(1, n_meas+1):  # 1 to <max meas_no>
     T1 = T_av1 + T_def
     print(f"{R1.x} at temperature {T1.x} and test-voltage {V1av.x}")
     logging.info(f"{R1.x} at temperature {T1.x} and test-voltage {V1av.x}")
-    calc_note = (f"Processed with HRBA v{VERSION} on "
-                 f"{dt.datetime.now().strftime('%A, %d. %B %Y %I:%M%p')}")
 
+    # _________Gather info for measurement results:_________
     R1_k = gtc.rp.k_factor(R1.df)
     R1_EU = R1.u*R1_k
-    this_result_R = {'Run_Id': runid, 'Meas_Date': t_av_string, 'Analysis_Note': calc_note,
+    this_result_R = {'Run_Id': runid, 'Meas_Date': t_av_string, 'Analysis_Note': analysis_note,
                      'Meas_No': meas_no, 'Parameter': 'R',
                      'Value': R1.x, 'Uncert': R1.u, 'DoF': R1.df,
                      'ExpU': R1_EU, 'k': R1_k, 'repr': R_info.ureal_to_str(R1)}
 
     V1_k = gtc.rp.k_factor(V1av.df)
     V1_EU = V1av.u*V1_k
-    this_result_V = {'Run_Id': runid, 'Meas_Date': t_av_string, 'Analysis_Note': calc_note,
+    this_result_V = {'Run_Id': runid, 'Meas_Date': t_av_string, 'Analysis_Note': analysis_note,
                      'Meas_No': meas_no, 'Parameter': 'V',
                      'Value': V1av.x, 'Uncert': V1av.u, 'DoF': V1av.df,
                      'ExpU': V1_EU, 'k': V1_k, 'repr': R_info.ureal_to_str(V1av)}
 
     T1_k = gtc.rp.k_factor(T_av1.df)
     T1_EU = T_av1.u*V1_k
-    this_result_T = {'Run_Id': runid, 'Meas_Date': t_av_string, 'Analysis_Note': calc_note,
+    this_result_T = {'Run_Id': runid, 'Meas_Date': t_av_string, 'Analysis_Note': analysis_note,
                      'Meas_No': meas_no, 'Parameter': 'T',
                      'Value': T_av1.x, 'Uncert': T_av1.u, 'DoF': T_av1.df,
                      'ExpU': T1_EU, 'k': T1_k, 'repr': R_info.ureal_to_str(T_av1)}
