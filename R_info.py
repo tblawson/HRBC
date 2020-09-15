@@ -167,6 +167,7 @@ def get_Rs0(curs, Rs_name):
     q_Rs = f"SELECT * FROM Res_Info WHERE R_Name='{Rs_name}';"
     curs.execute(q_Rs)
     Rs_rows = curs.fetchall()
+    assert len(Rs_rows) > 0, f'No Rs data found for {Rs_name}!'
     for r in Rs_rows:
         param = r[1]
         val = r[2]
@@ -205,6 +206,7 @@ def get_n_meas(curs, runid):
 
 
 def get_vgain(curs, DVM, param):
+    print(f"Looking up gain code {param} for DVM {DVM}")
     q_Vgain = f"SELECT * FROM Instr_Info WHERE I_Name='{DVM}'AND Parameter ='{param}';"
     curs.execute(q_Vgain)
     row = curs.fetchone()
@@ -264,7 +266,7 @@ def write_this_result_to_db(curs, result_lst):
 
 
 def write_budget_line(curs, i, R1, result):
-    headings = "Run_Id, Meas_No, Quantity_Label, Value, Uncert, DoF, Sens_Co, U_Contrib"
+    headings = "Run_Id, Meas_No, Quantity_Label, Value, Uncert, DoF, Sens_Co, U_Contrib, Analysis_Note"
     sensitivity = gtc.rp.sensitivity(R1, i)
     component = gtc.rp.u_component(R1, i)
     if math.isinf(i.df):
@@ -273,7 +275,7 @@ def write_budget_line(curs, i, R1, result):
     else:
         df = i.df
     values = (f"'{result['Run_Id']}','{result['Meas_No']}','{i.label}',{i.x},{i.u},{df},"
-              f"{sensitivity},{component}")
+              f"{sensitivity},{component},'{result['Analysis_Note']}'")
     q_write_budget = f"INSERT OR REPLACE INTO Uncert_Contribs ({headings}) VALUES ({values});"
     # print(f"Query:\n{q_write_budget}")
     curs.execute(q_write_budget)

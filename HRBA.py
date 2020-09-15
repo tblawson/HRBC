@@ -43,7 +43,8 @@ VERSION = 2.1  # 2nd Python 3 version, 1st db-based version.
 DT_FORMAT = R_info.DT_FORMAT  # '%Y-%m-%d %H:%M:%S'
 # DVM, GMH Correction factors, etc.
 ZERO = gtc.ureal(0, 0)
-FRAC_TOLERANCE = {'R2': 2e-2, 'G': 0.01, 'R1': 1}  # {'R2': 2e-4, 'G': 0.01, 'R1': 5e-2}
+CHECK_QUALITY = False
+FRAC_TOLERANCE = {'R2': 2e-2, 'G': 0.01, 'R1': 0.005}  # {'R2': 2e-4, 'G': 0.01, 'R1': 5e-2}
 RLINK_MAX = 2000  # Ohms
 
 datadir = r'G:\My Drive'
@@ -84,6 +85,7 @@ influences = [Rd]
 Rs_0 = R_info.get_Rs0(curs, run_info['Rs_Name'])  # Dict to hold all Rs info.
 logging.info(f"'Rs_0 = {Rs_0['R0'].x} +/- {Rs_0['R0'].u}, dof = {Rs_0['R0'].df}")
 print(f"'Rs 'book-value' = {Rs_0['R0'].x} +/- {Rs_0['R0'].u}, dof = {Rs_0['R0'].df}")
+
 # __________________... and include influences :__________________
 influences.extend([Rs_0['R0'], Rs_0['TRef'], Rs_0['VRef'], Rs_0['alpha'],
                    Rs_0['beta'], Rs_0['gamma'], Rs_0['tau']])
@@ -166,7 +168,7 @@ for meas_no in range(1, n_meas+1):  # 1 to <max meas_no>
 
     # ________________Mean voltages:________________
     V1av = gtc.result((V1_lst[0] - 2 * V1_lst[1] + V1_lst[2]) / 4,
-                      label=f"{run_info['Rx_Name']}_V_{runid}")
+                      label=f"{run_info['Rx_Name']}_V_meas={meas_no}_{runid}")
     V2av = (V2_lst[0] - 2 * V2_lst[1] + V2_lst[2]) / 4
     Vlin_Vdav = DVMd_params['linearity_Vdav']
     Vdav = (Vd_lst[0] - 2 * Vd_lst[1] + Vd_lst[2]) / 4 + Vlin_Vdav + Vdrift['Vdav']
@@ -186,17 +188,17 @@ for meas_no in range(1, n_meas+1):  # 1 to <max meas_no>
     # Define temperature definition of +/- 0.05 C to account for typical
     # ...separation between resistor element and GMH probe:
     T_def = gtc.ureal(0, gtc.type_b.distribution['gaussian'](0.05), 3,
-                      label='T_def ' + runid)
+                      label=f'T_def {runid}')
 
     # Data are plain numbers (with digitization rounding),
     # so use ta.estimate_digitized() to return a ureal...
-    T_av1 = gtc.result(gtc.ta.estimate_digitized(T1_lst, 0.01) + GMH1_correction + T_def,
-                       label=f"{run_info['Rx_Name']}_T_{runid}")
-    T_av2 = gtc.result(gtc.ta.estimate_digitized(T2_lst, 0.01) + GMH2_correction + T_def,
+    Tav_1 = gtc.result(gtc.ta.estimate_digitized(T1_lst, 0.01) + GMH1_correction + T_def,
+                       label=f"{run_info['Rx_Name']}_T_meas={meas_no}_{runid}")
+    Tav_2 = gtc.result(gtc.ta.estimate_digitized(T2_lst, 0.01) + GMH2_correction + T_def,
                        label=f'T_av2 {runid}')
-    dT = T_av2 - Rs_0['TRef']
+    dT = Tav_2 - Rs_0['TRef']
 
-    influences.extend([T_av2, T_def])
+    influences.extend([Tav_2, T_def])
 
     # ____________________Time offset:____________________
     t_av_dt = R_info.av_t_dt(V1_times + V2_times + Vd_times)  # Av time as datetime obj.
@@ -246,6 +248,7 @@ for meas_no in range(1, n_meas+1):  # 1 to <max meas_no>
     number of possible values (ie: No. of test-Vs] < [No. of possible
     voltage ratios]).
     """
+    print(f"G1_code = {G1_code}. G2_code = {G2_code}")
     G1 = R_info.get_vgain(curs, run_info['DVM12'], G1_code)
     G2 = R_info.get_vgain(curs, run_info['DVM12'], G2_code)
     vrc = gtc.result(G2 / G1, label='vrc ' + runid)
@@ -253,17 +256,24 @@ for meas_no in range(1, n_meas+1):  # 1 to <max meas_no>
     influences.extend([G1, G2])
 
     # _____________________Calculate R1:_____________________
-    R1 = gtc.result(Rs*vrc*V1av* delta_Vd / (Vdav*delta_V2 - V2av*delta_Vd),
-                    label=f"{run_info['Rx_Name']}_R_{runid}")
+    R1 = gtc.result(Rs*vrc*V1av*delta_Vd / (Vdav*delta_V2 - V2av*delta_Vd),
+                    label=f"{run_info['Rx_Name']}_R_meas={meas_no}_{runid}")
+    if CHECK_QUALITY:
+        assert R1.x > 0, (f'\nCalculation error! R1 <= zero!: {R1.x}. '
+                         f'Run info:{runid} meas={meas_no}')
+        assert R1.u < R1.x, (f'\nR1 Warning! Uncert >= value: {R1}. '
+                             f'Run info:{runid} meas={meas_no}')
+
+        R1val = R_info.get_r_val(run_info['Rx_Name'])
+        frac_err = abs(R1.x - R1val) / R1val
+        assert frac_err < FRAC_TOLERANCE['R1'], (f"R1 > {FRAC_TOLERANCE['R1']*1e6} ppm "
+                                                 "from nominal ({frac_err})!")
+
     print('R1 = {} +/- {}, dof = {}'.format(R1.x, R1.u, R1.df))
     logging.info(f"\tR1 = {R1.x} +/- {R1.u}, dof = {R1.df}")
 
-    R1val = R_info.get_r_val(run_info['Rx_Name'])
-    frac_err = abs(R1.x - R1val) / R1val
-    assert frac_err < FRAC_TOLERANCE['R1'], f'R1 > 1000 ppm from nominal ({frac_err})!'
-
     # ____Corrected R1 temperature, including definition uncert.:____
-    T1 = T_av1 + T_def
+    T1 = Tav_1 + T_def
     print(f"{R1.x} at temperature {T1.x} and test-voltage {V1av.x}")
     logging.info(f"{R1.x} at temperature {T1.x} and test-voltage {V1av.x}")
 
@@ -282,15 +292,17 @@ for meas_no in range(1, n_meas+1):  # 1 to <max meas_no>
                      'Value': V1av.x, 'Uncert': V1av.u, 'DoF': V1av.df,
                      'ExpU': V1_EU, 'k': V1_k, 'repr': R_info.ureal_to_str(V1av)}
 
-    T1_k = gtc.rp.k_factor(T_av1.df)
-    T1_EU = T_av1.u*V1_k
+    T1_k = gtc.rp.k_factor(Tav_1.df)
+    T1_EU = Tav_1.u * V1_k
     this_result_T = {'Run_Id': runid, 'Meas_Date': t_av_string, 'Analysis_Note': analysis_note,
                      'Meas_No': meas_no, 'Parameter': 'T',
-                     'Value': T_av1.x, 'Uncert': T_av1.u, 'DoF': T_av1.df,
-                     'ExpU': T1_EU, 'k': T1_k, 'repr': R_info.ureal_to_str(T_av1)}
+                     'Value': Tav_1.x, 'Uncert': Tav_1.u, 'DoF': Tav_1.df,
+                     'ExpU': T1_EU, 'k': T1_k, 'repr': R_info.ureal_to_str(Tav_1)}
 
+    # ------------- Write to Results table: --------------
     R_info.write_this_result_to_db(curs, [this_result_R, this_result_V, this_result_T])
 
+    # ---------- Write to Uncert_Contribs table: ----------
     for i in influences:
         R_info.write_budget_line(curs, i, R1, this_result_R)
 # _____________End of measurements loop._____________
