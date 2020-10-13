@@ -11,8 +11,8 @@ import string
 import datetime as dt
 import time
 import math
-import xlrd
-from openpyxl.styles import Font, colors, PatternFill, Border, Side
+# import xlrd
+# from openpyxl.styles import Font, colors, PatternFill, Border, Side
 import GTC as gtc
 import logging
 
@@ -137,22 +137,22 @@ def ureal_to_str(un):
     :param un: Ureal.
     :return: (str) a json representation of ureal.
     """
-    #print(f'Encoding {un}')
     archive = gtc.pr.Archive()
     d = {un.label: un}
     archive.add(**d)
     return gtc.pr.dumps_json(archive)
 
 
-def str_to_ureal(j_str, lbl):
+def str_to_ureal(j_str, stored_name):
     """
-    Decode an json string to a ureal.
+    Decode a json string to a ureal.
     :param j_str: json string representation of a ureal.
     :param stored_name: (str) Archive-id of ureal.
     :return: (ureal) Uncertain number with dependencies intact.
     """
+    print(f'Retrieving ureal (label={stored_name}) from:...\n', j_str)
     archive = gtc.pr.loads_json(j_str)
-    return archive.extract(lbl)
+    return archive.extract(stored_name)
 
 
 def get_Rs0(curs, Rs_name):
@@ -268,7 +268,7 @@ def write_this_result_to_db(curs, result_lst):
 def write_budget_line(curs, i, R1, result):
     headings = "Run_Id, Meas_No, Quantity_Label, Value, Uncert, DoF, Sens_Co, U_Contrib, Analysis_Note"
     sensitivity = gtc.rp.sensitivity(R1, i)
-    component = gtc.rp.u_component(R1, i)
+    component = abs(gtc.rp.u_component(R1, i))  # Can be -ve without abs()!
     if math.isinf(i.df):
         print(f"Writing budget line for {i.label} - Infinite dof detected: ({i.df}). Replacing with 1e6.")
         df = 1e6
@@ -406,36 +406,36 @@ def av_t_string(t_list, switch):
 #         log.write('Fit params:\t intercept={}+/-{},dof={}. Slope={}+/-{},dof={}'.format(R1.x, R1.u, R1.df, alpha.x,
 #                                                                                         alpha.u, alpha.df))
 
-    sheet['R'+str(row)] = R1.x
-    sheet['S'+str(row)] = R1.u
-    if math.isinf(R1.df):
-        sheet['T'+str(row)] = str(R1.df)
-    else:
-        sheet['T'+str(row)] = round(R1.df)
-
-    sheet['U'+str(row)] = R1.u*gtc.rp.k_factor(R1.df)
-
-    sheet['V'+str(row)] = T_av.x
-    sheet['W'+str(row)] = T_av.u
-    if math.isinf(T_av.df):
-        sheet['X'+str(row)] = str(T_av.df)
-    else:
-        sheet['X'+str(row)] = round(T_av.df)
-
-    t = [result['time_fl'] for result in results]  # x data (time,s from epoch)
-    t_av = gtc.ta.estimate(t)
-    time_av = dt.datetime.fromtimestamp(t_av.x)  # A Python datetime object
-    sheet['Y'+str(row)] = time_av.strftime('%d/%m/%Y %H:%M:%S')  # string-formatted for display
-
-    V1 = [V for V in [result['V'] for result in results]]
-    V_av = gtc.fn.mean(V1)
-    sheet['Z'+str(row)] = V_av.x
-    sheet['AA'+str(row)] = V_av.u
-    if math.isinf(V_av.df):
-        sheet['AB'+str(row)] = str(V_av.df)
-    else:
-        sheet['AB'+str(row)] = round(V_av.df)
-    return R1, alpha, T_av, V_av, time_av
+    # sheet['R'+str(row)] = R1.x
+    # sheet['S'+str(row)] = R1.u
+    # if math.isinf(R1.df):
+    #     sheet['T'+str(row)] = str(R1.df)
+    # else:
+    #     sheet['T'+str(row)] = round(R1.df)
+    #
+    # sheet['U'+str(row)] = R1.u*gtc.rp.k_factor(R1.df)
+    #
+    # sheet['V'+str(row)] = T_av.x
+    # sheet['W'+str(row)] = T_av.u
+    # if math.isinf(T_av.df):
+    #     sheet['X'+str(row)] = str(T_av.df)
+    # else:
+    #     sheet['X'+str(row)] = round(T_av.df)
+    #
+    # t = [result['time_fl'] for result in results]  # x data (time,s from epoch)
+    # t_av = gtc.ta.estimate(t)
+    # time_av = dt.datetime.fromtimestamp(t_av.x)  # A Python datetime object
+    # sheet['Y'+str(row)] = time_av.strftime('%d/%m/%Y %H:%M:%S')  # string-formatted for display
+    #
+    # V1 = [V for V in [result['V'] for result in results]]
+    # V_av = gtc.fn.mean(V1)
+    # sheet['Z'+str(row)] = V_av.x
+    # sheet['AA'+str(row)] = V_av.u
+    # if math.isinf(V_av.df):
+    #     sheet['AB'+str(row)] = str(V_av.df)
+    # else:
+    #     sheet['AB'+str(row)] = round(V_av.df)
+    # return R1, alpha, T_av, V_av, time_av
 
 
 def get_digi(readings):
