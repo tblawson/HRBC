@@ -63,6 +63,13 @@ indicating a decade multiplier.
 
 
 def GetRval(name):
+    """
+    Extract nominal resistor value from name.
+    Parse the resistor name for the nominal value. Resistor names MUST be of the form
+    'xxx nnp', where 'xxx ' is a one-word description ending with a SINGLE SPACE,
+    'nn' is an integer (usually a decade value) and the last character 'p' is a letter
+    indicating a decade multiplier.
+    """
     prefixes = {'r': 1, 'R': 1, 'k': 1000, 'M': 1e6, 'G': 1e9}
 
     if name[-1] in prefixes:
@@ -72,7 +79,9 @@ def GetRval(name):
     assert mult != 0, 'Error parsing comment - unkown multiplier!'
 
     # return numeric part of last word, multiplied by 1, 10^3, 10^6 or 10^9:
-    return(mult*int(string.strip(string.split(name)[-1], string.letters)))
+    r_val_str = name.split()[-1]
+    return mult * int(r_val_str.strip(string.ascii_letters))
+    # return mult*int(string.strip(string.split(name)[-1], string.letters))
 
 
 def GetRLstartrow(sheet, Id, jump, log):
@@ -87,7 +96,7 @@ def GetRLstartrow(sheet, Id, jump, log):
             else:  # Jump to just before start of next data-block
                 search_row += jump
         search_row += 1
-    print 'No matching Rlink data!'
+    print('No matching Rlink data!')
     log.write('GetRLstartrow():No matching Rlink data!\n')
     return -1
 
@@ -128,10 +137,10 @@ def av_t_strin(t_list, switch):
     n = float(len(t_list))
     t_av = 0.0
     for s in t_list:
-        if type(s) is unicode:
+        if type(s) is str:  # Python2.7: 'unicode'
             t_dt = dt.datetime.strptime(s, '%d/%m/%Y %H:%M:%S')
         elif type(s) is float:
-            print s, 'is a float...'
+            print(s, 'is a float...')
             t_dt = xlrd.xldate.xldate_as_datetime(s, 0)
         else:
             assert 0, 'Time format is not unicode or float!'
@@ -243,13 +252,13 @@ def write_R1_T_fit(results, sheet, row, log):
 
     if len(set(T_data)) <= 1: # No temperature variation recorded, so can't fit to T
         R1 = GTC.fn.mean(y)
-        print 'R1_LV (av, not fit):', R1
+        print('R1_LV (av, not fit):', R1)
         log.write('\nR1_LV (av, not fit): ' + str(R1))
     else:
         # a_ta,b_ta = GTC.ta.line_fit_wls(T_rel,y,u_y).a_b
         # Assume uncert of individual measurements dominate uncert of fit
         R1, alpha = GTC.fn.line_fit_wls(T_rel, y).a_b
-        print 'Fit params:\t intercept=', GTC.summary(R1), 'Slope=', GTC.summary(alpha)
+        print('Fit params:\t intercept=', GTC.summary(R1), 'Slope=', GTC.summary(alpha))
         log.write('\nFit params:\t intercept= ' + str(GTC.summary(R1)) + ' Slope= ' + str(GTC.summary(alpha)))
 
     sheet['R'+str(row)] = R1.x
