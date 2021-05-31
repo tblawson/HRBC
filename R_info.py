@@ -11,7 +11,7 @@ import datetime as dt
 import time
 import math
 import xlrd
-from openpyxl.styles import Font, colors, PatternFill, Border, Side
+from openpyxl.styles import Font, PatternFill, Border, Side
 import GTC
 from numbers import Number
 
@@ -49,17 +49,7 @@ def ExtractNames(comment):
     assert comment.find('R2: ') >= 0, 'R2 name not found in comment!'
     R1_name = comment[comment.find('R1: ') + 4:comment.find(' monitored by GMH')]
     R2_name = comment[comment.find('R2: ') + 4:comment.rfind(' monitored by GMH')]
-    return (R1_name, R2_name)
-
-
-# Extract nominal resistor value from name
-"""
-Parse the resistor name for the nominal value.Resistor names MUST be of the form
-'xxx nnp', where 'xxx ' is a one-word description ending with a SINGLE SPACE,
-'nn' is an integer (usually a decade value) and the last character 'p' is a letter
-indicating a decade multiplier.
-
-"""
+    return R1_name, R2_name
 
 
 def GetRval(name):
@@ -137,13 +127,19 @@ def av_t_strin(t_list, switch):
     n = float(len(t_list))
     t_av = 0.0
     for s in t_list:
-        if type(s) is str:  # Python2.7: 'unicode'
+        """
+        Excel cells may contain an un-formatted time as a float,
+        or an Excel date-time format string:
+        """
+        if isinstance(s, str):  # Python2.7: type(s) is 'unicode'
             t_dt = dt.datetime.strptime(s, '%d/%m/%Y %H:%M:%S')
-        elif type(s) is float:
+        elif isinstance(s, float):
             print(s, 'is a float...')
             t_dt = xlrd.xldate.xldate_as_datetime(s, 0)
+        elif isinstance(s, dt.datetime):
+            t_dt = s
         else:
-            assert 0, 'Time format is not unicode or float!'
+            assert 0, f'Time format is not unicode or float! - {s}'
         t_tup = dt.datetime.timetuple(t_dt)
         t_av += time.mktime(t_tup)
 
@@ -192,9 +188,9 @@ def WriteHeadings(sheet, row, version):
 
 # Write measurement summary   
 def WriteThisResult(sheet, row, result):
-    sheet['A'+str(row)].font = Font(color=colors.YELLOW)
+    sheet['A'+str(row)].font = Font(color='FFFF00')  # YELLOW
     sheet['A'+str(row)].fill = PatternFill(patternType='solid',
-                                           fgColor=colors.RED)
+                                           fgColor='FF0000')  # RED
     sheet['A'+str(row)] = str(result['name'])
 
     sheet['B'+str(row)] = result['V'].x
@@ -240,26 +236,39 @@ def WriteBudget(sheet, row, budget):
     return row
 
 
+def add_if_unique(item, lst):
+    """
+    Append 'item' to 'lst' only if it is not already present.
+    """
+    if item not in lst:
+        lst.append(item)
+    return lst
+
+
 # Weighted least-squares fit (R1-T)
 def write_R1_T_fit(results, sheet, row, log):
-    T_data = [T for T in [result['T'] for result in results]]  # All T values
+    T_data = [T for T in [result['T'] for result in results]]  # All T ureals
+    unique_T_data = []
+    for T in T_data:
+        add_if_unique(T, unique_T_data)
     T_av = GTC.fn.mean(T_data)
     # print'write_R1_T_fit():u(T_av)=',T_av.u,'dof(T_av)=',T_av.df
     T_rel = [t_k - T_av for t_k in T_data]  # x-vals
+    alpha = GTC.ureal(0, 0)
 
     y = [R for R in [result['R'] for result in results]]  # All R values
-    # u_y = [R.u for R in [result['R'] for result in results]] # All R uncerts
+    u_y = [R.u for R in [result['R'] for result in results]]  # All R uncerts
 
-    if len(set(T_data)) <= 1: # No temperature variation recorded, so can't fit to T
+    if len(unique_T_data) <= 1:  # No T-variation recorded, so can't fit to T. CHANGED from len(set(T_data)).
         R1 = GTC.fn.mean(y)
         print('R1_LV (av, not fit):', R1)
         log.write('\nR1_LV (av, not fit): ' + str(R1))
     else:
         # a_ta,b_ta = GTC.ta.line_fit_wls(T_rel,y,u_y).a_b
         # Assume uncert of individual measurements dominate uncert of fit
-        R1, alpha = GTC.fn.line_fit_wls(T_rel, y).a_b
-        print('Fit params:\t intercept=', GTC.summary(R1), 'Slope=', GTC.summary(alpha))
-        log.write('\nFit params:\t intercept= ' + str(GTC.summary(R1)) + ' Slope= ' + str(GTC.summary(alpha)))
+        R1, alpha = GTC.ta.line_fit_wls(T_rel, y, u_y).a_b
+        print(f'Fit params:\t intercept={R1.x}+/-{R1.u},dof={R1.df}. Slope={alpha.x}+/-{alpha.u},dof={alpha.df}')
+        log.write(f'Fit params:\t intercept={R1.x}+/-{R1.u},dof={R1.df}. Slope={alpha.x}+/-{alpha.u},dof={alpha.df}')
 
     sheet['R'+str(row)] = R1.x
     sheet['S'+str(row)] = R1.u
@@ -290,7 +299,7 @@ def write_R1_T_fit(results, sheet, row, log):
         sheet['AB'+str(row)] = str(V_av.df)
     else:
         sheet['AB'+str(row)] = round(V_av.df)
-    return (R1, alpha, T_av, V_av, time_av)
+    return R1, alpha, T_av, V_av, time_av
 
 
 def update_R_Info(name, params, data, sheet, row, Id, v):

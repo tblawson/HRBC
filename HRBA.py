@@ -165,7 +165,7 @@ for r in ws_Params.rows:  # a tuple of row objects
         I_values.append(R_info.Uncertainize(I_row_items))
         if I_row_items[1] == u'test':  # last parameter for this description
             I_DESCR.append(I_row_items[0])  # build description list
-            I_sublist.append(dict(zip(I_params,I_values)))  # add parameter dictionary to sublist
+            I_sublist.append(dict(zip(I_params, I_values)))  # add parameter dictionary to sublist
             del I_params[:]
             del I_values[:]
 
@@ -194,8 +194,8 @@ print(f'Found {len(I_INFO)} instruments ({last_I_row} rows)')
 log.write(f'\nFound {len(I_INFO)} instruments ({last_I_row} rows)')
 
 R_INFO = dict(zip(R_DESCR, R_sublist))
-print(f'Found {len(R_INFO)} instruments ({last_R_row} rows)')
-log.write(f'\nFound {len(R_INFO)} instruments ({last_R_row} rows)')
+print(f'Found {len(R_INFO)} resistors ({last_R_row} rows)')
+log.write(f'\nFound {len(R_INFO)} resistors ({last_R_row} rows)')
 
 # -------------End of parameter extraction-------------- #
 # ###################################################### #
@@ -281,7 +281,7 @@ nom_R1 = GTC.ureal(val1, val1/1e4, 8, label='nom_R1')  # don't know uncertainty 
 val2 = ws_Rlink['C'+str(RL_start_row+3)].value
 assert val2 is not None, 'Missing nominal R2 value!'
 nom_R2 = GTC.ureal(val2, val2/1e4, 8, label='nom_R2')  # don't know uncertainty of nominal values
-val1 =ws_Rlink['D'+str(RL_start_row+2)].value
+val1 = ws_Rlink['D'+str(RL_start_row+2)].value
 assert val1 is not None, 'Missing nominal V1 value!'
 abs_V1 = GTC.ureal(val1, val1/1e4, 8, label='abs_V1')  # don't know uncertainty of nominal values
 val2 = ws_Rlink['D'+str(RL_start_row+3)].value
@@ -366,7 +366,6 @@ while Data_row <= Data_stop_row:
         R2TRef = R_INFO[R2_name]['TRef_LV']
         R2VRef = R_INFO[R2_name]['VRef_LV']
 
-
     # Select appropriate value of VRC, etc.
     """
     #################################################################
@@ -403,13 +402,13 @@ while Data_row <= Data_stop_row:
 
     # Start list of influence variables
     influencies = [Rd, G1, G2, Vlin_pert,
-                   Vlin_Vdav, R2TRef, R2VRef]  # R2 dependancies
+                   Vlin_Vdav, R2TRef, R2VRef]  # R2 dependencies
 
     R2alpha = R_INFO[R2_name]['alpha']
     R2beta = R_INFO[R2_name]['beta']
     R2gamma = R_INFO[R2_name]['gamma']
     R2Tsensor = R_INFO[R2_name]['T_sensor']
-    influencies.extend([R2_0, R2alpha, R2beta, R2gamma])  # R2 dependancies
+    influencies.extend([R2_0, R2alpha, R2beta, R2gamma])  # R2 dependencies
 
     if R1_name not in R_INFO:
         R1Tsensor = 'Pt 100r'  # assume a Pt sensor in unknown resistor
@@ -433,7 +432,7 @@ while Data_row <= Data_stop_row:
     del Ts[:]  # list for 4 room Temp values
 
     # Process times, RH and temperature data in this 4-row block:
-    for r in range(Data_row, Data_row+4): # build list of 4 gmh / T-probe dvm readings
+    for r in range(Data_row, Data_row+4):  # build list of 4 gmh / T-probe dvm readings
         assert ws_Data['U'+str(r)].value is not None, 'No R1 GMH temperature data!'
         assert ws_Data['V'+str(r)].value is not None, 'No R2 GMH temperature data!'
         raw_gmh1.append(ws_Data['U'+str(r)].value)
@@ -477,11 +476,11 @@ while Data_row <= Data_stop_row:
     # so use ta.estimate_digitized() to return a ureal.
     assert len(raw_gmh1) > 1, 'Not enough GMH1 temperatures to average!'
     T1_av_gmh = GTC.result(GTC.ta.estimate_digitized(raw_gmh1, 0.01) + GMH1_cor,
-                              label='T1_av_gmh ' + Run_Id)
+                           label='T1_av_gmh ' + Run_Id)
 
     assert len(raw_gmh2) > 1, 'Not enough GMH2 temperatures to average!'
     T2_av_gmh = GTC.result(GTC.ta.estimate_digitized(raw_gmh2, 0.01) + GMH2_cor,
-                              label='T2_av_gmh ' + Run_Id) 
+                           label='T2_av_gmh ' + Run_Id)
 
     assert len(times) > 1, 'Not enough timestamps to average!'
     times_av_str = R_info.av_t_strin(times, 'str')  # mean time(as a time string)
@@ -552,9 +551,9 @@ while Data_row <= Data_stop_row:
 
     # T-definition arises from imperfect positioning of both probes AND their disagreement:
     T_def1 = GTC.result(GTC.ureal(0, Diff_T1.u/2, 7) + T_def,
-                           label='T_def1 ' + Run_Id)    
+                        label='T_def1 ' + Run_Id)
     T_def2 = GTC.result(GTC.ureal(0, Diff_T2.u/2, 7) + T_def,
-                           label='T_def2 ' + Run_Id)
+                        label='T_def2 ' + Run_Id)
     influencies.append(T_def2)  # R2 dependancy
 
     # Raw voltage measurements: V: [Vp,Vm,Vpp,Vppp]
@@ -631,7 +630,7 @@ while Data_row <= Data_stop_row:
     R_info.WriteThisResult(ws_Summary, summary_row, this_result)
 
     # build uncertainty budget table
-    budget_table =[]
+    budget_table = []
     for i in influencies:  # rp.u_component(R1_gmh,i) gives + or - values
         if i.u > 0:
             sensitivity = GTC.rp.sensitivity(R1, i)
@@ -725,7 +724,7 @@ else:
 ws_Summary['V'+str(summary_row)] = gamma.x
 ws_Summary['W'+str(summary_row)] = gamma.u
 if math.isinf(gamma.df) or math.isnan(alpha.df):
-     ws_Summary['X'+str(summary_row)] = str(gamma.df)
+    ws_Summary['X'+str(summary_row)] = str(gamma.df)
 else:
     ws_Summary['X'+str(summary_row)] = round(gamma.df)
 

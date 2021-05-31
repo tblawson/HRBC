@@ -228,7 +228,7 @@ class AqnThread(Thread):
             #  V1...
             devices.ROLES_INSTR['DVM12'].SendCmd('LFREQ LINE')
             time.sleep(0.5)
-            devices.ROLES_INSTR['DVM12'].SendCmd('DCV,'+str(int(self.V1_set)))
+            devices.ROLES_INSTR['DVM12'].SendCmd('DCV,'+str(int(abs(self.V1_set))))
             if self._want_abort:
                 self.AbortRun()
                 return
@@ -281,9 +281,9 @@ class AqnThread(Thread):
 
             # If running with fixed range set range to 'str(self.V1_set)':
             if self.RunPage.RangeTBtn.GetValue() == True:
-                range2 = self.V2_set
+                range2 = int(abs(self.V2_set))
             else:
-                range2 = self.V1_set
+                range2 = int(abs(self.V1_set))
             cmd = 'DCV,' + str(range2)
             devices.ROLES_INSTR['DVM12'].SendCmd(cmd)  # Reset DVM range
             if self._want_abort:
