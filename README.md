@@ -4,4 +4,4 @@ High Resistance Bridge Control software.
 
 Local repository is I:...\Staff\TBL\GitHub\HRBC\
 
-Use Spyder to edit locally and test.
+Use Pycharm (or IDE of your choice) to edit locally and test.
