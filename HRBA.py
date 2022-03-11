@@ -79,8 +79,8 @@ ws_Summary = wb_io['Results']  # wb_io.get_sheet_by_name('Results')
 ws_Params = wb_io['Parameters']  # wb_io.get_sheet_by_name('Parameters')
 
 # Get local parameters
-Data_start_row = ws_Data['B1'].value
-Data_stop_row = ws_Data['B2'].value
+Data_start_row = ws_Data.cell(row=1, column=2).value  # ['B1'].value
+Data_stop_row = ws_Data.cell(row=2, column=2).value  # ['B2'].value
 assert Data_start_row <= Data_stop_row, 'Stop row must follow start row!'
 
 # Get instrument assignments
@@ -91,14 +91,14 @@ for row in range(Data_start_row, Data_start_row + N_ROLES):
     # temp_dict = {ws_Data['AC' + str(row)].value: ws_Data['AD' + str(row)].value}
     # assert temp_dict.keys()[-1] is not None, 'Instrument assignment: Missing role!'
     # assert temp_dict.values()[-1] is not None, 'Instrument assignment: Missing description!'
-    key = ws_Data['AC' + str(row)].value
-    val = ws_Data['AD' + str(row)].value
+    key = ws_Data.cell(row=row, column=29).value  # ['AC' + str(row)].value
+    val = ws_Data.cell(row=row, column=30).value  # ['AD' + str(row)].value
     assert key is not None, 'Instrument assignment: Missing role!'
     assert val is not None, 'Instrument assignment: Missing description!'
     temp_dict = {key: val}
     role_descr.update(temp_dict)
-    if ws_Data['AC'+str(row)].value == u'DVM12':
-        range_mode = ws_Data['AE'+str(row)].value
+    if ws_Data.cell(row=row, column=29).value == u'DVM12':  # ['AC'+str(row)].value
+        range_mode = ws_Data.cell(row=row, column=31).value  # ['AE'+str(row)].value
         print('Range mode:', range_mode)
 
 # ------------------------------------------------------------------- #
@@ -202,9 +202,9 @@ log.write(f'\nFound {len(R_INFO)} resistors ({last_R_row} rows)')
 
 
 # Determine the meanings of 'LV' and 'HV'
-V1set_a = abs(ws_Data['A'+str(Data_start_row)].value)
+V1set_a = abs(ws_Data.cell(row=Data_start_row, column=1).value)  # ['A'+str(Data_start_row)].value
 assert V1set_a is not None, 'Missing initial V1 value!'
-V1set_b = abs(ws_Data['A'+str(Data_start_row+4)].value)
+V1set_b = abs(ws_Data.cell(row=Data_start_row+4, column=1).value)  # ['A'+str(Data_start_row+4)].value
 assert V1set_b is not None, 'Missing second V1 value!'
 
 if V1set_a < V1set_b:
@@ -221,18 +221,18 @@ print(f'LV ={LV}; HV ={HV}')
 Data_row = Data_start_row
 
 # Get start_row on Summary sheet
-summary_start_row = ws_Summary['B1'].value
+summary_start_row = ws_Summary.cell(row=1, column=2).value
 assert summary_start_row is not None, 'Missing start row on Results sheet!'
 
 # Get run identifier and copy to Results sheet
-Run_Id = ws_Data['B'+str(Data_start_row-1)].value
+Run_Id = ws_Data.cell(row=Data_start_row-1, column=2).value
 assert Run_Id is not None, 'Missing Run Id!'
 
 ws_Summary['C'+str(summary_start_row)] = 'Run Id:'
 ws_Summary['D'+str(summary_start_row)] = str(Run_Id)
 
 # Get run comment and extract R names & R values
-Data_comment = ws_Data['Z'+str(Data_row)].value
+Data_comment = ws_Data.cell(row=Data_row, column=26).value
 assert Data_comment is not None, 'Missing Comment!'
 
 print(Data_comment)
@@ -260,9 +260,9 @@ if R2_name not in R_INFO:
 
 # ## __________Get Rd value__________## #
 # 1st, detetermine data format
-N_revs = ws_Rlink['B2'].value  # Number of reversals = number of columns
+N_revs = ws_Rlink.cell(row=2, column=2).value  # Number of reversals = number of columns
 assert N_revs is not None and N_revs > 0, 'Missing or no reversals!'
-N_reads = ws_Rlink['B3'].value  # Number of readings = number of rows
+N_reads = ws_Rlink.cell(row=3, column=2).value  # Number of readings = number of rows
 assert N_reads is not None and N_reads > 0, 'Missing or no reads!'
 head_height = 6  # Rows of header before each block of data
 jump = head_height + N_reads  # rows to jump between starts of each header
@@ -275,16 +275,16 @@ assert RL_start_row > 1, 'Unable to find matching Rlink data!'
 """
 Assume all 'nominal' values have 100 ppm std.uncert. with 8 dof.
 """
-val1 = ws_Rlink['C'+str(RL_start_row+2)].value
+val1 = ws_Rlink.cell(row=RL_start_row+2, column=3).value
 assert val1 is not None, 'Missing nominal R1 value!'
 nom_R1 = GTC.ureal(val1, val1/1e4, 8, label='nom_R1')  # don't know uncertainty of nominal values
-val2 = ws_Rlink['C'+str(RL_start_row+3)].value
+val2 = ws_Rlink.cell(row=RL_start_row+3, column=3).value
 assert val2 is not None, 'Missing nominal R2 value!'
 nom_R2 = GTC.ureal(val2, val2/1e4, 8, label='nom_R2')  # don't know uncertainty of nominal values
-val1 = ws_Rlink['D'+str(RL_start_row+2)].value
+val1 = ws_Rlink.cell(row=RL_start_row+2, column=4).value
 assert val1 is not None, 'Missing nominal V1 value!'
 abs_V1 = GTC.ureal(val1, val1/1e4, 8, label='abs_V1')  # don't know uncertainty of nominal values
-val2 = ws_Rlink['D'+str(RL_start_row+3)].value
+val2 = ws_Rlink.cell(row=RL_start_row+3, column=4).value
 assert val2 is not None, 'Missing nominal V2 value!'
 abs_V2 = GTC.ureal(val2, val2/1e4, 8, label='abs_V2')  # don't know uncertainty of nominal values
 
@@ -345,9 +345,9 @@ print('\nLooping over data rows', Data_start_row, 'to', Data_stop_row, '...')
 log.write('\nLooping over data rows ' + str(Data_start_row) + ' to ' + str(Data_stop_row) + '\n')
 while Data_row <= Data_stop_row:
     # R2 parameters:
-    V2set = ws_Data['B'+str(Data_row)].value  # Changed from Data_start_row!
+    V2set = ws_Data.cell(row=Data_row, column=2).value  # Changed from Data_start_row!
     assert V2set is not None, 'Missing V2 setting!'
-    V1set = ws_Data['A'+str(Data_row)].value  # Changed from Data_start_row!
+    V1set = ws_Data.cell(row=Data_row, column=1).value  # Changed from Data_start_row!
     assert V1set is not None, 'Missing V1 setting!'
 
     # Select R2 info based on applied voltage ('LV' or 'HV')
@@ -433,23 +433,23 @@ while Data_row <= Data_stop_row:
 
     # Process times, RH and temperature data in this 4-row block:
     for r in range(Data_row, Data_row+4):  # build list of 4 gmh / T-probe dvm readings
-        assert ws_Data['U'+str(r)].value is not None, 'No R1 GMH temperature data!'
-        assert ws_Data['V'+str(r)].value is not None, 'No R2 GMH temperature data!'
-        raw_gmh1.append(ws_Data['U'+str(r)].value)
-        raw_gmh2.append(ws_Data['V'+str(r)].value)
+        assert ws_Data.cell(row=r, column=21).value is not None, 'No R1 GMH temperature data!'
+        assert ws_Data.cell(row=r, column=22)['V'+str(r)].value is not None, 'No R2 GMH temperature data!'
+        raw_gmh1.append(ws_Data.cell(row=r, column=21).value)
+        raw_gmh2.append(ws_Data.cell(row=r, column=22).value)
 
-        assert ws_Data['G'+str(r)].value is not None, 'No V2 timestamp!'
-        assert ws_Data['M'+str(r)].value is not None, 'No Vd1 timestamp!'
-        assert ws_Data['P'+str(r)].value is not None, 'No V1 timestamp!'
-        times.append(ws_Data['G'+str(r)].value)
-        times.append(ws_Data['M'+str(r)].value)
-        times.append(ws_Data['P'+str(r)].value)
+        assert ws_Data.cell(row=r, column=7).value is not None, 'No V2 timestamp!'
+        assert ws_Data.cell(row=r, column=13)['M'+str(r)].value is not None, 'No Vd1 timestamp!'
+        assert ws_Data.cell(row=r, column=16)['P'+str(r)].value is not None, 'No V1 timestamp!'
+        times.append(ws_Data.cell(row=r, column=7).value)
+        times.append(ws_Data.cell(row=r, column=13).value)
+        times.append(ws_Data.cell(row=r, column=16).value)
 
-        assert ws_Data['S'+str(r)].value is not None, 'No R1 raw DVM (temperature) data!'
-        raw_dvm1 = ws_Data['S'+str(r)].value
+        assert ws_Data.cell(row=r, column=19).value is not None, 'No R1 raw DVM (temperature) data!'
+        raw_dvm1 = ws_Data.cell(row=r, column=19).value
 
-        assert ws_Data['T'+str(r)].value is not None, 'No R2 raw DVM (temperature) data!'
-        raw_dvm2 = ws_Data['T'+str(r)].value
+        assert ws_Data.cell(row=r, column=20).value is not None, 'No R2 raw DVM (temperature) data!'
+        raw_dvm2 = ws_Data.cell(row=r, column=20).value
 
         # Check corrections for range-dependant values...
         # and apply appropriate corrections
@@ -563,17 +563,17 @@ while Data_row <= Data_stop_row:
     Vd = []
     for line in range(4):
 
-        V1.append(GTC.ureal(ws_Data['Q'+str(Data_row+line)].value,
-                            ws_Data['R'+str(Data_row+line)].value,
-                            ws_Data['C'+str(Data_row+line)].value-1,
+        V1.append(GTC.ureal(ws_Data.cell(row=Data_row+line, column=17).value,
+                            ws_Data.cell(row=Data_row+line, column=18).value,
+                            ws_Data.cell(row=Data_row+line, column=3).value-1,
                             label='V1_'+str(line) + ' ' + Run_Id))
-        V2.append(GTC.ureal(ws_Data['H'+str(Data_row+line)].value,
-                            ws_Data['I'+str(Data_row+line)].value,
-                            ws_Data['C'+str(Data_row+line)].value-1,
+        V2.append(GTC.ureal(ws_Data.cell(row=Data_row+line, column=8).value,
+                            ws_Data.cell(row=Data_row+line, column=9).value,
+                            ws_Data.cell(row=Data_row+line, column=3).value-1,
                             label='V2_'+str(line) + ' ' + Run_Id))
-        Vd.append(GTC.ureal(ws_Data['N'+str(Data_row+line)].value,
-                            ws_Data['O'+str(Data_row+line)].value,
-                            ws_Data['C'+str(Data_row+line)].value-1,
+        Vd.append(GTC.ureal(ws_Data.cell(row=Data_row+line, column=14).value,
+                            ws_Data.cell(row=Data_row+line, column=15).value,
+                            ws_Data.cell(row=Data_row+line, column=3).value-1,
                             label='Vd_'+str(line) + ' ' + Run_Id))
         assert V1[-1] is not None, 'Missing V1 data!'
         assert V2[-1] is not None, 'Missing V2 data!'
