@@ -20,7 +20,7 @@ Created on Fri Mar 17 13:52:15 2017
 import numpy as np
 import os
 import ctypes as ct
-import visa
+import pyvisa as visa
 import GMHstuff as Gmh  # GMH probe coms are handled by low-level routines in GMH3x32E.dll.
 
 INSTR_DATA = {}  # Dict of instrument parameter dicts, keyed by description
