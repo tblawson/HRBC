@@ -555,7 +555,7 @@ class AqnThread(Thread):
 
         if devices.ROLES_INSTR['DVMT1'].demo is True:
             T1dvm_out = np.random.normal(108.0, 1.0e-2)
-            self.ws['S' + str(row)].font = Font(color=colors.RED)
+            self.ws['S' + str(row)].font = Font(color='00FF0000')  # colors.RED
             # self.ws['S' + str(row)] = T1dvm_out
             # print('WriteDataThisRow(): cell S{}: {}'.format(str(row), T1dvm_out), file=self.log)
         else:
@@ -566,12 +566,12 @@ class AqnThread(Thread):
 
         if devices.ROLES_INSTR['DVMT2'].demo is True:
             T2dvm_out = np.random.normal(108.0, 1.0e-2)
-            self.ws['T' + str(row)].font = Font(color=colors.RED)
+            self.ws['T' + str(row)].font = Font(color='00FF0000')  # colors.RED
             # self.ws['T' + str(row)] = T2dvm_out
             # print('WriteDataThisRow(): cell T{}: {}'.format(str(row), T2dvm_out))
         else:
             T2dvm_out = devices.ROLES_INSTR['DVMT2'].send_cmd('READ?')
-            self.ws['T' + str(row)].font = Font(color=colors.BLACK)
+            self.ws['T' + str(row)].font = Font(color='00000000')  # colors.BLACK
         self.ws['T'+str(row)] = T2dvm_out  # float(filter(self.filt, T2dvm_out))
         print('WriteDataThisRow(): cell T{}: {}'.format(str(row), T2dvm_out), file=self.log)
 
