@@ -497,15 +497,15 @@ class SetupPage(wx.Panel):
         Choose from instrument descriptions listed in devices.DESCR
         (Uses address assignments in devices.INSTR_DATA)
         '''
-        self.instrument_choice = {'SRC1': 'SRC: T3310A,s/nU3213I18',
-                                  'SRC2': 'SRC: T3310A,s/nU3212I18',
+        self.instrument_choice = {'SRC1': 'SRC: T3310A,s/nU3212I18',
+                                  'SRC2': 'SRC: F5520A',
                                   'DVM12': 'DVM: HP3458A, s/n452',
                                   'DVMd': 'DVM: HP3458A, s/n382',
                                   'DVMT1': 'none',  # 'DVM: HP34401A, s/n976'
                                   'DVMT2': 'none',  # 'DVM: HP34420A, s/n130'
-                                  'GMH1': 'GMH: s/n628',
-                                  'GMH2': 'GMH: s/n627',
-                                  'GMHroom': 'GMH: s/n367',
+                                  'GMH1': 'GMH: s/n529',
+                                  'GMH2': 'GMH: s/n530',
+                                  'GMHroom': 'GMH: s/n369',
                                   'switchbox': 'V1'}
         for r in self.instrument_choice.keys():
             d = self.instrument_choice[r]
@@ -975,18 +975,18 @@ class RunPage(wx.Panel):
         self.status.SetStatusText('Starting run', 0)
         if self.RunThread is None:
             self.StopBtn.Enable(True)  # Enable Stop button
+            self.RLinkBtn.Enable(False)  # Disable Rlink button
             self.StartBtn.Enable(False)  # Disable Start button
             # start acquisition thread here
             self.RunThread = acq.AqnThread(self)
 
     def OnAbort(self, e):
+        self.StartBtn.Enable(True)  # Enable Start button
+        self.StopBtn.Enable(False)  # Disable Stop button
+        self.RLinkBtn.Enable(True)  # Enable Rlink button
         if self.RunThread:
-            self.StartBtn.Enable(True)
-            self.StopBtn.Enable(False)  # Disable Stop button
             self.RunThread.abort()
         elif self.RLinkThread:
-            self.RLinkBtn.Enable(True)  # Enable Start button
-            self.StopBtn.Enable(False)  # Disable Stop button
             self.RLinkThread.abort()
 
     def OnRLink(self, e):
@@ -996,7 +996,8 @@ class RunPage(wx.Panel):
         self.status.SetStatusText('Starting R-link measurement', 0)
         if self.RLinkThread is None:
             self.StopBtn.Enable(True)  # Enable Stop button
-            self.RLinkBtn.Enable(False)
+            self.RLinkBtn.Enable(False)  # Disable Rlink button
+            self.StartBtn.Enable(False)  # Disable Start button
             self.RLinkThread = rl.RLThread(self)
 
 '''

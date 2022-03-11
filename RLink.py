@@ -61,10 +61,10 @@ class RLThread(Thread):
         self.ws = self.wb_io.get_sheet_by_name('Rlink')
 
         # read start row & run parameters from Excel file
-        self.start_row = self.ws['B1'].value # 1st row of actual data (after 6 lines of header)
+        self.start_row = int(self.ws['B1'].value) # 1st row of actual data (after 6 lines of header)
         self.headrow = self.start_row - 6
-        self.N_reversals = self.ws['B2'].value
-        self.N_readings = self.ws['B3'].value
+        self.N_reversals = int(self.ws['B2'].value)
+        self.N_readings = int(self.ws['B3'].value)
 
         self.AbsV1 = self.ws['D1'].value
         self.AbsV2 = self.ws['D2'].value
