@@ -434,7 +434,7 @@ while Data_row <= Data_stop_row:
     # Process times, RH and temperature data in this 4-row block:
     for r in range(Data_row, Data_row+4):  # build list of 4 gmh / T-probe dvm readings
         assert ws_Data.cell(row=r, column=21).value is not None, 'No R1 GMH temperature data!'
-        assert ws_Data.cell(row=r, column=22)['V'+str(r)].value is not None, 'No R2 GMH temperature data!'
+        assert ws_Data.cell(row=r, column=22).value is not None, 'No R2 GMH temperature data!'
         raw_gmh1.append(ws_Data.cell(row=r, column=21).value)
         raw_gmh2.append(ws_Data.cell(row=r, column=22).value)
 
