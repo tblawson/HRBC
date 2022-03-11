@@ -114,7 +114,7 @@ A Python'd version of the TestPoint High Resistance Bridge program."
         dlg.Destroy()  # Destroy when done.
 
     def on_save(self, event=None):
-        if self.excelpath is not "":
+        if self.excelpath != "":
             print('Saving', self.page1.XLFile.GetValue(), '...')
             self.page1.wb.save(self.page1.XLFile.GetValue())
             self.page1.log.close()
