@@ -79,8 +79,8 @@ class AqnThread(Thread):
         self.ws = self.wb_io.get_sheet_by_name('Data')
 
         # read start/stop row numbers from Excel file
-        self.start_row = self.ws['B1'].value
-        self.stop_row = self.ws['B2'].value
+        self.start_row = self.ws.cell(row=1, column=2).value
+        self.stop_row = self.ws.cell(row=2, column=2).value
         strt_ev = evts.StartRowEvent(row=self.start_row)
         wx.PostEvent(self.RunPage, strt_ev)
         stp_ev = evts.StopRowEvent(row=self.stop_row)
@@ -116,40 +116,40 @@ class AqnThread(Thread):
         sub_row = self.start_row-1  # Sub-headings
         # Write unique id for this run
         # - used to pair measurement data with RLink data
-        self.ws['A'+str(sub_row)] = 'Run Id:'
-        self.ws['B'+str(sub_row)].font = Font(b=True)
-        self.ws['B'+str(sub_row)] = str(self.RunPage.run_id)
-        self.ws['A'+str(Head_row)] = 'V1_set'
-        self.ws['B'+str(Head_row)] = 'V2_set'
-        self.ws['C'+str(Head_row)] = 'n'
-        self.ws['D'+str(Head_row)] = 'Start/xl del.'
-        self.ws['E'+str(Head_row)] = 'AZ1 del.'
-        self.ws['F'+str(Head_row)] = 'Range del.'
-        self.ws['G'+str(Head_row)] = 'V2'
-        self.ws['G'+str(sub_row)] = 't'
-        self.ws['H'+str(sub_row)] = 'V'
-        self.ws['I'+str(sub_row)] = 'sd(V)'
+        self.ws.cell(row=sub_row, column=1).value = 'Run Id:'  # self.ws['A'+str(sub_row))] = ...
+        self.ws.cell(row=sub_row, column=2).font = Font(b=True)  # ['B'+str(sub_row)].font 
+        self.ws.cell(row=sub_row, column=2).value = str(self.RunPage.run_id)
+        self.ws.cell(row=Head_row, column=1).value = 'V1_set' 
+        self.ws.cell(row=Head_row, column=2).value = 'V2_set'
+        self.ws.cell(row=Head_row, column=3).value = 'n'
+        self.ws.cell(row=Head_row, column=4).value = 'Start/xl del.'
+        self.ws.cell(row=Head_row, column=5).value = 'AZ1 del.'
+        self.ws.cell(row=Head_row, column=6).value = 'Range del.'
+        self.ws.cell(row=Head_row, column=7).value = 'V2'
+        self.ws.cell(row=sub_row, column=7).value = 't'
+        self.ws.cell(row=sub_row, column=8).value = 'V'
+        self.ws.cell(row=sub_row, column=9).value = 'sd(V)'
         # miss columns j,k,l
-        self.ws['M'+str(Head_row)] = 'Vd1'
-        self.ws['M'+str(sub_row)] = 't'
-        self.ws['N'+str(sub_row)] = 'V'
-        self.ws['O'+str(sub_row)] = 'sd(V)'
-        self.ws['P'+str(Head_row)] = 'V1'
-        self.ws['P'+str(sub_row)] = 't'
-        self.ws['Q'+str(sub_row)] = 'V'
-        self.ws['R'+str(sub_row)] = 'sd(V)'
-        self.ws['S'+str(Head_row)] = 'dvm_T1'
-        self.ws['T'+str(Head_row)] = 'dvm_T2'
-        self.ws['U'+str(Head_row)] = 'GMH_T1'
-        self.ws['V'+str(Head_row)] = 'GMH_T2'
-        self.ws['W'+str(Head_row)] = 'Ambient Conditions'
-        self.ws['W'+str(sub_row)] = 'T'
-        self.ws['X'+str(sub_row)] = 'P(mbar)'
-        self.ws['Y'+str(sub_row)] = '%RH'
-        self.ws['Z'+str(Head_row)] = 'Comment'
-        self.ws['AC'+str(Head_row)] = 'Role'
-        self.ws['AD'+str(Head_row)] = 'Instrument descr.'
-        self.ws['AE'+str(Head_row)] = 'Range mode'
+        self.ws.cell(row=Head_row, column=13).value = 'Vd1'
+        self.ws.cell(row=sub_row, column=13).value = 't'
+        self.ws.cell(row=sub_row, column=14).value = 'V'
+        self.ws.cell(row=sub_row, column=15).value = 'sd(V)'
+        self.ws.cell(row=Head_row, column=16).value = 'V1'
+        self.ws.cell(row=sub_row, column=16).value = 't'
+        self.ws.cell(row=sub_row, column=17).value = 'V'
+        self.ws.cell(row=sub_row, column=18).value = 'sd(V)'
+        self.ws.cell(row=Head_row, column=19).value = 'dvm_T1'
+        self.ws.cell(row=Head_row, column=20).value = 'dvm_T2'
+        self.ws.cell(row=Head_row, column=21).value = 'GMH_T1'
+        self.ws.cell(row=Head_row, column=22).value = 'GMH_T2'
+        self.ws.cell(row=Head_row, column=23).value = 'Ambient Conditions'
+        self.ws.cell(row=sub_row, column=23).value = 'T'
+        self.ws.cell(row=sub_row, column=24).value = 'P(mbar)'
+        self.ws.cell(row=sub_row, column=25).value = '%RH'
+        self.ws.cell(row=Head_row, column=26).value = 'Comment'
+        self.ws.cell(row=Head_row, column=29).value = 'Role'
+        self.ws.cell(row=Head_row, column=30).value = 'Instrument descr.'
+        self.ws.cell(row=Head_row, column=31).value = 'Range mode'
 
         stat_ev = evts.StatusEvent(msg='AqnThread.run():', field=0)
         wx.PostEvent(self.TopLevel, stat_ev)
@@ -171,9 +171,9 @@ class AqnThread(Thread):
 
         # Get some initial temperatures...
         T = devices.ROLES_INSTR['GMH1'].Measure('T')
-        self.ws['U'+str(self.start_row-1)] = T
+        self.ws.cell(row=self.start_row-1, column=21).value = T
         T = devices.ROLES_INSTR['GMH2'].Measure('T')
-        self.ws['V'+str(self.start_row-1)] = T
+        self.ws.cell(row=self.start_row-1, column=22).value = T
 
         # Record ALL roles and corresponding instr descriptions in XL sheet
         role_row = self.start_row
@@ -185,20 +185,20 @@ class AqnThread(Thread):
         bord_br = Border(bottom=Side(style='thin'), right=Side(style='thin'))
         for r in devices.ROLES_WIDGETS.keys():
             if role_row == self.start_row:  # 1st row
-                self.ws['AC'+str(role_row)].border = bord_tl
-                self.ws['AD'+str(role_row)].border = bord_tr
+                self.ws.cell(row=role_row, column=29).border = bord_tl
+                self.ws.cell(row=role_row, column=30).border = bord_tr
             elif role_row == self.start_row + 9:  # last row
-                self.ws['AC'+str(role_row)].border = bord_bl
-                self.ws['AD'+str(role_row)].border = bord_br
+                self.ws.cell(row=role_row, column=29).border = bord_bl
+                self.ws.cell(row=role_row, column=30).border = bord_br
             else:  # in-between rows
-                self.ws['AC'+str(role_row)].border = bord_l
-                self.ws['AD'+str(role_row)].border = bord_r
-            self.ws['AC'+str(role_row)] = r
+                self.ws.cell(row=role_row, column=29).border = bord_l
+                self.ws.cell(row=role_row, column=30).border = bord_r
+            self.ws.cell(row=role_row, column=29).value = r
             d = devices.ROLES_WIDGETS[r]['icb'].GetValue()  # descr
-            self.ws['AD'+str(role_row)] = d
+            self.ws.cell(row=role_row, column=30).value = d
             if r == 'DVM12':
                 mode = self.Range_Mode[self.RunPage.RangeTBtn.GetValue()]
-                self.ws['AE'+str(role_row)] = mode
+                self.ws.cell(row=role_row, column=31).value = mode
             role_row += 1
 
         row = self.start_row
@@ -443,7 +443,7 @@ class AqnThread(Thread):
                 self.AbortRun()
                 return
         time.sleep(self.start_del)
-        self.n_readings = self.ws.cell(row=row, column=3).value
+        self.n_readings = int(self.ws.cell(row=row, column=3).value)
         self.AZ1_del = self.ws.cell(row=row, column=5).value
         self.range_del = self.ws.cell(row=row, column=6).value
         del_ev = evts.DelaysEvent(n=self.n_readings,
@@ -501,84 +501,84 @@ class AqnThread(Thread):
         av_t = np.mean(self.V1Times)
         fmt = "%d/%m/%Y %H:%M:%S"
         t_stamp = str(dt.datetime.fromtimestamp(av_t).strftime(fmt))
-        self.ws['P'+str(row)] = t_stamp
+        self.ws.cell(row=row, column=16).value = t_stamp
         print >>self.log, 'WriteDataThisRow(): cell', 'P'+str(row), ':',
         t_stamp
 
-        self.ws['Q'+str(row)] = np.mean(self.V1Data)
+        self.ws.cell(row=row, column=17).value = np.mean(self.V1Data)
         print >>self.log, 'WriteDataThisRow(): cell', 'Q'+str(row), ':',
         np.mean(self.V1Data)
 
-        self.ws['R'+str(row)] = np.std(self.V1Data, ddof=1)
+        self.ws.cell(row=row, column=18).value = np.std(self.V1Data, ddof=1)
         print >>self.log, 'WriteDataThisRow(): cell', 'R'+str(row),
         np.std(self.V1Data, ddof=1)
 
         av_t = np.mean(self.V2Times)
         t_stamp = str(dt.datetime.fromtimestamp(av_t).strftime(fmt))
-        self.ws['G'+str(row)] = t_stamp
+        self.ws.cell(row=row, column=7).value = t_stamp
         print >>self.log, 'WriteDataThisRow(): cell', 'G'+str(row), ':',
         t_stamp
 
-        self.ws['H'+str(row)] = np.mean(self.V2Data)
+        self.ws.cell(row=row, column=8).value = np.mean(self.V2Data)
         print >>self.log, 'WriteDataThisRow(): cell', 'H'+str(row), ':',
         np.mean(self.V2Data)
 
-        self.ws['I'+str(row)] = np.std(self.V2Data, ddof=1)
+        self.ws.cell(row=row, column=9).value = np.std(self.V2Data, ddof=1)
         print >>self.log, 'WriteDataThisRow(): cell', 'I'+str(row), ':',
         np.std(self.V2Data, ddof=1)
 
         av_t = np.mean(self.VdTimes)
         t_stamp = str(dt.datetime.fromtimestamp(av_t).strftime(fmt))
-        self.ws['M'+str(row)] = t_stamp
+        self.ws.cell(row=row, column=13).value = t_stamp
         print >>self.log, 'WriteDataThisRow(): cell', 'M'+str(row), ':',
         t_stamp
 
-        self.ws['N'+str(row)] = np.mean(self.VdData)
+        self.ws.cell(row=row, column=14).value = np.mean(self.VdData)
         print >>self.log, 'WriteDataThisRow(): cell', 'N'+str(row), ':',
         np.mean(self.VdData)
 
-        self.ws['O'+str(row)] = np.std(self.VdData, ddof=1)
+        self.ws.cell(row=row, column=15).value = np.std(self.VdData, ddof=1)
         print >>self.log, 'WriteDataThisRow(): cell', 'O'+str(row), ':',
         np.std(self.VdData, ddof=1)
 
         if devices.ROLES_INSTR['DVMT1'].demo is True:
             T1dvmOP = np.random.normal(108.0, 1.0e-2)
-            self.ws['S'+str(row)] = T1dvmOP
+            self.ws.cell(row=row, column=19).value = T1dvmOP
             print >>self.log, 'WriteDataThisRow(): cell', 'S'+str(row), ':',
             T1dvmOP
         else:
             T1dvmOP = devices.ROLES_INSTR['DVMT1'].SendCmd('READ?')
-            self.ws['S'+str(row)] = float(filter(self.filt, T1dvmOP))
+            self.ws.cell(row=row, column=19).value = float(filter(self.filt, T1dvmOP))
             print >>self.log, 'WriteDataThisRow(): cell', 'S'+str(row), ':',
             float(filter(self.filt, T1dvmOP))
 
         if devices.ROLES_INSTR['DVMT2'].demo is True:
             T2dvmOP = np.random.normal(108.0, 1.0e-2)
-            self.ws['T'+str(row)] = T2dvmOP
+            self.ws.cell(row=row, column=20).value = T2dvmOP
             print >>self.log, 'WriteDataThisRow(): cell', 'T'+str(row), ':',
             T2dvmOP
         else:
             T2dvmOP = devices.ROLES_INSTR['DVMT2'].SendCmd('READ?')
-            self.ws['T'+str(row)] = float(filter(self.filt, T2dvmOP))
+            self.ws.cell(row=row, column=20).value = float(filter(self.filt, T2dvmOP))
             print >>self.log, 'WriteDataThisRow(): cell', 'T'+str(row), ':',
             float(filter(self.filt, T2dvmOP))
 
-        self.ws['U'+str(row)] = self.T1
+        self.ws.cell(row=row, column=21).value = self.T1
         print >>self.log, 'WriteDataThisRow(): cell', 'U'+str(row), ':',
         self.T1
-        self.ws['V'+str(row)] = self.T2
+        self.ws.cell(row=row, column=22).value = self.T2
         print >>self.log, 'WriteDataThisRow(): cell', 'V'+str(row), ':',
         self.T2
-        self.ws['W'+str(row)] = self.Troom
+        self.ws.cell(row=row, column=23).value = self.Troom
         print >>self.log, 'WriteDataThisRow(): cell', 'W'+str(row), ':',
         self.Troom
-        self.ws['X'+str(row)] = self.Proom
+        self.ws.cell(row=row, column=24).value = self.Proom
         print >>self.log, 'WriteDataThisRow(): cell', 'X'+str(row), ':',
         self.Proom
-        self.ws['Y'+str(row)] = self.RHroom
+        self.ws.cell(row=row, column=25).value = self.RHroom
         print >>self.log, 'WriteDataThisRow(): cell', 'Y'+str(row), ':',
         self.RHroom
-        self.ws['Z'+str(row)] = self.Comment
+        self.ws.cell(row=row, column=26).value = self.Comment
         print >>self.log, 'WriteDataThisRow(): cell', 'Z'+str(row), ':',
         self.Comment
 
@@ -619,8 +619,8 @@ class AqnThread(Thread):
     def Standby(self):
         # Set sources to 0V and disable outputs
         # devices.ROLES_INSTR['SRC1'].SendCmd('R0=')
-        self.RunPage.V1Setting.SetValue(str(0))
-        self.RunPage.V2Setting.SetValue(str(0))
+        self.RunPage.V1Setting.SetValue('0')
+        self.RunPage.V2Setting.SetValue('0')
 
     def abort(self):
         """abort worker thread."""
