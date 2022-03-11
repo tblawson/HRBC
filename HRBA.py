@@ -439,8 +439,8 @@ while Data_row <= Data_stop_row:
         raw_gmh2.append(ws_Data.cell(row=r, column=22).value)
 
         assert ws_Data.cell(row=r, column=7).value is not None, 'No V2 timestamp!'
-        assert ws_Data.cell(row=r, column=13)['M'+str(r)].value is not None, 'No Vd1 timestamp!'
-        assert ws_Data.cell(row=r, column=16)['P'+str(r)].value is not None, 'No V1 timestamp!'
+        assert ws_Data.cell(row=r, column=13).value is not None, 'No Vd1 timestamp!'
+        assert ws_Data.cell(row=r, column=16).value is not None, 'No V1 timestamp!'
         times.append(ws_Data.cell(row=r, column=7).value)
         times.append(ws_Data.cell(row=r, column=13).value)
         times.append(ws_Data.cell(row=r, column=16).value)
