@@ -9,8 +9,8 @@ Created on Wed Jul 29 13:21:22 2015
 import os
 import ctypes as ct
 
-
-GMHpath = os.getenv('GMH_PATH')
+# GMHpath = os.getenv('GMH_PATH')
+GMHpath = 'G:/Shared drives/MSL - Electricity/Ongoing/OHM/Temperature_PRTs/GMHdll'
 print(GMHpath)
 GMHLIB = ct.windll.LoadLibrary(os.path.join(GMHpath, 'GMH3x32E'))  # (os.path.join(GMHpath, 'GMH3x32E'))
 
