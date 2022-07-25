@@ -24,12 +24,10 @@ are output to.
 """
 
 import os
-
-#os.environ['GMHPATH'] = 'C:\Users\\t.lawson\Documents\Python Scripts\High_Res_Bridge\GMHdll'
-#os.environ['XLPATH'] = 'C:\Users\\t.lawson\Documents\Python Scripts\High_Res_Bridge'
-
+# os.environ['GMHPATH'] = 'C:\Users\\t.lawson\Documents\Python Scripts\High_Res_Bridge\GMHdll'
+# os.environ['XLPATH'] = 'C:\Users\\t.lawson\Documents\Python Scripts\High_Res_Bridge'
 import wx
-#import wx.lib.inspection
+# import wx.lib.inspection
 import nbpages as page
 import HighRes_events as evts
 import devices
@@ -41,11 +39,13 @@ print 'HRBC', VERSION
 
 """
 MainFrame Definition:
-holds the MainPanel in which the appliction runs
+holds the MainPanel in which the application runs
 """
+
+
 class MainFrame(wx.Frame):
     def __init__(self, *args, **kwargs):
-        wx.Frame.__init__(self,size=(900,500),*args, **kwargs)
+        wx.Frame.__init__(self, size=(900, 500), *args, **kwargs)
         self.version = VERSION
         self.ExcelPath = ""
 

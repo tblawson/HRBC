@@ -33,7 +33,7 @@ Created on Fri Sep 18 14:01:18 2015
 
 @author: t.lawson
 """
-
+from __future__ import print_function
 import os
 import sys
 # sys.path.append("C:\Python27\Lib\site-packages\GTC")
