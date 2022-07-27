@@ -57,7 +57,7 @@ ZERO = GTC.ureal(0, 0)
 FRAC_TOLERANCE = {'R2': 2e-2, 'G': 0.01, 'R1': 1}  # {'R2': 2e-4, 'G': 0.01, 'R1': 5e-2}
 PPM_TOLERANCE = {'R2': 2e-4, 'G': 0.01, 'R1': 1e-3}
 RLINK_MAX = 2000  # Ohms
-DEFAULT_TDEF_UNCERT = 0.1  # Default resistor temperature uncertainty, deg C
+DEFAULT_TDEF_UNCERT = 0.05  # Default resistor temperature uncertainty, deg C
 
 datadir = input('Path to data directory:')
 xlname = input('Excel filename:')
