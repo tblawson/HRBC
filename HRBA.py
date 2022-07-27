@@ -249,7 +249,7 @@ summary_row = R_info.WriteHeadings(ws_Summary, summary_start_row, VERSION)
 results_HV = []  # High voltage measurements
 results_LV = []  # Low voltage measurements
 
-# Get resistor names and values
+# Get resistor names and nominal values
 R1_name, R2_name = R_info.ExtractNames(Data_comment)
 R1val = R_info.GetRval(R1_name)
 R2val = R_info.GetRval(R2_name)
@@ -367,6 +367,16 @@ while Data_row <= Data_stop_row:
         R2TRef = R_INFO[R2_name]['TRef_LV']
         R2VRef = R_INFO[R2_name]['VRef_LV']
 
+    # ...and same calculation for R1, but just for temperature:
+    Vdif_LV = abs(abs(V1set) - R_INFO[R1_name]['VRef_LV'])
+    Vdif_HV = abs(abs(V1set) - R_INFO[R1_name]['VRef_HV'])
+    if Vdif_LV < Vdif_HV:
+        R1TRef = R_INFO[R1_name]['TRef_LV']
+    elif Vdif_LV > Vdif_HV:
+        R1TRef = R_INFO[R1_name]['TRef_HV']
+    else:
+        R1TRef = R_INFO[R1_name]['TRef_LV']
+
     # Select appropriate value of VRC, etc.
     """
     #################################################################
@@ -410,6 +420,9 @@ while Data_row <= Data_stop_row:
     R2gamma = R_INFO[R2_name]['gamma']
     R2Tsensor = R_INFO[R2_name]['T_sensor']
     influencies.extend([R2_0, R2alpha, R2beta, R2gamma])  # R2 dependencies
+
+    R1alpha = R_INFO[R1_name]['alpha']  # Need this for DUC uncertainty (due to its temperature uncertainty).
+    influencies.append(R1alpha)  # R1 dependencies (DUC umcert due to temperature uncert).
 
     if R1_name not in R_INFO:
         R1Tsensor = 'Pt 100r'  # assume a Pt sensor in unknown resistor
@@ -540,7 +553,7 @@ while Data_row <= Data_stop_row:
     T2_av = T2_av_gmh
     T2_av_dvm = GTC.ureal(0, 0)  # ignore any dvm data
     Diff_T2 = GTC.ureal(0, 0)  # No temperature disparity (GMH only)
-    influencies.append(T2_av_gmh)  # R2 dependancy
+    influencies.extend([T1_av_gmh, T2_av_gmh])  # R2 dependancy
 #    else:
 #        T2_av = GTC.ar.result( GTC.fn.mean((T2_av_dvm,T2_av_gmh)),label='T2_av' + Run_Id)
 #        Diff_T2 = GTC.ar.result(GTC.magnitude(T2_av_dvm-T2_av_gmh),label='Diff_T2' + Run_Id)
@@ -555,7 +568,7 @@ while Data_row <= Data_stop_row:
                         label='T_def1 ' + Run_Id)
     T_def2 = GTC.result(GTC.ureal(0, Diff_T2.u/2, 7) + T_def,
                         label='T_def2 ' + Run_Id)
-    influencies.append(T_def2)  # R2 dependancy
+    influencies.extend([T_def1, T_def2])  # R2 dependancy
 
     # Raw voltage measurements: V: [Vp,Vm,Vpp,Vppp]
     # All readings are precise enough not to worry about digitization error...
@@ -614,7 +627,10 @@ while Data_row <= Data_stop_row:
     # assert abs(R2.x-R2val)/R2val < PPM_TOLERANCE['R2'], 'R2 > 100 ppm from nominal! R2 = {0}'.format(R2.x)
 
     # calculate R1
-    R1 = R2*vrc*V1av*delta_Vd/(Vdav*delta_V2 - V2av*delta_Vd)
+    dT1 = T1_av - R1TRef + T_def1
+    T_DUC_uncert = R1alpha*dT1
+
+    R1 = (R2*vrc*V1av*delta_Vd/(Vdav*delta_V2 - V2av*delta_Vd))*(1 + T_DUC_uncert)
     print(f'R1 = {R1.x} +/- {R1.u}, dof = {R1.df}')
     frac_err = abs(R1.x - R1val) / R1val
     assert frac_err < FRAC_TOLERANCE['R1'], f'R1 > 1000 ppm from nominal ({frac_err})!'
