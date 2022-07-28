@@ -49,7 +49,7 @@ import GTC
 
 import R_info  # useful functions
 
-VERSION = 1.3d
+VERSION = '1.3d'
 
 # DVM, GMH Correction factors, etc.
 
