@@ -59,6 +59,13 @@ PPM_TOLERANCE = {'R2': 2e-4, 'G': 0.01, 'R1': 1e-3}
 RLINK_MAX = 2000  # Ohms
 DEFAULT_TDEF_UNCERT = 0.05  # Default resistor temperature uncertainty, deg C
 
+# By default, calculate R1 as if it is a part of a build-up chain.
+DUC_CALC_MODE = False
+# If DUC_CALC_MODE is True, R1 is assumed to be the DUC (and the final link in the buildup).
+is_duc = input('Is R1 the DUC (final link in the buildup) (Y/N)?')
+if is_duc in ['Y', 'y']:
+    DUC_CALC_MODE = True
+
 datadir = input('Path to data directory:')
 xlname = input('Excel filename:')
 xlfile = os.path.join(datadir, xlname)
@@ -626,9 +633,13 @@ while Data_row <= Data_stop_row:
     assert frac_err < FRAC_TOLERANCE['R2'], f'R2 > 100 ppm from nominal! R2 ({frac_err})'
     # assert abs(R2.x-R2val)/R2val < PPM_TOLERANCE['R2'], 'R2 > 100 ppm from nominal! R2 = {0}'.format(R2.x)
 
-    # calculate R1
-    dT1 = T1_av - R1TRef + T_def1
-    T_DUC_uncert = R1alpha*dT1
+    # Calculate R1
+    T_def_duc = GTC.ureal(0, T1_av.u, T1_av.df)
+    if DUC_CALC_MODE is True:
+        T_DUC_uncert = R1alpha*T_def_duc  # T_def1
+    else:
+        T_DUC_uncert = GTC.constant(0)
+    influencies.append(T_DUC_uncert)
 
     R1 = (R2*vrc*V1av*delta_Vd/(Vdav*delta_V2 - V2av*delta_Vd))*(1 + T_DUC_uncert)
     print(f'R1 = {R1.x} +/- {R1.u}, dof = {R1.df}')
