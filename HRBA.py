@@ -198,12 +198,12 @@ value, measured at 'low voltage').
 
 """
 I_INFO = dict(zip(I_DESCR, I_sublist))
-print(f'Found {len(I_INFO)} instruments ({last_I_row} rows)')
-log.write(f'\nFound {len(I_INFO)} instruments ({last_I_row} rows)')
+print(f"Found {len(I_INFO)} instruments ({last_I_row} rows)")
+log.write(f"\nFound {len(I_INFO)} instruments ({last_I_row} rows)")
 
 R_INFO = dict(zip(R_DESCR, R_sublist))
-print(f'Found {len(R_INFO)} resistors ({last_R_row} rows)')
-log.write(f'\nFound {len(R_INFO)} resistors ({last_R_row} rows)')
+print(f"Found {len(R_INFO)} resistors ({last_R_row} rows)")
+log.write(f"\nFound {len(R_INFO)} resistors ({last_R_row} rows)")
 
 # -------------End of parameter extraction-------------- #
 # ###################################################### #
@@ -636,7 +636,7 @@ while Data_row <= Data_stop_row:
     # Calculate R1
     T_def_duc = GTC.ureal(0, T1_av.u, T1_av.df)
     if DUC_CALC_MODE is True:
-        T_DUC_uncert = R1alpha*T_def_duc  # T_def1
+        T_DUC_uncert = GTC.fn.mul2(R1alpha, T_def_duc)  # Both zero-valued.
     else:
         T_DUC_uncert = GTC.constant(0)
     influencies.append(T_DUC_uncert)
