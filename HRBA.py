@@ -639,7 +639,7 @@ while Data_row <= Data_stop_row:
         T_DUC_uncert = GTC.fn.mul2(R1alpha, T_def_duc)  # Both zero-valued.
     else:
         T_DUC_uncert = GTC.constant(0)
-    influencies.append(T_DUC_uncert)
+    influencies.append(T_def_duc)
 
     R1 = (R2*vrc*V1av*delta_Vd/(Vdav*delta_V2 - V2av*delta_Vd))*(1 + T_DUC_uncert)
     print(f'R1 = {R1.x} +/- {R1.u}, dof = {R1.df}')
