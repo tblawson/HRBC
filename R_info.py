@@ -199,9 +199,10 @@ def WriteThisResult(sheet, row, result):
 
     sheet['C'+str(row)] = str(result['time_str'])
 
-    sheet['D'+str(row)] = result['T'].x
-    sheet['D'+str(row+1)] = result['T'].u
-    sheet['D'+str(row+2)] = result['T'].df
+    temperature = result['T1_A'] + result['Tdef1']
+    sheet['D'+str(row)] = temperature.x  # result['T']
+    sheet['D'+str(row+1)] = temperature.u  # result['T']
+    sheet['D'+str(row+2)] = temperature.df  # result['T']
 
     sheet['E'+str(row)] = result['R'].x
 
@@ -246,13 +247,14 @@ def add_if_unique(item, lst):
 
 
 # Weighted least-squares fit (R1-T)
-def write_R1_T_fit(results, sheet, row, log):
-    T_data = [T for T in [result['T'] for result in results]]  # All T ureals
+def write_R1_T_fit(results, sheet, row, log, Tdef, R1_alpha, mode):
+    T_data = [T for T in [result['T1_A'] for result in results]]  # All T ureals
+    # T_def_on_R_data = [i for i in [result['T1_def_on_R1'] for result in results]]
     unique_T_data = []
     for T in T_data:
         add_if_unique(T, unique_T_data)
-    T_av = GTC.fn.mean(T_data)
-    # print'write_R1_T_fit():u(T_av)=',T_av.u,'dof(T_av)=',T_av.df
+
+    T_av = GTC.fn.mean(T_data) + Tdef  # Type-B added here. ONCE!
     T_rel = [t_k - T_av for t_k in T_data]  # x-vals
     alpha = GTC.ureal(0, 0)
 
@@ -269,6 +271,11 @@ def write_R1_T_fit(results, sheet, row, log):
         R1, alpha = GTC.ta.line_fit_wls(T_rel, y, u_y).a_b
         print(f'Fit params:\t intercept={R1.x}+/-{R1.u},dof={R1.df}. Slope={alpha.x}+/-{alpha.u},dof={alpha.df}')
         log.write(f'Fit params:\t intercept={R1.x}+/-{R1.u},dof={R1.df}. Slope={alpha.x}+/-{alpha.u},dof={alpha.df}')
+
+    if mode is True:
+        T_def_duc = GTC.ureal(0, T_av.u, T_av.df, label='T_def_duc')
+        T1_def_on_R1 = GTC.fn.mul2(R1_alpha, T_def_duc)
+        R1 = R1*(1 + T1_def_on_R1)  # Include Tdef1 influence on final DUC value here.
 
     sheet['R'+str(row)] = R1.x
     sheet['S'+str(row)] = R1.u
