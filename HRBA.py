@@ -560,7 +560,7 @@ while Data_row <= Data_stop_row:
     T2_av = T2_av_gmh
     T2_av_dvm = GTC.ureal(0, 0)  # ignore any dvm data
     Diff_T2 = GTC.ureal(0, 0)  # No temperature disparity (GMH only)
-    influencies.extend([T1_av_gmh, T2_av_gmh])  # R2 dependancy
+    influencies.append(T2_av_gmh)  # R2 dependancy
 #    else:
 #        T2_av = GTC.ar.result( GTC.fn.mean((T2_av_dvm,T2_av_gmh)),label='T2_av' + Run_Id)
 #        Diff_T2 = GTC.ar.result(GTC.magnitude(T2_av_dvm-T2_av_gmh),label='Diff_T2' + Run_Id)
@@ -575,7 +575,7 @@ while Data_row <= Data_stop_row:
                         label='T_def1 ' + Run_Id)
     T_def2 = GTC.result(GTC.ureal(0, Diff_T2.u/2, 7) + T_def,
                         label='T_def2 ' + Run_Id)
-    influencies.extend([T_def1, T_def2])  # R2 dependancy
+    influencies.append(T_def2)  # R2 dependancy
 
     # Raw voltage measurements: V: [Vp,Vm,Vpp,Vppp]
     # All readings are precise enough not to worry about digitization error...
@@ -633,39 +633,46 @@ while Data_row <= Data_stop_row:
     assert frac_err < FRAC_TOLERANCE['R2'], f'R2 > 100 ppm from nominal! R2 ({frac_err})'
     # assert abs(R2.x-R2val)/R2val < PPM_TOLERANCE['R2'], 'R2 > 100 ppm from nominal! R2 = {0}'.format(R2.x)
 
-    # Calculate R1
-    T_def_duc = GTC.ureal(0, T1_av.u, T1_av.df)
-    if DUC_CALC_MODE is True:
-        T_DUC_uncert = GTC.fn.mul2(R1alpha, T_def_duc)  # Both zero-valued.
-    else:
-        T_DUC_uncert = GTC.constant(0)
+    # Calculate THIS R1 (individual measurement).
+    this_T1_no_typeB = T1_av  # Type-A only - for calculation of mean (Type-B added after).
+    this_T1 = T1_av + T_def1  # For reporting as a final value.
+    T_def_duc = GTC.ureal(0, T1_av.u, T1_av.df, label='T_def_duc')  # DUC uncert (from T1 uncert)
     influencies.append(T_def_duc)
 
-    R1 = (R2*vrc*V1av*delta_Vd/(Vdav*delta_V2 - V2av*delta_Vd))*(1 + T_DUC_uncert)
-    print(f'R1 = {R1.x} +/- {R1.u}, dof = {R1.df}')
-    frac_err = abs(R1.x - R1val) / R1val
+    if DUC_CALC_MODE is True:
+        T1_def_on_R1 = GTC.fn.mul2(R1alpha, T_def_duc)  # Both zero-valued.
+    else:
+        T1_def_on_R1 = GTC.constant(0)
+
+    # Additional type B-only included if we're reporting final DUC value.
+    this_R1 = (R2 * vrc * V1av * delta_Vd / (Vdav * delta_V2 - V2av * delta_Vd)) * (1 + T1_def_on_R1)
+    print(f'Uncert contrib. of T1 uncert on R1 = {GTC.component(this_R1, T_def_duc)}')
+
+    print(f'R1 = {this_R1.x} +/- {this_R1.u}, dof = {this_R1.df}')
+    frac_err = abs(this_R1.x - R1val) / R1val
     assert frac_err < FRAC_TOLERANCE['R1'], f'R1 > 1000 ppm from nominal ({frac_err})!'
     # assert abs(R1.x-R1val)/R1val < PPM_TOLERANCE['R1'], 'R1 > 1000 ppm from nominal!'
 
-    T1 = T1_av + T_def1
-    print(f'{R1} at temperature {T1}')
+    print(f'{this_R1} at temperature {this_T1}')
 
     # Combine data for this measurement: name,time,R,T,V and write to Summary sheet:
     this_result = {'name': R1_name, 'time_str': times_av_str,
-                   'time_fl': times_av_fl, 'V': V1av, 'R': R1, 'T': T1,
-                   'R_expU': R1.u*GTC.rp.k_factor(R1.df)}  # 'quick=False' arg deprecated.
+                   'time_fl': times_av_fl, 'V': V1av, 'R': this_R1,
+                   'T1_A': this_T1_no_typeB, 'Tdef1': T_def1,
+                   'R_expU': this_R1.u * GTC.rp.k_factor(this_R1.df)}  # 'quick=False' arg deprecated.
 
-    R_info.WriteThisResult(ws_Summary, summary_row, this_result)
+    R_info.WriteThisResult(ws_Summary, summary_row, this_result)  # An individual measurement.
 
     # build uncertainty budget table
     budget_table = []
     for i in influencies:  # rp.u_component(R1_gmh,i) gives + or - values
-        if i.u > 0:
-            sensitivity = GTC.rp.sensitivity(R1, i)
-        else:
-            sensitivity = 0
+        sensitivity = GTC.rp.sensitivity(this_R1, i)
+        # if i.u > 0:
+        #     sensitivity = GTC.rp.sensitivity(this_R1, i)
+        # else:
+        #     sensitivity = 0
         budget_table.append([i.label, i.x, i.u, i.df, sensitivity,
-                             GTC.component(R1, i)])
+                             GTC.component(this_R1, i)])
 
     budget_table_sorted = sorted(budget_table, key=R_info.by_u_cont,
                                  reverse=True)
@@ -713,7 +720,9 @@ print('\nLV:')
 log.write('\nLV:')
 R1_LV, Ohm_per_C_LV, T_LV, V_LV, date = R_info.write_R1_T_fit(results_LV,
                                                               ws_Summary,
-                                                              summary_row, log)
+                                                              summary_row, log,
+                                                              T_def1, R1alpha,
+                                                              DUC_CALC_MODE)
 alpha_LV = Ohm_per_C_LV/R1_LV
 
 summary_row += 1
@@ -723,7 +732,9 @@ print('\nHV:')
 log.write('\nHV:')
 R1_HV, Ohm_per_C_HV, T_HV, V_HV, date = R_info.write_R1_T_fit(results_HV,
                                                               ws_Summary,
-                                                              summary_row, log)
+                                                              summary_row, log,
+                                                              T_def1, R1alpha,
+                                                              DUC_CALC_MODE)
 alpha_HV = Ohm_per_C_HV/R1_HV
 
 alpha = GTC.fn.mean([alpha_LV, alpha_HV])
