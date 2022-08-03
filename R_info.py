@@ -256,7 +256,7 @@ def write_R1_T_fit(results, sheet, row, log, Tdef, R1_alpha, mode):
 
     T_av = GTC.fn.mean(T_data) + Tdef  # Type-B added here. ONCE!
     T_rel = [t_k - T_av for t_k in T_data]  # x-vals
-    alpha = GTC.ureal(0, 0)
+    alpha = GTC.ureal(0, 0)  # Pre-defined default - will be updated later.
 
     y = [R for R in [result['R'] for result in results]]  # All R values
     u_y = [R.u for R in [result['R'] for result in results]]  # All R uncerts
@@ -289,9 +289,9 @@ def write_R1_T_fit(results, sheet, row, log, Tdef, R1_alpha, mode):
     sheet['V'+str(row)] = T_av.x
     sheet['W'+str(row)] = T_av.u
     if math.isinf(T_av.df):
-        sheet['X'+str(row)] = str(T_av.df)
+        sheet['X'+str(row)] = str(T_av.df)  # 'inf'
     else:
-        sheet['X'+str(row)] = round(T_av.df)
+        sheet['X'+str(row)] = round(T_av.df, 1)
 
     t = [result['time_fl'] for result in results]  # x data (time,s from epoch)
     t_av = GTC.ta.estimate(t)
