@@ -636,7 +636,7 @@ while Data_row <= Data_stop_row:
     # Calculate THIS R1 (individual measurement).
     this_T1_no_typeB = T1_av  # Type-A only - for calculation of mean (Type-B added after).
     this_T1 = T1_av + T_def1  # For reporting as a final value.
-    T_def_duc = GTC.ureal(0, T1_av.u, T1_av.df, label='T_def_duc')  # DUC uncert (from T1 uncert)
+    T_def_duc = GTC.ureal(0, this_T1.u, this_T1.df, label='T_def_duc')  # DUC uncert (from T1 uncert)
     influencies.append(T_def_duc)
 
     if DUC_CALC_MODE is True:
