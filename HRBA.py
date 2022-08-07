@@ -567,7 +567,7 @@ while Data_row <= Data_stop_row:
 #        influencies.append(T2_av_dvm,T2_av_gmh) # R2 dependancy
 
     # Default T definition arises from imperfect positioning of sensors wrt resistor:
-    T_def = GTC.ureal(0, GTC.type_b.distribution['gaussian'](DEFAULT_TDEF_UNCERT), 3,
+    T_def = GTC.ureal(0, GTC.type_b.distribution['gaussian'](DEFAULT_TDEF_UNCERT), 8,
                       label='T_def ' + Run_Id)
 
     # T-definition arises from imperfect positioning of both probes AND their disagreement:
