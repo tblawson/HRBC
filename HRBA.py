@@ -49,7 +49,7 @@ import GTC
 
 import R_info  # useful functions
 
-VERSION = '1.3e'
+VERSION = '1.3f'
 
 # DVM, GMH Correction factors, etc.
 
@@ -60,11 +60,11 @@ RLINK_MAX = 2000  # Ohms
 DEFAULT_TDEF_UNCERT = 0.05  # Default resistor temperature uncertainty, deg C
 
 # By default, calculate R1 as if it is a part of a build-up chain.
-DUC_CALC_MODE = False
+# DUC_CALC_MODE = False
 # If DUC_CALC_MODE is True, R1 is assumed to be the DUC (and the final link in the buildup).
-is_duc = input('Is R1 the DUC (final link in the buildup) (Y/N)?')
-if is_duc in ['Y', 'y']:
-    DUC_CALC_MODE = True
+# is_duc = input('Is R1 the DUC (final link in the buildup) (Y/N)?')
+# if is_duc in ['Y', 'y']:
+#     DUC_CALC_MODE = True
 
 datadir = input('Path to data directory:')
 xlname = input('Excel filename:')
@@ -639,10 +639,10 @@ while Data_row <= Data_stop_row:
     T_def_duc = GTC.ureal(0, this_T1.u, this_T1.df, label='T_def_duc')  # DUC uncert (from T1 uncert)
     influencies.append(T_def_duc)
 
-    if DUC_CALC_MODE is True:
-        T1_def_on_R1 = GTC.fn.mul2(R1alpha, T_def_duc)  # Both zero-valued.
-    else:
-        T1_def_on_R1 = GTC.constant(0)
+    # if DUC_CALC_MODE is True:
+    T1_def_on_R1 = GTC.fn.mul2(R1alpha, T_def_duc)  # Both zero-valued.
+    # else:
+    #     T1_def_on_R1 = GTC.constant(0)
 
     # Additional type B-only included if we're reporting final DUC value.
     this_R1 = (R2 * vrc * V1av * delta_Vd / (Vdav * delta_V2 - V2av * delta_Vd)) * (1 + T1_def_on_R1)
