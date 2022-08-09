@@ -721,8 +721,7 @@ log.write('\nLV:')
 R1_LV, Ohm_per_C_LV, T_LV, V_LV, date = R_info.write_R1_T_fit(results_LV,
                                                               ws_Summary,
                                                               summary_row, log,
-                                                              T_def1, R1alpha,
-                                                              DUC_CALC_MODE)
+                                                              T_def1, R1alpha)
 alpha_LV = Ohm_per_C_LV/R1_LV
 
 summary_row += 1
@@ -733,8 +732,7 @@ log.write('\nHV:')
 R1_HV, Ohm_per_C_HV, T_HV, V_HV, date = R_info.write_R1_T_fit(results_HV,
                                                               ws_Summary,
                                                               summary_row, log,
-                                                              T_def1, R1alpha,
-                                                              DUC_CALC_MODE)
+                                                              T_def1, R1alpha)
 alpha_HV = Ohm_per_C_HV/R1_HV
 
 alpha = GTC.fn.mean([alpha_LV, alpha_HV])

@@ -247,7 +247,7 @@ def add_if_unique(item, lst):
 
 
 # Weighted least-squares fit (R1-T)
-def write_R1_T_fit(results, sheet, row, log, Tdef, R1_alpha, mode):
+def write_R1_T_fit(results, sheet, row, log, Tdef, R1_alpha):
     T_data = [T for T in [result['T1_A'] for result in results]]  # All T ureals
     # T_def_on_R_data = [i for i in [result['T1_def_on_R1'] for result in results]]
     unique_T_data = []
@@ -272,10 +272,10 @@ def write_R1_T_fit(results, sheet, row, log, Tdef, R1_alpha, mode):
         print(f'Fit params:\t intercept={R1.x}+/-{R1.u},dof={R1.df}. Slope={alpha.x}+/-{alpha.u},dof={alpha.df}')
         log.write(f'Fit params:\t intercept={R1.x}+/-{R1.u},dof={R1.df}. Slope={alpha.x}+/-{alpha.u},dof={alpha.df}')
 
-    if mode is True:
-        T_def_duc = GTC.ureal(0, T_av.u, T_av.df, label='T_def_duc')
-        T1_def_on_R1 = GTC.fn.mul2(R1_alpha, T_def_duc)
-        R1 = R1*(1 + T1_def_on_R1)  # Include Tdef1 influence on final DUC value here.
+    # if mode is True:
+    T_def_duc = GTC.ureal(0, T_av.u, T_av.df, label='T_def_duc')
+    T1_def_on_R1 = GTC.fn.mul2(R1_alpha, T_def_duc)
+    R1 = R1*(1 + T1_def_on_R1)  # Include Tdef1 influence on final DUC value here.
 
     sheet['R'+str(row)] = R1.x
     sheet['S'+str(row)] = R1.u
