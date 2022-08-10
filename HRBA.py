@@ -49,7 +49,7 @@ import GTC
 
 import R_info  # useful functions
 
-VERSION = '1.3f'
+VERSION = '1.4'
 
 # DVM, GMH Correction factors, etc.
 
@@ -249,7 +249,7 @@ print('Run Id:', Run_Id)
 log.write(f'\nRun Id: {Run_Id}')
 
 # Write headings
-summary_row = R_info.WriteHeadings(ws_Summary, summary_start_row, VERSION)
+summary_row = R_info.WriteHeadings(ws_Summary, summary_start_row, VERSION, Data_start_row, Data_stop_row)
 
 # Lists of dictionaries...
 # ...(with name,time,Resistance,Temperature,Voltage entries).
@@ -374,15 +374,15 @@ while Data_row <= Data_stop_row:
         R2TRef = R_INFO[R2_name]['TRef_LV']
         R2VRef = R_INFO[R2_name]['VRef_LV']
 
-    # ...and same calculation for R1, but just for temperature:
-    Vdif_LV = abs(abs(V1set) - R_INFO[R1_name]['VRef_LV'])
-    Vdif_HV = abs(abs(V1set) - R_INFO[R1_name]['VRef_HV'])
-    if Vdif_LV < Vdif_HV:
-        R1TRef = R_INFO[R1_name]['TRef_LV']
-    elif Vdif_LV > Vdif_HV:
-        R1TRef = R_INFO[R1_name]['TRef_HV']
-    else:
-        R1TRef = R_INFO[R1_name]['TRef_LV']
+    # # ...and same calculation for R1, but just for temperature:
+    # Vdif_LV = abs(abs(V1set) - R_INFO[R1_name]['VRef_LV'])
+    # Vdif_HV = abs(abs(V1set) - R_INFO[R1_name]['VRef_HV'])
+    # if Vdif_LV < Vdif_HV:
+    #     R1TRef = R_INFO[R1_name]['TRef_LV']
+    # elif Vdif_LV > Vdif_HV:
+    #     R1TRef = R_INFO[R1_name]['TRef_HV']
+    # else:
+    #     R1TRef = R_INFO[R1_name]['TRef_LV']
 
     # Select appropriate value of VRC, etc.
     """
@@ -639,12 +639,7 @@ while Data_row <= Data_stop_row:
     T_def_duc = GTC.ureal(0, this_T1.u, this_T1.df, label='T_def_duc')  # DUC uncert (from T1 uncert)
     influencies.append(T_def_duc)
 
-    # if DUC_CALC_MODE is True:
     T1_def_on_R1 = GTC.fn.mul2(R1alpha, T_def_duc)  # Both zero-valued.
-    # else:
-    #     T1_def_on_R1 = GTC.constant(0)
-
-    # Additional type B-only included if we're reporting final DUC value.
     this_R1 = (R2 * vrc * V1av * delta_Vd / (Vdav * delta_V2 - V2av * delta_Vd)) * (1 + T1_def_on_R1)
     print(f'Uncert contrib. of T1 uncert on R1 = {GTC.component(this_R1, T_def_duc)}')
 
@@ -782,8 +777,10 @@ if R1_name not in R_INFO:
     print(f'Adding {R1_name} to resistor info...')
     last_R_row = R_info.update_R_Info(R1_name, params, R_data, ws_Params,
                                       last_R_row, Run_Id, VERSION)
-else:
+else:  # Update any changed parameters.
     print(f'\nAlready know about {R1_name}')
+    test_row = R_info.find_param_row(ws_Params, last_R_row, R1_name, 'alpha')
+    print(f'{R1_name}, alpha is on row {test_row}')
 
 # Save workbook
 wb_io.save(xlfile)

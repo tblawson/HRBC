@@ -152,10 +152,11 @@ def av_t_strin(t_list, switch):
 
 
 # Write headings on Summary sheet
-def WriteHeadings(sheet, row, version):
+def WriteHeadings(sheet, row, version, start_row, end_row):
     now = dt.datetime.now()
     sheet['A'+str(row-1)].font = Font(b=True)
-    sheet['A'+str(row-1)] = 'Processed with HRBA v'+str(version)+' on '+now.strftime("%A, %d. %B %Y %I:%M%p")
+    sheet['A'+str(row-1)] = f'Data-rows {start_row} -> {end_row}, processed with HRBA v'\
+                            +str(version)+' on '+now.strftime("%A, %d. %B %Y %I:%M%p")
     sheet['J'+str(row)] = 'Uncertainty Budget'
 
     sheet['R'+str(row)] = 'R1(T)'
@@ -308,6 +309,15 @@ def write_R1_T_fit(results, sheet, row, log, Tdef, R1_alpha):
         sheet['AB'+str(row)] = round(V_av.df)
     return R1, alpha, T_av, V_av, time_av
 
+
+def find_param_row(sheet, max_row, name, param):
+    row_num = 0
+    for r in sheet.iter_rows(max_col=2, max_row=max_row, values_only=True):
+        print(r[1].value)
+        if r[1].value == name and r[2].value == param:
+            row_num = r.row
+            break
+    return row_num
 
 def update_R_Info(name, params, data, sheet, row, Id, v):
     R_dict = dict(zip(params, data))
