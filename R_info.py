@@ -154,31 +154,46 @@ def av_t_strin(t_list, switch):
 # Write headings on Summary sheet
 def WriteHeadings(sheet, row, version, start_row, end_row):
     now = dt.datetime.now()
-    sheet['A'+str(row-1)].font = Font(b=True)
-    sheet['A'+str(row-1)] = f'Data-rows {start_row} -> {end_row}, processed with HRBA v'\
+    sheet['A' + str(row-1)].font = Font(b=True)
+    sheet['A' + str(row-1)] = f'Data-rows {start_row} -> {end_row}, processed with HRBA v'\
                             +str(version)+' on '+now.strftime("%A, %d. %B %Y %I:%M%p")
-    sheet['J'+str(row)] = 'Uncertainty Budget'
+    sheet['J' + str(row)] = 'Uncertainty Budget'
 
-    sheet['R'+str(row)] = 'R1(T)'
-    sheet['U'+str(row)] = 'exp. U(95%)'
-    sheet['V'+str(row)] = 'av T'
-    sheet['Y'+str(row)] = 'av date/time'
-    sheet['Z'+str(row)] = 'av V'
+    sheet['R' + str(row)] = 'R1(T)'
+    sheet['U' + str(row)] = 'exp. U(95%)'
+    sheet['V' + str(row)] = 'av T'
+    sheet['Y' + str(row)] = 'av date/time'
+    sheet['Z' + str(row)] = 'av V'
+    sheet['AC' + str(row)] = 'k'
+    sheet['AC' + str(row - 1)] = 'T'
+    sheet['AD' + str(row)] = 'exp. U(95%)'
+    sheet['AE' + str(row)] = 'k'
+    sheet['AE' + str(row - 1)] = 'V'
+    sheet['AF' + str(row)] = 'exp. U(95%)'
+    sheet['AG' + str(row)] = 'val'
+    sheet['AG' + str(row - 1)] = '%RH'
+    sheet['AH' + str(row)] = 'sd'
+    sheet['AI' + str(row)] = 'dof'
+    sheet['AJ' + str(row)] = 'k'
+    sheet['AK' + str(row)] = 'exp. U(95%)'
+    sheet['AL' + str(row)] = 'CMC (ppm)'
+    sheet['AM' + str(row)] = 'CMC (Ohm)'
+
     row += 1
-    sheet['A'+str(row)] = 'Name'
-    sheet['B'+str(row)] = 'Test V'
-    sheet['C'+str(row)] = 'Date'
-    sheet['D'+str(row)] = 'T'
-    sheet['E'+str(row)] = 'R1'
-    sheet['F'+str(row)] = 'std u.'
-    sheet['G'+str(row)] = 'dof'
-    sheet['H'+str(row)] = 'exp. U(95%)'
-    sheet['J'+str(row)] = 'Quantity (Label)'
-    sheet['K'+str(row)] = 'Value'
-    sheet['L'+str(row)] = 'Std u'
-    sheet['M'+str(row)] = 'dof'
-    sheet['N'+str(row)] = 'sens. coef.'
-    sheet['O'+str(row)] = 'u contrib.'
+    sheet['A' + str(row)] = 'Name'
+    sheet['B' + str(row)] = 'Test V'
+    sheet['C' + str(row)] = 'Date'
+    sheet['D' + str(row)] = 'T'
+    sheet['E' + str(row)] = 'R1'
+    sheet['F' + str(row)] = 'std u.'
+    sheet['G' + str(row)] = 'dof'
+    sheet['H' + str(row)] = 'exp. U(95%)'
+    sheet['J' + str(row)] = 'Quantity (Label)'
+    sheet['K' + str(row)] = 'Value'
+    sheet['L' + str(row)] = 'Std u'
+    sheet['M' + str(row)] = 'dof'
+    sheet['N' + str(row)] = 'sens. coef.'
+    sheet['O' + str(row)] = 'u contrib.'
 
     sheet['Q'+str(row)] = 'LV'
     row += 1
@@ -273,11 +288,11 @@ def write_R1_T_fit(results, sheet, row, log, Tdef, R1_alpha):
         print(f'Fit params:\t intercept={R1.x}+/-{R1.u},dof={R1.df}. Slope={alpha.x}+/-{alpha.u},dof={alpha.df}')
         log.write(f'Fit params:\t intercept={R1.x}+/-{R1.u},dof={R1.df}. Slope={alpha.x}+/-{alpha.u},dof={alpha.df}')
 
-    # if mode is True:
     T_def_duc = GTC.ureal(0, T_av.u, T_av.df, label='T_def_duc')
     T1_def_on_R1 = GTC.fn.mul2(R1_alpha, T_def_duc)
     R1 = R1*(1 + T1_def_on_R1)  # Include Tdef1 influence on final DUC value here.
 
+# R1 measurement:
     sheet['R'+str(row)] = R1.x
     sheet['S'+str(row)] = R1.u
     if math.isinf(R1.df):
@@ -286,19 +301,24 @@ def write_R1_T_fit(results, sheet, row, log, Tdef, R1_alpha):
         sheet['T'+str(row)] = round(R1.df)
 
     sheet['U'+str(row)] = R1.u*GTC.rp.k_factor(R1.df)
-
+# T1 measurement:
     sheet['V'+str(row)] = T_av.x
     sheet['W'+str(row)] = T_av.u
     if math.isinf(T_av.df):
         sheet['X'+str(row)] = str(T_av.df)  # 'inf'
     else:
         sheet['X'+str(row)] = round(T_av.df, 1)
+    T_av_k = GTC.rp.k_factor(T_av.df)
+    sheet['AC'+str(row)] = T_av_k
+    sheet['AD'+str(row)] = T_av_k*T_av.u
 
+# date / time:
     t = [result['time_fl'] for result in results]  # x data (time,s from epoch)
     t_av = GTC.ta.estimate(t)
     time_av = dt.datetime.fromtimestamp(t_av.x)  # A Python datetime object
     sheet['Y'+str(row)] = time_av.strftime('%d/%m/%Y %H:%M:%S')  # string-formatted for display
 
+# V1 measurement:
     V1 = [V for V in [result['V'] for result in results]]
     V_av = GTC.fn.mean(V1)
     sheet['Z'+str(row)] = V_av.x
@@ -307,40 +327,85 @@ def write_R1_T_fit(results, sheet, row, log, Tdef, R1_alpha):
         sheet['AB'+str(row)] = str(V_av.df)
     else:
         sheet['AB'+str(row)] = round(V_av.df)
+    V_av_k = GTC.rp.k_factor(V_av.df)
+    sheet['AE' + str(row)] = V_av_k
+    sheet['AF' + str(row)] = V_av_k * V_av.u
+
+# %RH measurement:
+
+# CMCs:
+    CMC_ppm = 0.7+27*R1.x/1e9 - 20*GTC.pow(R1.x/1e9, 3)
+    sheet['AL' + str(row)] = CMC_ppm
+    sheet['AM' + str(row)] = R1.x*CMC_ppm/1e6
+
     return R1, alpha, T_av, V_av, time_av
+
+
+def create_comment_ref(version):
+    now_tup = dt.datetime.now()
+    now_fmt = now_tup.strftime('%d/%m/%Y %H:%M:%S')
+    return 'HRBA' + str(version) + '_' + now_fmt
+
+
+def create_label(name, param, Id):
+    return name.split()[0] + '_' + param + '_' + Id
 
 
 def find_param_row(sheet, max_row, name, param):
     row_num = 0
     for r in sheet.iter_rows(max_col=2, max_row=max_row, values_only=True):
-        print(r[1].value)
-        if r[1].value == name and r[2].value == param:
-            row_num = r.row
+        row_num += 1
+        if r[0] == name and r[1] == param:
             break
     return row_num
 
-def update_R_Info(name, params, data, sheet, row, Id, v):
+
+def update_R_Info(sheet, param, value, row, label, version):
+    """
+    Update the parameters of a known resistor.
+    :param sheet: openpyxl sheet object for 'Parameters' sheet
+    :param param: parameter (str)
+    :param value: data (usually a GTC.ureal)
+    :param row: current row of 'Parameters' sheet (int)
+    :param label: ureal label (str)
+    :param version: HRBA version (str)
+    :return: none
+    """
+
+    # Don't update alpha (calculated estimate is usually unreliable).
+    # Also, exclude non-GTC.ureal params
+    # if param not in ('date', 'T_sensor', 'alpha'):
+    sheet['C' + str(row)] = value.x
+    sheet['D' + str(row)] = value.u
+    if math.isinf(value.df):
+        sheet['E' + str(row)] = str(value.df)
+    else:
+        sheet['E' + str(row)] = round(value.df)
+        sheet['F' + str(row)] = label
+    sheet['G' + str(row)] = create_comment_ref(version)
+
+
+def append_R_Info(name, params, data, sheet, row, Id, v):
+    """
+    Adds a new resistor entry to the Parameters sheet, if it was
+    previously not present.
+    :param name: resistor name (str)
+    :param params: list of parameters (list of str)
+    :param data: list of values (list of various types, including ureal)
+    :param sheet: Openpyxl sheet object for 'Parameters' sheet
+    :param row: current row in 'Parameters' sheet to start writing (int)
+    :param Id: Run ID - used to construct ureal label (str)
+    :param v: HRBA version - used to construct comment/reference (str)
+    :return: current row for appending mor data to the sheet (int)
+    """
     R_dict = dict(zip(params, data))
 
     for param in params:
-        label = name.split()[0] + '_' + param + '_' + Id
+        label = create_label(name, param, Id)
         row += 1
         sheet['A'+str(row)] = name
         sheet['B'+str(row)] = param
-        if param not in ('date', 'T_sensor'):  # GTC.ureal params
-            sheet['C'+str(row)] = R_dict[param].x
-            sheet['D'+str(row)] = R_dict[param].u
-            if math.isinf(R_dict[param].df):
-                sheet['E'+str(row)] = str(R_dict[param].df)
-            else:
-                sheet['E'+str(row)] = round(R_dict[param].df)
-            sheet['F'+str(row)] = label
-        else:
-            sheet['C'+str(row)] = R_dict[param]
-
-        now_tup = dt.datetime.now()
-        now_fmt = now_tup.strftime('%d/%m/%Y %H:%M:%S')
-        sheet['G'+str(row)] = 'HRBA' + str(v) + '_' + now_fmt
+        update_R_Info(sheet, param, R_dict[param].u, row, label, v)
 
     # Mark end of data with a bottom border on cells of last row:
     b = Border(bottom=Side(style='thin'))
