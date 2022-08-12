@@ -58,6 +58,7 @@ FRAC_TOLERANCE = {'R2': 2e-2, 'G': 0.01, 'R1': 1}  # {'R2': 2e-4, 'G': 0.01, 'R1
 PPM_TOLERANCE = {'R2': 2e-4, 'G': 0.01, 'R1': 1e-3}
 RLINK_MAX = 2000  # Ohms
 DEFAULT_TDEF_UNCERT = 0.05  # Default resistor temperature uncertainty, deg C
+DEFAULT_RHDEF_UNCERT = 5  # default RH uncertainty, %RH
 
 # By default, calculate R1 as if it is a part of a build-up chain.
 # DUC_CALC_MODE = False
@@ -439,6 +440,7 @@ while Data_row <= Data_stop_row:
     # GMH correction factors
     GMH1_cor = I_INFO[role_descr['GMH1']]['T_correction']
     GMH2_cor = I_INFO[role_descr['GMH2']]['T_correction']
+    RH_cor = I_INFO[role_descr['GMHroom']]['RH_correction']
 
     # Temperature measurement, RH and times:
     del raw_gmh1[:]  # list for 4 corrected T1 gmh readings
@@ -465,6 +467,7 @@ while Data_row <= Data_stop_row:
         times.append(ws_Data.cell(row=r, column=7).value)
         times.append(ws_Data.cell(row=r, column=13).value)
         times.append(ws_Data.cell(row=r, column=16).value)
+        RHs.append(ws_Data.cell(row=r, column=25).value)
 
         assert ws_Data.cell(row=r, column=19).value is not None, 'No R1 raw DVM (temperature) data!'
         raw_dvm1 = ws_Data.cell(row=r, column=19).value
@@ -492,6 +495,8 @@ while Data_row <= Data_stop_row:
             T2DVM_cor = I_INFO[role_descr['DVMT2']]['correction_100k']
         R_dvm2.append(raw_dvm2*(1+T2DVM_cor))
 
+
+
     # Mean temperature from GMH
     # Data are plain numbers (with digitization rounding),
     # so use ta.estimate_digitized() to return a ureal.
@@ -517,6 +522,8 @@ while Data_row <= Data_stop_row:
     ... (and same for T, P) ...
 
     """
+    # %RH - type A only - not including type-B definition uncert.
+    RH_av_A = GTC.ar.result(GTC.ta.estimate_digitized(RHs, R_info.GetDigi(RHs)) + RH_cor, label='RH_av')
 
     # Build lists of 4 temperatures (calculated from T-probe dvm readings)...
     # ... and calculate mean temperatures
@@ -569,6 +576,8 @@ while Data_row <= Data_stop_row:
     # Default T definition arises from imperfect positioning of sensors wrt resistor:
     T_def = GTC.ureal(0, GTC.type_b.distribution['gaussian'](DEFAULT_TDEF_UNCERT), 8,
                       label='T_def ' + Run_Id)
+    RH_def = GTC.ureal(0, GTC.type_b.distribution['gaussian'](DEFAULT_RHDEF_UNCERT), 16,
+                      label='RH_def ' + Run_Id)
 
     # T-definition arises from imperfect positioning of both probes AND their disagreement:
     T_def1 = GTC.result(GTC.ureal(0, Diff_T1.u/2, 7) + T_def,
@@ -653,7 +662,7 @@ while Data_row <= Data_stop_row:
     # Combine data for this measurement: name,time,R,T,V and write to Summary sheet:
     this_result = {'name': R1_name, 'time_str': times_av_str,
                    'time_fl': times_av_fl, 'V': V1av, 'R': this_R1,
-                   'T1_A': this_T1_no_typeB, 'Tdef1': T_def1,
+                   'T1_A': this_T1_no_typeB, 'Tdef1': T_def1, 'RH_A': RH_av_A, 'RHdef': RH_def,
                    'R_expU': this_R1.u * GTC.rp.k_factor(this_R1.df)}  # 'quick=False' arg deprecated.
 
     R_info.WriteThisResult(ws_Summary, summary_row, this_result)  # An individual measurement.
@@ -769,18 +778,28 @@ sheet it should be added to the 'current knowledge'...
 
 params = ['R0_LV', 'TRef_LV', 'VRef_LV', 'R0_HV', 'TRef_HV', 'VRef_HV',
           'alpha', 'beta', 'gamma', 'date', 'T_sensor']
-
-R_data = [R1_LV, T_LV, V_LV, R1_HV, T_HV, V_HV, alpha, beta, gamma, date,
-          'none']
+R_data = [R1_LV, T_LV, V_LV, R1_HV, T_HV, V_HV,
+          alpha, beta, gamma, date, 'none']
+R_dict = dict(zip(params, R_data))
 
 if R1_name not in R_INFO:
+    # APPEND info to 'Parameters'.
     print(f'Adding {R1_name} to resistor info...')
-    last_R_row = R_info.update_R_Info(R1_name, params, R_data, ws_Params,
+    last_R_row = R_info.append_R_Info(R1_name, params, R_data, ws_Params,
                                       last_R_row, Run_Id, VERSION)
-else:  # Update any changed parameters.
-    print(f'\nAlready know about {R1_name}')
-    test_row = R_info.find_param_row(ws_Params, last_R_row, R1_name, 'alpha')
-    print(f'{R1_name}, alpha is on row {test_row}')
+else:  # UPDATE this R1.
+    print(f'\nAlready know of {R1_name} - updating...')
+    for param in params:
+        param_row = R_info.find_param_row(ws_Params, last_R_row, R1_name, param)
+
+        # Don't update alpha (calculated estimate is usually unreliable).
+        # Also, exclude non-GTC.ureal params (date, T_sensor):
+        if param not in ('date', 'T_sensor', 'alpha', 'beta', 'gamma'):
+            print(f'{R1_name} - Updating {param}')
+            label = R_info.create_label(R1_name, param, Run_Id)
+            R_info.update_R_Info(ws_Params, param, R_dict[param], param_row, label, VERSION)
+        else:
+            print(f'{R1_name} - ({param}) ~No change.')
 
 # Save workbook
 wb_io.save(xlfile)
