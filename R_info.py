@@ -204,6 +204,7 @@ def WriteHeadings(sheet, row, version, start_row, end_row):
 
 # Write measurement summary   
 def WriteThisResult(sheet, row, result):
+    # print(f"\tWriteThisResult(): RHs: {result['RHs']}")
     sheet['A'+str(row)].font = Font(color='FFFF00')  # YELLOW
     sheet['A'+str(row)].fill = PatternFill(patternType='solid',
                                            fgColor='FF0000')  # RED
@@ -263,14 +264,19 @@ def add_if_unique(item, lst):
 
 
 # Weighted least-squares fit (R1-T)
-def write_R1_T_fit(results, sheet, row, log, Tdef, R1_alpha):
+def write_R1_T_fit(results, RH_data, sheet, row, log, Tdef, RH_def, RH_cor, R1_alpha):
     T_data = [T for T in [result['T1_A'] for result in results]]  # All T ureals
-    # T_def_on_R_data = [i for i in [result['T1_def_on_R1'] for result in results]]
+    # RH_data = []
+    # for result in results:
+    #     # print(f"'{result['time_str']} - {result['RHs']}'")
+    #     RH_data.extend(result['RHs'])
+
     unique_T_data = []
     for T in T_data:
         add_if_unique(T, unique_T_data)
 
     T_av = GTC.fn.mean(T_data) + Tdef  # Type-B added here. ONCE!
+    RH_av = GTC.fn.mean(RH_data) + RH_def + RH_cor  # Type-Bs added here. ONCE!
     T_rel = [t_k - T_av for t_k in T_data]  # x-vals
     alpha = GTC.ureal(0, 0)  # Pre-defined default - will be updated later.
 
@@ -332,6 +338,15 @@ def write_R1_T_fit(results, sheet, row, log, Tdef, R1_alpha):
     sheet['AF' + str(row)] = V_av_k * V_av.u
 
 # %RH measurement:
+    sheet['AG' + str(row)] = RH_av.x
+    sheet['AH' + str(row)] = RH_av.u
+    if math.isinf(RH_av.df):
+        sheet['AI' + str(row)] = str(RH_av.df)  # 'inf'
+    else:
+        sheet['AI' + str(row)] = round(RH_av.df, 1)
+    RH_av_k = GTC.rp.k_factor(RH_av.df)
+    sheet['AJ' + str(row)] = RH_av_k
+    sheet['AK' + str(row)] = RH_av_k * RH_av.u
 
 # CMCs:
     CMC_ppm = 0.7+27*R1.x/1e9 - 20*GTC.pow(R1.x/1e9, 3)
@@ -425,14 +440,15 @@ def GetDigi(readings):
     Return maximum digitization level of a set of data.
     """
     max_n = 0
-    for x in readings:
-        if 'e' in str(x) or 'E' in str(x):
-            (m, e) = math.modf(x)
-            n = int(str(m).split('e')[1])
-        else:
-            n = -1*len(str(x).split('.')[1])
+    for reading in readings:
+        # if 'e' in str(reading) or 'E' in str(reading):
+        #     (m, e) = math.modf(reading)
+        #     n = int(str(m).split('e')[1])
+        # else:
+        n = -1*len(str(float(reading)).split('.')[1])
 
-        if max_n < n:
+        if abs(n) > abs(max_n):
             max_n = n
     d = 10**max_n
+    print(f'GetDigi(): Max digitisation is {d}')
     return d

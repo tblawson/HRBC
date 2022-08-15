@@ -345,6 +345,8 @@ R_dvm1 = []
 R_dvm2 = []
 times = []
 RHs = []
+LV_RHs = []  # Accumulate all LV RH's here.
+HV_RHs = []  # Accumulate all HV RH's here.
 Ps = []
 Ts = []
 
@@ -454,7 +456,7 @@ while Data_row <= Data_stop_row:
     del Ps[:]  # list for 4 room pressure values
     del Ts[:]  # list for 4 room Temp values
 
-    # Process times, RH and temperature data in this 4-row block:
+    # Process times and temperature data in this 4-row block:
     for r in range(Data_row, Data_row+4):  # build list of 4 gmh / T-probe dvm readings
         assert ws_Data.cell(row=r, column=21).value is not None, 'No R1 GMH temperature data!'
         assert ws_Data.cell(row=r, column=22).value is not None, 'No R2 GMH temperature data!'
@@ -467,6 +469,7 @@ while Data_row <= Data_stop_row:
         times.append(ws_Data.cell(row=r, column=7).value)
         times.append(ws_Data.cell(row=r, column=13).value)
         times.append(ws_Data.cell(row=r, column=16).value)
+        assert ws_Data.cell(row=r, column=25).value is not None, 'No RH value!'
         RHs.append(ws_Data.cell(row=r, column=25).value)
 
         assert ws_Data.cell(row=r, column=19).value is not None, 'No R1 raw DVM (temperature) data!'
@@ -495,8 +498,6 @@ while Data_row <= Data_stop_row:
             T2DVM_cor = I_INFO[role_descr['DVMT2']]['correction_100k']
         R_dvm2.append(raw_dvm2*(1+T2DVM_cor))
 
-
-
     # Mean temperature from GMH
     # Data are plain numbers (with digitization rounding),
     # so use ta.estimate_digitized() to return a ureal.
@@ -522,8 +523,8 @@ while Data_row <= Data_stop_row:
     ... (and same for T, P) ...
 
     """
-    # %RH - type A only - not including type-B definition uncert.
-    RH_av_A = GTC.ar.result(GTC.ta.estimate_digitized(RHs, R_info.GetDigi(RHs)) + RH_cor, label='RH_av')
+    # %RH - type A only - not including type-B definition uncert and correction.
+    # RH_av_A = GTC.result(GTC.ta.estimate_digitized(RHs, R_info.GetDigi(RHs)), label='RH_av')
 
     # Build lists of 4 temperatures (calculated from T-probe dvm readings)...
     # ... and calculate mean temperatures
@@ -577,7 +578,7 @@ while Data_row <= Data_stop_row:
     T_def = GTC.ureal(0, GTC.type_b.distribution['gaussian'](DEFAULT_TDEF_UNCERT), 8,
                       label='T_def ' + Run_Id)
     RH_def = GTC.ureal(0, GTC.type_b.distribution['gaussian'](DEFAULT_RHDEF_UNCERT), 16,
-                      label='RH_def ' + Run_Id)
+                       label='RH_def ' + Run_Id)
 
     # T-definition arises from imperfect positioning of both probes AND their disagreement:
     T_def1 = GTC.result(GTC.ureal(0, Diff_T1.u/2, 7) + T_def,
@@ -650,20 +651,21 @@ while Data_row <= Data_stop_row:
 
     T1_def_on_R1 = GTC.fn.mul2(R1alpha, T_def_duc)  # Both zero-valued.
     this_R1 = (R2 * vrc * V1av * delta_Vd / (Vdav * delta_V2 - V2av * delta_Vd)) * (1 + T1_def_on_R1)
-    print(f'Uncert contrib. of T1 uncert on R1 = {GTC.component(this_R1, T_def_duc)}')
+    # print(f'Uncert contrib. of T1 uncert on R1 = {GTC.component(this_R1, T_def_duc)}')
 
     print(f'R1 = {this_R1.x} +/- {this_R1.u}, dof = {this_R1.df}')
     frac_err = abs(this_R1.x - R1val) / R1val
     assert frac_err < FRAC_TOLERANCE['R1'], f'R1 > 1000 ppm from nominal ({frac_err})!'
     # assert abs(R1.x-R1val)/R1val < PPM_TOLERANCE['R1'], 'R1 > 1000 ppm from nominal!'
 
-    print(f'{this_R1} at temperature {this_T1}')
+    # print(f'{this_R1} at temperature {this_T1}')
 
     # Combine data for this measurement: name,time,R,T,V and write to Summary sheet:
     this_result = {'name': R1_name, 'time_str': times_av_str,
                    'time_fl': times_av_fl, 'V': V1av, 'R': this_R1,
-                   'T1_A': this_T1_no_typeB, 'Tdef1': T_def1, 'RH_A': RH_av_A, 'RHdef': RH_def,
+                   'T1_A': this_T1_no_typeB, 'Tdef1': T_def1, 'RHs': RHs,
                    'R_expU': this_R1.u * GTC.rp.k_factor(this_R1.df)}  # 'quick=False' arg deprecated.
+    # print(f'\tdata-rows {r-3}-{r}, RHs: {RHs}')
 
     R_info.WriteThisResult(ws_Summary, summary_row, this_result)  # An individual measurement.
 
@@ -689,18 +691,23 @@ while Data_row <= Data_stop_row:
     # Separate results by voltage (V1av) if different
     if HV == LV:
         results_LV.append(this_result)
+        LV_RHs.extend(RHs)
         results_HV.append(this_result)
+        HV_RHs.extend(RHs)
     elif abs(V1av.x - LV) < 1:
         results_LV.append(this_result)
+        LV_RHs.extend(RHs)
+        # print(f"\tLV - data-rows {r - 3}-{r}, RHs: {RHs}, this_result[RHs]: {this_result['RHs']}")
     else:
         results_HV.append(this_result)
+        HV_RHs.extend(RHs)
+        # print(f"\tHV - data-rows {r - 3}-{r}, RHs: {RHs}, this_result[RHs]: {this_result['RHs']}")
 
     del influencies[:]
     Data_row += 4  # Move to next measurement
 
 # ----- End of data-row loop ---- #
 # ############################### #
-
 
 # At this point the summary row has reached its maximum for this analysis run
 # ...so make a note of it, for use as the next run's starting row:
@@ -718,14 +725,14 @@ are used to calculate R1 at the mean Temperature. LV and HV values are
 obtained separately. The mean time, Temperature and Voltage values are
 also reported.
 """
-
 # Weighted total least-squares fit (R1-T), LV
 print('\nLV:')
 log.write('\nLV:')
-R1_LV, Ohm_per_C_LV, T_LV, V_LV, date = R_info.write_R1_T_fit(results_LV,
+R1_LV, Ohm_per_C_LV, T_LV, V_LV, date = R_info.write_R1_T_fit(results_LV, LV_RHs,
                                                               ws_Summary,
                                                               summary_row, log,
-                                                              T_def1, R1alpha)
+                                                              T_def1, RH_def, RH_cor,
+                                                              R1alpha)
 alpha_LV = Ohm_per_C_LV/R1_LV
 
 summary_row += 1
@@ -733,10 +740,11 @@ summary_row += 1
 # Weighted total least-squares fit (R1-T), HV
 print('\nHV:')
 log.write('\nHV:')
-R1_HV, Ohm_per_C_HV, T_HV, V_HV, date = R_info.write_R1_T_fit(results_HV,
+R1_HV, Ohm_per_C_HV, T_HV, V_HV, date = R_info.write_R1_T_fit(results_HV, HV_RHs,
                                                               ws_Summary,
                                                               summary_row, log,
-                                                              T_def1, R1alpha)
+                                                              T_def1, RH_def, RH_cor,
+                                                              R1alpha)
 alpha_HV = Ohm_per_C_HV/R1_HV
 
 alpha = GTC.fn.mean([alpha_LV, alpha_HV])
