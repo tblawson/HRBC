@@ -276,7 +276,8 @@ def write_R1_T_fit(results, RH_data, sheet, row, log, Tdef, RH_def, RH_cor, R1_a
         add_if_unique(T, unique_T_data)
 
     T_av = GTC.fn.mean(T_data) + Tdef  # Type-B added here. ONCE!
-    RH_av = GTC.fn.mean(RH_data) + RH_def + RH_cor  # Type-Bs added here. ONCE!
+    # RH_data are plain numbers so use ta.estimate:
+    RH_av = GTC.ta.estimate(RH_data) + RH_def + RH_cor  # Type-Bs added here. ONCE!
     T_rel = [t_k - T_av for t_k in T_data]  # x-vals
     alpha = GTC.ureal(0, 0)  # Pre-defined default - will be updated later.
 
