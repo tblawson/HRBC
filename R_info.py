@@ -66,7 +66,7 @@ def GetRval(name):
         mult = prefixes[name[-1]]
     else:
         mult = 0
-    assert mult != 0, 'Error parsing comment - unkown multiplier!'
+    assert mult != 0, 'Error parsing resistor name - unkown multiplier!'
 
     # return numeric part of last word, multiplied by 1, 10^3, 10^6 or 10^9:
     r_val_str = name.split()[-1]
