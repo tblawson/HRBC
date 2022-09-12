@@ -23,7 +23,7 @@ from matplotlib.figure import Figure
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import matplotlib.ticker as mtick
-from openpyxl import load_workbook, cell
+from openpyxl import load_workbook, utils
 
 import HighRes_events as evts
 import acquisition as acq
@@ -447,12 +447,12 @@ class SetupPage(wx.Panel):
                     u'value', u'uncert', u'dof', u'label')
 
         # Determine colummn indices from column letters:
-        col_I = cell.cell.column_index_from_string('I') - 1
-        col_J = cell.cell.column_index_from_string('J') - 1
-        col_K = cell.cell.column_index_from_string('K') - 1
-        col_L = cell.cell.column_index_from_string('L') - 1
-        col_M = cell.cell.column_index_from_string('M') - 1
-        col_N = cell.cell.column_index_from_string('N') - 1
+        col_I = utils.cell.column_index_from_string('I') - 1
+        col_J = utils.cell.column_index_from_string('J') - 1
+        col_K = utils.cell.column_index_from_string('K') - 1
+        col_L = utils.cell.column_index_from_string('L') - 1
+        col_M = utils.cell.column_index_from_string('M') - 1
+        col_N = utils.cell.column_index_from_string('N') - 1
 
         params = []
         values = []
@@ -469,14 +469,14 @@ class SetupPage(wx.Panel):
                 params.append(param)
                 if v_u_d_l[1] is None:  # single-valued (no uncert)
                     values.append(v_u_d_l[0])  # append value as next item
-                    print descr, ' : ', param, ' = ', v_u_d_l[0]
-                    print >>self.log, descr, ' : ', param, ' = ', v_u_d_l[0]
+                    print(descr, ' : ', param, ' = ', v_u_d_l[0])
+                    # print >>self.log, descr, ' : ', param, ' = ', v_u_d_l[0]
                 else:  # multi-valued
                     while v_u_d_l[-1] is None:  # remove empty cells
                         del v_u_d_l[-1]  # v_u_d_l.pop()
                     values.append(v_u_d_l)  # append value-list as next item
-                    print descr, ' : ', param, ' = ', v_u_d_l
-                    print >>self.log, descr, ' : ', param, ' = ', v_u_d_l  # self.log.write(logline)
+                    print(descr, ' : ', param, ' = ', v_u_d_l)
+                    # print >>self.log, descr, ' : ', param, ' = ', v_u_d_l  # self.log.write(logline)
 
                 if param == u'test':  # last parameter for this description
                     devices.DESCR.append(descr)  # build description list
@@ -484,8 +484,8 @@ class SetupPage(wx.Panel):
                     del params[:]
                     del values[:]
 
-        print '----END OF PARAMETER LIST----' 
-        print >>self.log, '----END OF PARAMETER LIST----'
+        print('----END OF PARAMETER LIST----' )
+        # print >>self.log, '----END OF PARAMETER LIST----'
 
         # Compile into a dictionary that lives in devices.py...  
         devices.INSTR_DATA = dict(zip(devices.DESCR, devices.sublist))
@@ -534,11 +534,11 @@ class SetupPage(wx.Panel):
 
         if 'GMH' in r:  # Changed from d to r
             # create and open a GMH instrument instance
-            print'\nnbpages.SetupPage.CreateInstr(): Creating GMH device (%s -> %s).' % (d, r)
+            print('\nnbpages.SetupPage.CreateInstr(): Creating GMH device (%s -> %s).' % (d, r))
             devices.ROLES_INSTR.update({r: devices.GMH_Sensor(d)})
         else:
             # create a visa instrument instance
-            print'\nnbpages.SetupPage.CreateInstr(): Creating VISA device (%s -> %s).' % (d, r)
+            print('\nnbpages.SetupPage.CreateInstr(): Creating VISA device (%s -> %s).' % (d, r))
             devices.ROLES_INSTR.update({r: devices.instrument(d)})
             devices.ROLES_INSTR[r].Open()
         self.SetInstr(d, r)
@@ -580,7 +580,7 @@ class SetupPage(wx.Panel):
             addr = a.lstrip('COMGPIB0:')  # leave only numeric part of address string
             devices.INSTR_DATA[d]['addr'] = int(addr)
             devices.ROLES_INSTR[r].addr = int(addr)
-        print'UpdateAddr():', r, 'using', d, 'set to addr', addr, '(', a, ')'
+        print('UpdateAddr():', r, 'using', d, 'set to addr', addr, '(', a, ')')
 
     def OnTest(self, e):
         # Called when a 'test' button is clicked
@@ -589,10 +589,10 @@ class SetupPage(wx.Panel):
             if devices.ROLES_WIDGETS[r]['tbtn'] == e.GetEventObject():
                 d = devices.ROLES_WIDGETS[r]['icb'].GetValue()
                 break  # stop looking when find the right instrument descr
-        print'\nnbpages.SetupPage.OnTest():',d
+        print('\nnbpages.SetupPage.OnTest():',d)
         assert 'test' in devices.INSTR_DATA[d], 'No test exists for this device.'
         test = devices.INSTR_DATA[d]['test']  # test string
-        print '\tTest string:', test
+        print('\tTest string:', test)
         self.Response.SetValue(str(devices.ROLES_INSTR[r].Test(test)))
         self.status.SetStatusText('Testing %s with cmd %s' % (d, test), 0)
 
@@ -858,7 +858,7 @@ class RunPage(wx.Panel):
 
     def OnRangeMode(self, e):
         state = e.GetEventObject().GetValue()
-        print 'OnRangeMode(): Range toggle button value =', state
+        print('OnRangeMode(): Range toggle button value =', state)
         if state is True:
             e.GetEventObject().SetLabel("AUTO-range DVM12")
         else:
@@ -951,22 +951,22 @@ class RunPage(wx.Panel):
         # V1:
         src1 = devices.ROLES_INSTR['SRC1']
         if self.V1Setting.GetValue() == 0:
-            print'RunPage.OnZeroVolts(): Zero/Stby directly (not via V1 display)'
+            print('RunPage.OnZeroVolts(): Zero/Stby directly (not via V1 display)')
             src1.SetV(0)
             src1.Stby()
         else:
             self.V1Setting.SetValue('0')  # Calls OnV1Set() ONLY IF VALUE CHANGES
-            print'RunPage.OnZeroVolts():  Zero/Stby via V1 display'
+            print('RunPage.OnZeroVolts():  Zero/Stby via V1 display')
 
         # V2:
         src2 = devices.ROLES_INSTR['SRC2']
         if self.V2Setting.GetValue() == 0:
-            print'RunPage.OnZeroVolts(): Zero/Stby directly (not via V2 display)'
+            print('RunPage.OnZeroVolts(): Zero/Stby directly (not via V2 display)')
             src2.SetV(0)
             src2.Stby()
         else:
             self.V2Setting.SetValue('0')  # Calls OnV2Set() ONLY IF VALUE CHANGES
-            print'RunPage.OnZeroVolts():  Zero/Stby via V2 display'
+            print('RunPage.OnZeroVolts():  Zero/Stby via V2 display')
 
     def OnStart(self, e):
         self.Progress.SetValue(0)
