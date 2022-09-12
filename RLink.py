@@ -26,6 +26,7 @@ from openpyxl.styles import Font, colors
 
 import HighRes_events as evts
 import devices
+import R_info
 
 
 class RLThread(Thread):
@@ -43,15 +44,15 @@ class RLThread(Thread):
 
         self.log = self.SetupPage.log
 
-        print'\nRole -> Instrument:'
-        print'------------------------------'
+        print('\nRole -> Instrument:')
+        print('------------------------------')
         # Print all instrument objects
         for r in devices.ROLES_WIDGETS.keys():
             d = devices.ROLES_WIDGETS[r]['icb'].GetValue()
-            print'%s -> %s' % (devices.INSTR_DATA[d]['role'], d)
+            print('%s -> %s' % (devices.INSTR_DATA[d]['role'], d))
             if r != devices.INSTR_DATA[d]['role']:
                 devices.INSTR_DATA[d]['role'] = r
-                print'Role data corrected to:', r, '->', d
+                print('Role data corrected to:', r, '->', d)
 
         # Get filename of Excel file
         self.xlfilename = self.SetupPage.XLFile.GetValue()
@@ -76,10 +77,12 @@ class RLThread(Thread):
         self.R2Name = self.SetupPage.R2Name.GetValue()
 
         # Extract resistor nominal values from names
-        R1multiplier = self.Getmultiplier(self.R1Name)
-        R2multiplier = self.Getmultiplier(self.R2Name)
-        self.R1Val = R1multiplier*int(string.strip(string.split(self.R1Name)[-1], string.letters))
-        self.R2Val = R2multiplier*int(string.strip(string.split(self.R2Name)[-1], string.letters))
+        # R1multiplier = self.Getmultiplier(self.R1Name)
+        # R2multiplier = self.Getmultiplier(self.R2Name)
+        # self.R1Val = R1multiplier*int(string.strip(string.split(self.R1Name)[-1], string.letters))
+        # self.R2Val = R2multiplier*int(string.strip(string.split(self.R2Name)[-1], string.letters))
+        self.R1Val = R_info.GetRval(self.R1Name)
+        self.R2Val = R_info.GetRval(self.R2Name)
 
         self.start()  # Starts the thread running on creation
 
@@ -121,10 +124,10 @@ class RLThread(Thread):
         for r in headings.keys():
             for c in range(1, len(headings[r])+1):
                 if r == self.headrow + 5:  # 'delta_V' row
-                    if (c % 2 == 0):  # even columns
-                        col = colors.BLUE
+                    if c % 2 == 0:  # even columns
+                        col = "000000FF"  # col = colors.BLUE
                     else:  # odd columns
-                        col = colors.RED
+                        col = "00FF0000"  # col = colors.RED
                     self.ws.cell(row=r, column=c).font = Font(color=col)
                 if r == self.headrow:  # 1st row (Run Id)
                     self.ws.cell(row=r, column=c).font = Font(b=True)
@@ -178,16 +181,18 @@ class RLThread(Thread):
                     devices.ROLES_INSTR['DVMd'].SendCmd('AZERO ONCE')
                     time.sleep(1)  # was 10
                     dvmOP = devices.ROLES_INSTR['DVMd'].Read()
-                    self.RLink_data.append(float(filter(self.filt, dvmOP)))
+                    # self.RLink_data.append(float(filter(self.filt, dvmOP)))
+                self.RLink_data.append(dvmOP)
+
                 P = 100*((revs-1)*self.N_readings+row)/(self.N_reversals*self.N_readings)  # % progress
                 update_ev = evts.DataEvent(t=0, Vm=self.RLink_data[row-1],
                                            Vsd=0, P=P, r=col_letter+str(row),
                                            flag='-')
                 wx.PostEvent(self.RunPage, update_ev)
                 if revs % 2 == 0:  # even columns
-                    col = colors.BLUE
+                    col = "000000FF"  # col = colors.BLUE
                 else:  # odd columns
-                    col = colors.RED
+                    col = "00FF0000"  # col = colors.RED
                 self.ws.cell(row=self.start_row+row-1,
                              column=revs).font = Font(color=col)
                 self.ws.cell(row=self.start_row+row-1,
@@ -195,7 +200,7 @@ class RLThread(Thread):
                 row += 1
             # (end of readings loop)
 
-            print self.RLink_data[row-2]
+            print(self.RLink_data[row-2])
 
             # Reverse source polarities
             self.V1set *= -1
@@ -253,20 +258,21 @@ class RLThread(Thread):
         wx.PostEvent(self.TopLevel, stat_ev)
         self._want_abort = 1
 
-    def Getmultiplier(self, name):
-        # A helper function to extract the value multiplier from resistor name
-        if name[-1] == 'k':
-            mult = 1000
-        elif name[-1] == 'M':
-            mult = int(1e6)
-        elif name[-1] == 'G':
-            mult = int(1e9)
-        return mult
+    # def Getmultiplier(self, name):
+    #     # A helper function to extract the value multiplier from resistor name
+    #     mult = 0
+    #     if name[-1] == 'k':
+    #         mult = 1000
+    #     elif name[-1] == 'M':
+    #         mult = int(1e6)
+    #     elif name[-1] == 'G':
+    #         mult = int(1e9)
+    #     return mult
 
-    def filt(self, char):
-        # A helper function to strip rubbish from DVM o/p unicode string
-        # and retain any number (as a string)
-        accept_str = u'-0.12345678eE9'
-        return char in accept_str  # Returns 'True' or 'False'
+    # def filt(self, char):
+    #     # A helper function to strip rubbish from DVM o/p unicode string
+    #     # and retain any number (as a string)
+    #     accept_str = u'-0.12345678eE9'
+    #     return char in accept_str  # Returns 'True' or 'False'
 
 """--------------End of Thread class definition-------------------"""
