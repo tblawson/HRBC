@@ -109,12 +109,12 @@ class GMH_Sensor(device):
         Use COM port number to open device
         Returns 1 if successful, 0 if not
         """
-        print'\ndevices.GMH_Sensor.Open(): Trying port', repr(self.addr)
+        print('\ndevices.GMH_Sensor.Open(): Trying port', repr(self.addr))
         self.error_code = ct.c_int16(GMHLIB.GMH_OpenCom(self.addr))
         self.GetErrMsg()  # Get self.error_msg
 
         if self.error_code.value in range(0, 4) or self.error_code.value == -2:
-            print 'devices.GMH_Sensor.Open(): ', self.str_addr, 'is open.'
+            print('devices.GMH_Sensor.Open(): ', self.str_addr, 'is open.')
 
             # We're not there yet - test device responsiveness
             self.Transmit(1, self.ValFn)
@@ -124,42 +124,42 @@ class GMH_Sensor(device):
                 self.intData.value = 120  # 120 mins B4 power-off
                 self.Transmit(1, self.SetPowOffFn)
                 if len(self.info) == 0:  # No device info yet
-                    print 'devices.GMH_Sensor.Open(): Getting sensor info...'
+                    print('devices.GMH_Sensor.Open(): Getting sensor info...')
                     self.GetSensorInfo()
                     self.demo = False  # If we got this far we're probably OK
                     return True
                 else:  # Already have device measurement info
-                    print'devices.GMH_Sensor.Open(): \
-                    Instrument ready - demo=False.'
+                    print('devices.GMH_Sensor.Open(): \
+                    Instrument ready - demo=False.')
                     self.demo = False  # If we got this far we're probably OK
                     return True
             else:  # No response
-                print 'devices.GMH_Sensor.Open():', self.error_msg.value
+                print('devices.GMH_Sensor.Open():', self.error_msg.value)
                 self.Close()
                 self.demo = True
                 return False
 
         else:  # Com open failed
-            print'devices.GMH_Sensor.Open() FAILED:', self.Descr
+            print('devices.GMH_Sensor.Open() FAILED:', self.Descr)
             self.Close()
             self.demo = True
             return False
 
     def Init(self):
-        print'devices.GMH_Sensor.Init():', self.Descr, 'initiated \
-        (nothing happens here).'
+        print('devices.GMH_Sensor.Init():', self.Descr, 'initiated \
+        (nothing happens here).')
         pass
 
     def Close(self):
         """
         Closes all / any GMH devices that are currently open.
         """
-        print'\ndevices.GMH_Sensor.Close(): \
-        Setting demo=True and Closing all GMH sensors ...'
+        print('\ndevices.GMH_Sensor.Close(): \
+        Setting demo=True and Closing all GMH sensors ...')
         self.demo = True
         self.error_code = ct.c_int16(GMHLIB.GMH_CloseCom())
         m = 'devices.GMH_Sensor.Close(): CloseCom err_msg:'
-        print m, self.error_msg.value
+        print(m, self.error_msg.value)
         return 1
 
     def Transmit(self, Addr, Func):
@@ -172,10 +172,10 @@ class GMH_Sensor(device):
                                                          ct.byref(self.intData)))
         self.GetErrMsg()
         if self.error_code.value < 0:
-            print'\ndevices.GMH_Sensor.Transmit():FAIL'
+            print('\ndevices.GMH_Sensor.Transmit():FAIL')
             return False
         else:
-            print'\ndevices.GMH_Sensor.Transmit():PASS'
+            print('\ndevices.GMH_Sensor.Transmit():PASS')
             return True
 
     def GetErrMsg(self):
@@ -225,21 +225,21 @@ class GMH_Sensor(device):
                 GMHLIB.GMH_GetUnit(unit_code, ct.byref(self.unit_str))
                 units.append(self.unit_str.value)
 
-                print'Found', self.meas_str.value, '(', self.unit_str.value,')', 'at address', Address
+                print('Found', self.meas_str.value, '(', self.unit_str.value,')', 'at address', Address)
             else:
-                print m, 'Exhausted addresses at', Address
+                print(m, 'Exhausted addresses at', Address)
                 if Address > 1:  # Don't let the last addr tried screw it up.
                     self.error_code.value = 0
                     self.demo = False
                 else:
                     self.demo = True
                 break
-                '''
+                """
                 (Assumes all functions are in a contiguous
                 address range starting at 1)
-                '''
+                """
         self.info = dict(zip(measurements, zip(addresses, units)))
-        print m, '\n', self.info, 'demo =', self.demo
+        print(m, '\n', self.info, 'demo =', self.demo)
         return len(self.info)
 
     def Measure(self, meas):
@@ -264,17 +264,17 @@ class GMH_Sensor(device):
             self.Close()
 
             m = 'devices.Measure():'
-            print m, self.meas_alias[meas], '=', self.flData.value
+            print(m, self.meas_alias[meas], '=', self.flData.value)
             return self.flData.value
         else:
             assert self.demo is True, 'Illegal denial to demo device!'
-            print'devices.GMH_Sensor.Measure(): Returning demo-value.'
+            print('devices.GMH_Sensor.Measure(): Returning demo-value.')
             demo_rtn = {'T': (20.5, 0.2), 'P': (1013, 5), 'RH': (50, 10)}
             return np.random.normal(*demo_rtn[meas])
 
     def Test(self, meas):
         """ Used to test that the device is functioning. """
-        print'\ndevices.GMH_Sensor.Test()...'
+        print('\ndevices.GMH_Sensor.Test()...')
         result = self.Measure(meas)
         return result
 
@@ -356,31 +356,31 @@ Excel Parameters sheet.'
             self.instr.timeout = 2000  # default 2 s timeout
             INSTR_DATA[self.Descr]['demo'] = False  # A real working instr
             self.demo = False  # A real working instr ONLY on Open() success
-            print m, self.Descr, 'session handle=', self.instr.session
+            print(m, self.Descr, 'session handle=', self.instr.session)
         except visa.VisaIOError:
             self.instr = None
             self.demo = True  # default to demo mode if can't open
             INSTR_DATA[self.Descr]['demo'] = True
-            print m, self.Descr, 'opened in demo mode'
+            print(m, self.Descr, 'opened in demo mode')
         return self.instr
 
     def Close(self):
         # Close comms with instrument
         m = 'devices.instrument.Close():'
         if self.demo is True:
-            print m, self.Descr, 'in demo mode - nothing to close'
+            print(m, self.Descr, 'in demo mode - nothing to close')
         if self.instr is not None:
-            print m, self.Descr, 'session handle=', self.instr.session
+            print(m, self.Descr, 'session handle=', self.instr.session)
             self.instr.close()
         else:
-            print m, self.Descr, 'is "None" or already closed'
+            print(m, self.Descr, 'is "None" or already closed')
         self.is_open = 0
 
     def Init(self):
         # Send initiation string
         m = 'devices.instrument.Init():'
         if self.demo is True:
-            print m, self.Descr, 'in demo mode - no initiation necessary'
+            print(m, self.Descr, 'in demo mode - no initiation necessary')
             return 1
         else:
             reply = 1
@@ -389,10 +389,10 @@ Excel Parameters sheet.'
                     try:
                         self.instr.write(s)
                     except visa.VisaIOError:
-                        print'Failed to write "%s" to %s' % (s, self.Descr)
+                        print('Failed to write "%s" to %s' % (s, self.Descr))
                         reply = -1
                         return reply
-            print m, self.Descr, 'initiated with cmd:', s
+            print(m, self.Descr, 'initiated with cmd:', s)
         return reply
 
     def SetV(self, V):
@@ -405,12 +405,12 @@ Excel Parameters sheet.'
                 s = self.Transmille_V_str(V)
             else:
                 s = str(V).join(self.VStr)
-            print'devices.instrument.SetV():', self.Descr, 's=', s
+            print('devices.instrument.SetV():', self.Descr, 's=', s)
             try:
                 self.instr.write(s)
             except visa.VisaIOError:
                 m = 'Failed to write "%s" to %s, via handle %s'
-                print m % (s, self.Descr, self.instr.session)
+                print(m % (s, self.Descr, self.instr.session))
                 return -1
             return 1
         elif 'DVM:' in self.Descr:
@@ -419,7 +419,7 @@ Excel Parameters sheet.'
             self.instr.write(s)
             return 1
         else:  # 'none' in self.Descr, (or something odd has happened)
-            print 'Invalid function for instrument', self.Descr
+            print('Invalid function for instrument', self.Descr)
             return -1
 
     def Transmille_V_str(self, V):
@@ -456,10 +456,10 @@ Excel Parameters sheet.'
             s = self.SetFnStr
             if s != '':
                 self.instr.write(s)
-            print'devices.instrument.SetFn():', self.Descr, '- OK.'
+            print('devices.instrument.SetFn():', self.Descr, '- OK.')
             return 1
         else:
-            print'devices.instrument.SetFn(): Invalid function for', self.Descr
+            print('devices.instrument.SetFn(): Invalid function for', self.Descr)
             return -1
 
     def Oper(self):
@@ -473,12 +473,12 @@ Excel Parameters sheet.'
                 try:
                     self.instr.write(s)
                 except visa.VisaIOError:
-                    print'Failed to write "%s" to %s' % (s, self.Descr)
+                    print('Failed to write "%s" to %s' % (s, self.Descr))
                     return -1
-            print'devices.instrument.Oper():', self.Descr, 'output ENABLED.'
+            print('devices.instrument.Oper():', self.Descr, 'output ENABLED.')
             return 1
         else:
-            print'devices.instrument.Oper(): Invalid function for', self.Descr
+            print('devices.instrument.Oper(): Invalid function for', self.Descr)
             return -1
 
     def Stby(self):
@@ -490,10 +490,10 @@ Excel Parameters sheet.'
             s = self.StbyStr
             if s != '':
                 self.instr.write(s)
-            print'devices.instrument.Stby():', self.Descr, 'output DISABLED.'
+            print('devices.instrument.Stby():', self.Descr, 'output DISABLED.')
             return 1
         else:
-            print'devices.instrument.Stby(): Invalid function for', self.Descr
+            print('devices.instrument.Stby(): Invalid function for', self.Descr)
             return -1
 
     def CheckErr(self):
@@ -509,7 +509,7 @@ Excel Parameters sheet.'
             return reply
         else:
             m = 'devices.instrument.CheckErr(): Invalid function for'
-            print m, self.Descr
+            print(m, self.Descr)
             return -1
 
     def SendCmd(self, s):
@@ -519,20 +519,20 @@ Excel Parameters sheet.'
         if self.role == 'switchbox':  # update icb
             pass  # may need an event here...
         if self.demo is True:
-            print m, 'returning', demo_reply
+            print(m, 'returning', demo_reply)
             return demo_reply
         # Check if s contains '?' or 'X' or is an empty string
         # ... in which case a response is expected
         if any(x in s for x in'?X'):
-            print m, 'Query(%s) to %s' % (s, self.Descr)
+            print(m, 'Query(%s) to %s' % (s, self.Descr))
             reply = self.instr.query(s)
             return reply
         elif s == '':
             reply = self.instr.read()
-            print m, 'Read()', reply, 'from', self.Descr
+            print(m, 'Read()', reply, 'from', self.Descr)
             return reply
         else:
-            print m, 'Write(%s) to %s' % (s, self.Descr)
+            print(m, 'Write(%s) to %s' % (s, self.Descr))
             self.instr.write(s)
             return reply
 
@@ -541,7 +541,7 @@ Excel Parameters sheet.'
         if self.demo is True:
             return reply
         if 'DVM' in self.Descr:
-            print'devices.instrument.Read(): from', self.Descr
+            print('devices.instrument.Read(): from', self.Descr)
             if '3458A' in self.Descr:
                 reply = self.instr.read()
                 return reply
@@ -549,7 +549,7 @@ Excel Parameters sheet.'
                 reply = self.instr.query('READ?')
                 return reply
         else:
-            print 'devices.instrument.Read(): Invalid function for', self.Descr
+            print('devices.instrument.Read(): Invalid function for', self.Descr)
             return reply
 
     def Test(self, s):

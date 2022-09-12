@@ -34,7 +34,7 @@ import devices
 
 VERSION = "1.1"
 
-print 'HRBC', VERSION
+print('HRBC', VERSION)
 
 
 """
@@ -114,11 +114,11 @@ A Python'd version of the TestPoint High Resistance Bridge program."
 
     def OnSave(self, event=None):
         if self.ExcelPath is not "":
-            print 'Saving', self.page1.XLFile.GetValue(), '...'
+            print('Saving', self.page1.XLFile.GetValue(), '...')
             self.page1.wb.save(self.page1.XLFile.GetValue())
             self.page1.log.close()
         else:
-            print 'Nothing to save. Bye.'
+            print('Nothing to save. Bye.')
 
     def OnOpen(self, event=None):
         dlg = wx.FileDialog(self, message="Select data file",
@@ -127,8 +127,8 @@ A Python'd version of the TestPoint High Resistance Bridge program."
         if dlg.ShowModal() == wx.ID_OK:
             self.ExcelPath = dlg.GetPath()
             self.directory = dlg.GetDirectory()
-            print self.directory
-            print self.ExcelPath
+            print(self.directory)
+            print(self.ExcelPath)
             file_evt = evts.FilePathEvent(XLpath=self.ExcelPath,
                                           d=self.directory, v=VERSION)
             wx.PostEvent(self.page1, file_evt)
@@ -139,7 +139,7 @@ A Python'd version of the TestPoint High Resistance Bridge program."
         for r in devices.ROLES_INSTR.keys():
             devices.ROLES_INSTR[r].Close()
         devices.RM.close()
-        print head, 'closed VISA resource manager and GMH instruments'
+        print(head, 'closed VISA resource manager and GMH instruments')
 
     def OnQuit(self, event=None):
         self.CloseInstrSessions()

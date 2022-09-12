@@ -52,22 +52,22 @@ class AqnThread(Thread):
 
         self.Range_Mode = {True: 'AUTO', False: 'FIXED'}
 
-        print'Role -> Instrument:'
-        print >>self.log, 'Role -> Instrument:'
-        print'------------------------------'
-        print >>self.log, '------------------------------'
+        print('Role -> Instrument:')
+        # print >>self.log, 'Role -> Instrument:'
+        print('------------------------------')
+        # print >>self.log, '------------------------------'
         # Print all GPIB instrument objects
         for r in devices.ROLES_WIDGETS.keys():
             d = devices.ROLES_WIDGETS[r]['icb'].GetValue()
             # For 'switchbox' role, d is actually the setting
             # (V1, Vd1,...) not the instrument description.
 
-            print'%s -> %s' % (devices.INSTR_DATA[d]['role'], d)
-            print >>self.log, '%s -> %s' % (devices.INSTR_DATA[d]['role'], d)
+            print('%s -> %s' % (devices.INSTR_DATA[d]['role'], d))
+            # print >>self.log, '%s -> %s' % (devices.INSTR_DATA[d]['role'], d)
             if r != devices.INSTR_DATA[d]['role']:
                 devices.INSTR_DATA[d]['role'] = r
-                print'Role data corrected to:', r, '->', d
-                print >>self.log, 'Role data corrected to:', r, '->', d
+                print('Role data corrected to:', r, '->', d)
+                # print >>self.log, 'Role data corrected to:', r, '->', d
 
         # Get filename of Excel file
         self.xlfilename = self.SetupPage.XLFile.GetValue()  # Full path
@@ -264,8 +264,8 @@ class AqnThread(Thread):
             av_t = np.mean(self.V1Times)
             t1 = dt.datetime.fromtimestamp(av_t).strftime("%d/%m/%Y %H:%M:%S")
             V1m = np.mean(self.V1Data)
-            print 'AqnThread.run(): V1m =', V1m
-            print >>self.log, 'AqnThread.run(): V1m =', V1m
+            print( 'AqnThread.run(): V1m =', V1m)
+            # print >>self.log, 'AqnThread.run(): V1m =', V1m
             assert len(self.V1Data) > 1, "Can't take SD of one or less items!"
             V1sd = np.std(self.V1Data, ddof=1)
             P = 100.0*pbar/(1 + self.stop_row - self.start_row)  # % progress
@@ -280,7 +280,7 @@ class AqnThread(Thread):
             self.SetupPage.Switchbox.SetValue('V2')  # update sw-box config icb
 
             # If running with fixed range set range to 'str(self.V1_set)':
-            if self.RunPage.RangeTBtn.GetValue() == True:
+            if self.RunPage.RangeTBtn.GetValue():
                 range2 = int(abs(self.V2_set))
             else:
                 range2 = int(abs(self.V1_set))
@@ -321,8 +321,8 @@ class AqnThread(Thread):
             av_t = np.mean(self.V2Times)
             t2 = dt.datetime.fromtimestamp(av_t).strftime("%d/%m/%Y %H:%M:%S")
             V2m = np.mean(self.V2Data)
-            print 'AqnThread.run(): V2m =', V2m
-            print >>self.log, 'AqnThread.run(): V2m =', V2m
+            print('AqnThread.run(): V2m =', V2m)
+            # print >>self.log, 'AqnThread.run(): V2m =', V2m
             assert len(self.V2Data) > 1, "Can't take SD of one or less items!"
             V2sd = np.std(self.V2Data, ddof=1)
             P = 100.0*pbar/(1 + self.stop_row - self.start_row)  # % progress
@@ -353,8 +353,8 @@ class AqnThread(Thread):
             av_t = np.mean(self.VdTimes)
             td = dt.datetime.fromtimestamp(av_t).strftime("%d/%m/%Y %H:%M:%S")
             Vdm = np.mean(self.VdData)
-            print 'AqnThread.run(): Vdm =', Vdm
-            print >>self.log, 'AqnThread.run(): Vdm =', Vdm
+            print('AqnThread.run(): Vdm =', Vdm)
+            # print >>self.log, 'AqnThread.run(): Vdm =', Vdm
             assert len(self.VdData) > 1, "Can't take SD of one or less items!"
             Vdsd = np.std(self.VdData, ddof=1)
             P = 100.0*pbar/(1 + self.stop_row - self.start_row)  # % progress
@@ -407,12 +407,12 @@ class AqnThread(Thread):
 
             # Open non-GMH devices:
             if 'GMH' not in devices.ROLES_INSTR[r].Descr:
-                print'AqnThread.initialise(): Opening', d
-                print >>self.log, 'AqnThread.initialise(): Opening', d
+                print('AqnThread.initialise(): Opening', d)
+                # print >>self.log, 'AqnThread.initialise(): Opening', d
                 devices.ROLES_INSTR[r].Open()
             else:
-                print'AqnThread.initialise(): %s already open' % d
-                print >>self.log, 'AqnThread.initialise(): %s already open' % d
+                print('AqnThread.initialise(): %s already open' % d)
+                # print >>self.log, 'AqnThread.initialise(): %s already open' % d
 
             stat_ev = evts.StatusEvent(msg=d, field=1)
             wx.PostEvent(self.TopLevel, stat_ev)
@@ -425,8 +425,8 @@ class AqnThread(Thread):
         d = devices.ROLES_INSTR['SRC2'].Descr
         if d.endswith('F5520A'):
             err = devices.ROLES_INSTR['SRC2'].CheckErr()
-            print 'Cleared F5520A error:', err
-            print >>self.log, 'Cleared F5520A error:', err
+            print('Cleared F5520A error:', err)
+            # print >>self.log, 'Cleared F5520A error:', err
             time.sleep(3)  # Wait 3 s after checking error
 
         # Get V1,V2 setting, n, delays from spreadsheet
@@ -502,85 +502,85 @@ class AqnThread(Thread):
         fmt = "%d/%m/%Y %H:%M:%S"
         t_stamp = str(dt.datetime.fromtimestamp(av_t).strftime(fmt))
         self.ws.cell(row=row, column=16).value = t_stamp
-        print >>self.log, 'WriteDataThisRow(): cell', 'P'+str(row), ':',
-        t_stamp
+        # print >>self.log, 'WriteDataThisRow(): cell', 'P'+str(row), ':',
+        # t_stamp
 
         self.ws.cell(row=row, column=17).value = np.mean(self.V1Data)
-        print >>self.log, 'WriteDataThisRow(): cell', 'Q'+str(row), ':',
+        # print >>self.log, 'WriteDataThisRow(): cell', 'Q'+str(row), ':',
         np.mean(self.V1Data)
 
         self.ws.cell(row=row, column=18).value = np.std(self.V1Data, ddof=1)
-        print >>self.log, 'WriteDataThisRow(): cell', 'R'+str(row),
+        # print >>self.log, 'WriteDataThisRow(): cell', 'R'+str(row),
         np.std(self.V1Data, ddof=1)
 
         av_t = np.mean(self.V2Times)
         t_stamp = str(dt.datetime.fromtimestamp(av_t).strftime(fmt))
         self.ws.cell(row=row, column=7).value = t_stamp
-        print >>self.log, 'WriteDataThisRow(): cell', 'G'+str(row), ':',
-        t_stamp
+        # print >>self.log, 'WriteDataThisRow(): cell', 'G'+str(row), ':',
+        # t_stamp
 
         self.ws.cell(row=row, column=8).value = np.mean(self.V2Data)
-        print >>self.log, 'WriteDataThisRow(): cell', 'H'+str(row), ':',
+        # print >>self.log, 'WriteDataThisRow(): cell', 'H'+str(row), ':',
         np.mean(self.V2Data)
 
         self.ws.cell(row=row, column=9).value = np.std(self.V2Data, ddof=1)
-        print >>self.log, 'WriteDataThisRow(): cell', 'I'+str(row), ':',
+        # print >>self.log, 'WriteDataThisRow(): cell', 'I'+str(row), ':',
         np.std(self.V2Data, ddof=1)
 
         av_t = np.mean(self.VdTimes)
         t_stamp = str(dt.datetime.fromtimestamp(av_t).strftime(fmt))
         self.ws.cell(row=row, column=13).value = t_stamp
-        print >>self.log, 'WriteDataThisRow(): cell', 'M'+str(row), ':',
-        t_stamp
+        # print >>self.log, 'WriteDataThisRow(): cell', 'M'+str(row), ':',
+        # t_stamp
 
         self.ws.cell(row=row, column=14).value = np.mean(self.VdData)
-        print >>self.log, 'WriteDataThisRow(): cell', 'N'+str(row), ':',
+        # print >>self.log, 'WriteDataThisRow(): cell', 'N'+str(row), ':',
         np.mean(self.VdData)
 
         self.ws.cell(row=row, column=15).value = np.std(self.VdData, ddof=1)
-        print >>self.log, 'WriteDataThisRow(): cell', 'O'+str(row), ':',
+        # print >>self.log, 'WriteDataThisRow(): cell', 'O'+str(row), ':',
         np.std(self.VdData, ddof=1)
 
         if devices.ROLES_INSTR['DVMT1'].demo is True:
             T1dvmOP = np.random.normal(108.0, 1.0e-2)
             self.ws.cell(row=row, column=19).value = T1dvmOP
-            print >>self.log, 'WriteDataThisRow(): cell', 'S'+str(row), ':',
-            T1dvmOP
+            # print >>self.log, 'WriteDataThisRow(): cell', 'S'+str(row), ':',
+            # T1dvmOP
         else:
             T1dvmOP = devices.ROLES_INSTR['DVMT1'].SendCmd('READ?')
             self.ws.cell(row=row, column=19).value = float(filter(self.filt, T1dvmOP))
-            print >>self.log, 'WriteDataThisRow(): cell', 'S'+str(row), ':',
-            float(filter(self.filt, T1dvmOP))
+            # print >>self.log, 'WriteDataThisRow(): cell', 'S'+str(row), ':',
+            # float(filter(self.filt, T1dvmOP))
 
         if devices.ROLES_INSTR['DVMT2'].demo is True:
             T2dvmOP = np.random.normal(108.0, 1.0e-2)
             self.ws.cell(row=row, column=20).value = T2dvmOP
-            print >>self.log, 'WriteDataThisRow(): cell', 'T'+str(row), ':',
-            T2dvmOP
+            # print >>self.log, 'WriteDataThisRow(): cell', 'T'+str(row), ':',
+            # T2dvmOP
         else:
             T2dvmOP = devices.ROLES_INSTR['DVMT2'].SendCmd('READ?')
             self.ws.cell(row=row, column=20).value = float(filter(self.filt, T2dvmOP))
-            print >>self.log, 'WriteDataThisRow(): cell', 'T'+str(row), ':',
-            float(filter(self.filt, T2dvmOP))
+            # print >>self.log, 'WriteDataThisRow(): cell', 'T'+str(row), ':',
+            # float(filter(self.filt, T2dvmOP))
 
         self.ws.cell(row=row, column=21).value = self.T1
-        print >>self.log, 'WriteDataThisRow(): cell', 'U'+str(row), ':',
-        self.T1
+        # print >>self.log, 'WriteDataThisRow(): cell', 'U'+str(row), ':',
+        # self.T1
         self.ws.cell(row=row, column=22).value = self.T2
-        print >>self.log, 'WriteDataThisRow(): cell', 'V'+str(row), ':',
-        self.T2
+        # print >>self.log, 'WriteDataThisRow(): cell', 'V'+str(row), ':',
+        # self.T2
         self.ws.cell(row=row, column=23).value = self.Troom
-        print >>self.log, 'WriteDataThisRow(): cell', 'W'+str(row), ':',
-        self.Troom
+        # print >>self.log, 'WriteDataThisRow(): cell', 'W'+str(row), ':',
+        # self.Troom
         self.ws.cell(row=row, column=24).value = self.Proom
-        print >>self.log, 'WriteDataThisRow(): cell', 'X'+str(row), ':',
-        self.Proom
+        # print >>self.log, 'WriteDataThisRow(): cell', 'X'+str(row), ':',
+        # self.Proom
         self.ws.cell(row=row, column=25).value = self.RHroom
-        print >>self.log, 'WriteDataThisRow(): cell', 'Y'+str(row), ':',
-        self.RHroom
+        # print >>self.log, 'WriteDataThisRow(): cell', 'Y'+str(row), ':',
+        # self.RHroom
         self.ws.cell(row=row, column=26).value = self.Comment
-        print >>self.log, 'WriteDataThisRow(): cell', 'Z'+str(row), ':',
-        self.Comment
+        # print >>self.log, 'WriteDataThisRow(): cell', 'Z'+str(row), ':',
+        # self.Comment
 
         # Save after every row
         self.wb_io.save(self.xlfilename)
