@@ -20,7 +20,7 @@ Created on Fri Mar 17 13:52:15 2017
 import numpy as np
 import os
 import ctypes as ct
-import visa
+import pyvisa as visa
 
 
 INSTR_DATA = {}  # Dict of instrument parameter dicts, keyed by description
