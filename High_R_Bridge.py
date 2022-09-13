@@ -45,7 +45,7 @@ holds the MainPanel in which the application runs
 
 class MainFrame(wx.Frame):
     def __init__(self, *args, **kwargs):
-        wx.Frame.__init__(self, size=(900, 500), *args, **kwargs)
+        wx.Frame.__init__(self, size=(1000, 620), *args, **kwargs)
         self.version = VERSION
         self.ExcelPath = ""
 
@@ -58,18 +58,19 @@ class MainFrame(wx.Frame):
         MenuBar = wx.MenuBar()
         FileMenu = wx.Menu()
 
-        About = FileMenu.Append(wx.ID_ABOUT, text='&About', help='About HighResBridgeControl (HRBC)')
+        About = FileMenu.Append(wx.ID_ABOUT, '&About', 'About HighResBridgeControl (HRBC)')
         self.Bind(wx.EVT_MENU, self.OnAbout, About)
 
-        Open = FileMenu.Append(wx.ID_OPEN, text='&Open', help='Open an Excel file')
+        Open = FileMenu.Append(wx.ID_OPEN, '&Open', 'Open an Excel file')
         self.Bind(wx.EVT_MENU, self.OnOpen, Open)
 
-        Save = FileMenu.Append(wx.ID_SAVE, text='&Save', help='Save data to an Excel file - this usually happens automatically during a run.')
+        Save = FileMenu.Append(wx.ID_SAVE, '&Save',
+                               'Save data to an Excel file - this usually happens automatically during a run.')
         self.Bind(wx.EVT_MENU, self.OnSave, Save)
 
         FileMenu.AppendSeparator()
 
-        Quit = FileMenu.Append(wx.ID_EXIT, text='&Quit', help='Exit HighResBridge')
+        Quit = FileMenu.Append(wx.ID_EXIT, '&Quit', 'Exit HighResBridge')
         self.Bind(wx.EVT_MENU, self.OnQuit, Quit)
 
         MenuBar.Append(FileMenu, "&File")
@@ -113,7 +114,7 @@ A Python'd version of the TestPoint High Resistance Bridge program."
         dlg.Destroy()  # Destroy when done.
 
     def OnSave(self, event=None):
-        if self.ExcelPath is not "":
+        if self.ExcelPath != "":
             print('Saving', self.page1.XLFile.GetValue(), '...')
             self.page1.wb.save(self.page1.XLFile.GetValue())
             self.page1.log.close()
@@ -123,7 +124,7 @@ A Python'd version of the TestPoint High Resistance Bridge program."
     def OnOpen(self, event=None):
         dlg = wx.FileDialog(self, message="Select data file",
                             defaultDir=os.getcwd(), defaultFile="",
-                            wildcard="*", style=wx.OPEN | wx.CHANGE_DIR)
+                            wildcard="*", style=wx.FD_OPEN | wx.FD_CHANGE_DIR)
         if dlg.ShowModal() == wx.ID_OK:
             self.ExcelPath = dlg.GetPath()
             self.directory = dlg.GetDirectory()
