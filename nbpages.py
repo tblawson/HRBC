@@ -32,7 +32,7 @@ import devices
 
 matplotlib.rc('lines', linewidth=1, color='blue')
 
-#os.environ['XLPATH'] = 'C:\Documents and Settings\\t.lawson\My Documents\Python Scripts\High_Res_Bridge'
+# os.environ['XLPATH'] = 'C:\Documents and Settings\\t.lawson\My Documents\Python Scripts\High_Res_Bridge'
 '''
 ------------------------
 # Setup Page definition:
@@ -52,7 +52,7 @@ class SetupPage(wx.Panel):
         self.SRC_COMBO_CHOICE = ['none']
         self.DVM_COMBO_CHOICE = ['none']
         self.GMH_COMBO_CHOICE = ['none']
-        self.SB_COMBO_CHOICE = devices.SWITCH_CONFIGS.keys()
+        self.SB_COMBO_CHOICE = [k for k in devices.SWITCH_CONFIGS.keys()]
         self.T_SENSOR_CHOICE = devices.T_Sensors
         self.cbox_addr_COM = []
         self.cbox_addr_GPIB = []
@@ -347,17 +347,17 @@ class SetupPage(wx.Panel):
         gbSizer.Add(self.SwitchboxTest, pos=(9, 3), span=(1, 1),
                     flag=wx.ALL | wx.EXPAND, border=5)
 
-        gbSizer.Add(ResponseLbl, pos=(3, 4), span=(1, 1),
+        gbSizer.Add(ResponseLbl, pos=(3, 5), span=(1, 1),
                     flag=wx.ALL | wx.EXPAND, border=5)
         gbSizer.Add(self.Response, pos=(4, 4), span=(1, 3),
                     flag=wx.ALL | wx.EXPAND, border=5)
         gbSizer.Add(self.VisaList, pos=(0, 5), span=(1, 1),
                     flag=wx.ALL | wx.EXPAND, border=5)
-        gbSizer.Add(self.ResList, pos=(0, 4), span=(3, 1),
+        gbSizer.Add(self.ResList, pos=(0, 4), span=(4, 1),
                     flag=wx.ALL | wx.EXPAND, border=5)
 
         # Autopopulate btn
-        gbSizer.Add(self.AutoPop, pos=(2, 5), span=(1, 1),
+        gbSizer.Add(self.AutoPop, pos=(1, 5), span=(1, 1),
                     flag=wx.ALL | wx.EXPAND, border=5)
 
         self.SetSizerAndFit(gbSizer)
@@ -551,8 +551,8 @@ class SetupPage(wx.Panel):
         as necessary.
         """
 #        print 'nbpages.SetupPage.SetInstr():',d,'assigned to role',r,'demo mode:',devices.ROLES_INSTR[r].demo
-        assert devices.INSTR_DATA.has_key(d), 'Unknown instrument: %s - check Excel file is loaded.' % d
-        assert devices.INSTR_DATA[d].has_key('role'), 'Unknown instrument parameter - check Excel Parameters sheet is populated.'
+        assert d in devices.INSTR_DATA, 'Unknown instrument: %s - check Excel file is loaded.' % d
+        assert 'role' in devices.INSTR_DATA[d], 'Unknown instrument parameter - check Excel Parameters sheet is populated.'
         devices.INSTR_DATA[d]['role'] = r  # update default role
         
         # Set the address cb to correct value (according to devices.INSTR_DATA)
@@ -687,12 +687,14 @@ class RunPage(wx.Panel):
         self.Comment.Bind(wx.EVT_TEXT, self.OnComment)
         comtip_a = 'This is auto-generated from data on the Setup page.'
         comtip_b = ' Other notes may be added manually.'
-        self.Comment.SetToolTipString(comtip_a + comtip_b)
+        # self.Comment.SetToolTipString(comtip_a + comtip_b)
+        self.Comment.SetToolTip(comtip_a + comtip_b)
 
         self.NewRunIDBtn = wx.Button(self, id=wx.ID_ANY,
                                      label='Create new run id')
         idcomtip = 'New id used to link subsequent Rlink and measurement data.'
-        self.NewRunIDBtn.SetToolTipString(idcomtip)
+        # self.NewRunIDBtn.SetToolTipString(idcomtip)
+        self.NewRunIDBtn.SetToolTip(idcomtip)
         self.NewRunIDBtn.Bind(wx.EVT_BUTTON, self.OnNewRunID)
         self.RunID = wx.TextCtrl(self, id=wx.ID_ANY, size=(500, 20))
 
@@ -715,6 +717,9 @@ class RunPage(wx.Panel):
         self.RangeTBtn = wx.ToggleButton(self, id=wx.ID_ANY,
                                          label='DVM12 Range mode')
         self.RangeTBtn.Bind(wx.EVT_TOGGLEBUTTON, self.OnRangeMode)
+
+        self.ReadDVMdBtn = wx.Button(self, id=wx.ID_ANY, label='Read DVMd')
+        self.ReadDVMdBtn.Bind(wx.EVT_BUTTON, self.OnReadDVMd)
 
         # Delay widgets
         SettleDelLbl = wx.StaticText(self, id=wx.ID_ANY, label='Settle delay:')
@@ -766,7 +771,7 @@ class RunPage(wx.Panel):
         gbSizer = wx.GridBagSizer()
 
         # Comment widgets
-        gbSizer.Add(CommentLbl,pos=(0, 0), span=(1, 1),
+        gbSizer.Add(CommentLbl, pos=(0, 0), span=(1, 1),
                     flag=wx.ALL | wx.EXPAND, border=5)
         gbSizer.Add(self.Comment, pos=(0, 1), span=(1, 6),
                     flag=wx.ALL | wx.EXPAND, border=5)
@@ -788,6 +793,8 @@ class RunPage(wx.Panel):
         gbSizer.Add(self.V2Setting, pos=(2, 4), span=(1, 1),
                     flag=wx.ALL, border=5)
         gbSizer.Add(self.RangeTBtn, pos=(2, 5), span=(1, 1),
+                    flag=wx.ALL | wx.EXPAND, border=5)
+        gbSizer.Add(self.ReadDVMdBtn, pos=(4, 5), span=(1, 1),
                     flag=wx.ALL | wx.EXPAND, border=5)
 
         # Delay widgets
@@ -863,6 +870,13 @@ class RunPage(wx.Panel):
             e.GetEventObject().SetLabel("AUTO-range DVM12")
         else:
             e.GetEventObject().SetLabel("FIXED-range DVM12")
+
+    def OnReadDVMd(self, e):
+        print('OnReadDVMd()...')
+        dvmOP = devices.ROLES_INSTR['DVMd'].Read()
+        if devices.ROLES_INSTR['DVMd'].demo:
+            dvmOP = -123.456
+        self.Vav.SetValue(dvmOP)
 
     def OnNewRunID(self, e):
         start = self.fullstr.find('R1: ')
