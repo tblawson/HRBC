@@ -497,7 +497,7 @@ class SetupPage(wx.Panel):
         Choose from instrument descriptions listed in devices.DESCR
         (Uses address assignments in devices.INSTR_DATA)
         '''
-        self.instrument_choice = {'SRC1': 'SRC: T3310A,s/nU3212I18',
+        self.instrument_choice = {'SRC1': 'SRC: T3310A,s/nU3213I18',
                                   'SRC2': 'SRC: F5520A',
                                   'DVM12': 'DVM: HP3458A, s/n452',
                                   'DVMd': 'DVM: HP3458A, s/n382',
@@ -505,7 +505,7 @@ class SetupPage(wx.Panel):
                                   'DVMT2': 'none',  # 'DVM: HP34420A, s/n130'
                                   'GMH1': 'GMH: s/n529',
                                   'GMH2': 'GMH: s/n530',
-                                  'GMHroom': 'GMH: s/n369',
+                                  'GMHroom': 'GMH: s/n367',
                                   'switchbox': 'V1'}
         for r in self.instrument_choice.keys():
             d = self.instrument_choice[r]
