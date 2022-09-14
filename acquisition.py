@@ -469,7 +469,8 @@ class AqnThread(Thread):
             else:
                 # lfreq line, azero once,range auto, wait for settle
                 dvmOP = devices.ROLES_INSTR['DVM12'].Read()
-                self.V1Data.append(float(filter(self.filt, dvmOP)))
+                # self.V1Data.append(float(filter(self.filt, dvmOP)))
+                self.V1Data.append(float(dvmOP))
         elif node == 'V2':
             self.V2Times.append(time.time())
             if devices.ROLES_INSTR['DVM12'].demo is True:
@@ -477,7 +478,8 @@ class AqnThread(Thread):
                 self.V2Data.append(dvmOP)
             else:
                 dvmOP = devices.ROLES_INSTR['DVM12'].Read()
-                self.V2Data.append(float(filter(self.filt, dvmOP)))
+                # self.V2Data.append(float(filter(self.filt, dvmOP)))
+                self.V2Data.append(float(dvmOP))
         elif node == 'Vd':
             self.VdTimes.append(time.time())
             if self.AZ1_del > 0:
@@ -488,7 +490,8 @@ class AqnThread(Thread):
                 self.VdData.append(dvmOP)
             else:
                 dvmOP = devices.ROLES_INSTR['DVMd'].Read()
-                self.VdData.append(float(filter(self.filt, dvmOP)))
+                # self.VdData.append(float(filter(self.filt, dvmOP)))
+                self.VdData.append(float(dvmOP))
             return 1
 
     def WriteDataThisRow(self, row):
