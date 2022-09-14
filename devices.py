@@ -126,6 +126,7 @@ class GMH_Sensor(device):
                 if len(self.info) == 0:  # No device info yet
                     print('devices.GMH_Sensor.Open(): Getting sensor info...')
                     self.GetSensorInfo()
+                    print(self.info)
                     self.demo = False  # If we got this far we're probably OK
                     return True
                 else:  # Already have device measurement info
@@ -186,7 +187,7 @@ class GMH_Sensor(device):
         error_code_ENG = ct.c_int16(self.error_code.value + los)
         GMHLIB.GMH_GetErrorMessageRet(error_code_ENG, ct.byref(self.error_msg))
         if self.error_code.value in range(0, 4):  # Correct message_0
-            self.error_msg.value = 'Success'
+            self.error_msg.value = 'Success'.encode()  # bytes('Success', 'utf-8')
         return 1
 
     def GetSensorInfo(self):
@@ -216,7 +217,7 @@ class GMH_Sensor(device):
                 meas_code = ct.c_int16(self.intData.value + los)
                 # Write result to self.meas_str:
                 GMHLIB.GMH_GetMeasurement(meas_code, ct.byref(self.meas_str))
-                measurements.append(self.meas_str.value)
+                measurements.append(self.meas_str.value.decode('utf-8'))
 
                 self.Transmit(Addr, self.UnitFn)
 
@@ -225,7 +226,7 @@ class GMH_Sensor(device):
                 GMHLIB.GMH_GetUnit(unit_code, ct.byref(self.unit_str))
                 units.append(self.unit_str.value)
 
-                print('Found', self.meas_str.value, '(', self.unit_str.value,')', 'at address', Address)
+                print('Found', self.meas_str.value, '(', self.unit_str.value, ')', 'at address', Address)
             else:
                 print(m, 'Exhausted addresses at', Address)
                 if Address > 1:  # Don't let the last addr tried screw it up.
