@@ -589,7 +589,7 @@ class SetupPage(wx.Panel):
             if devices.ROLES_WIDGETS[r]['tbtn'] == e.GetEventObject():
                 d = devices.ROLES_WIDGETS[r]['icb'].GetValue()
                 break  # stop looking when find the right instrument descr
-        print('\nnbpages.SetupPage.OnTest():',d)
+        print('\nnbpages.SetupPage.OnTest():', d)
         assert 'test' in devices.INSTR_DATA[d], 'No test exists for this device.'
         test = devices.INSTR_DATA[d]['test']  # test string
         print('\tTest string:', test)
@@ -601,6 +601,7 @@ class SetupPage(wx.Panel):
         config = str(devices.SWITCH_CONFIGS[self.Switchbox.GetValue()])
         try:
             instr = devices.RM.open_resource(resource)
+            print(f'Sending "{config}" to switchbox')
             instr.write(config)
         except devices.visa.VisaIOError:
             self.Response.SetValue('Couldn\'t open visa resource for switchbox!')
@@ -913,14 +914,14 @@ class RunPage(wx.Panel):
         if e.flag in 'EF':  # finished
             self.RunThread = None
             self.StartBtn.Enable(True)
-            self.Progress.SetToolTipString(str(0)+'%')
+            self.Progress.SetToolTip(str(0)+'%')
         else:
             self.Time.SetValue(str(e.t))
             self.Vav.SetValue(str(e.Vm))
             self.Vsd.SetValue(str(e.Vsd))
             self.Row.SetValue(str(e.r))
             self.Progress.SetValue(e.P)
-            self.Progress.SetToolTipString(str(e.P)+'%')
+            self.Progress.SetToolTip(str(e.P)+'%')
 
     def UpdateDels(self, e):
         # Triggered by an 'update delays' event
