@@ -38,7 +38,11 @@ are handled by RM.
 RM = visa.ResourceManager()
 
 # Switchbox
-SWITCH_CONFIGS = {'V1': 'A', 'Vd1': 'C', 'Vd2': 'D', 'V2': 'B'}
+SWITCH_CONFIGS = {'V1': 'A',
+                  'V2': 'B'
+                  }
+                # 'Vd1': 'C',  # Not used now.
+                # 'Vd2': 'D'}  # - use hard-wired DVMd
 
 T_Sensors = ('none', 'Pt', 'SR104t', 'thermistor')
 
@@ -224,7 +228,7 @@ class GMH_Sensor(device):
                 unit_code = ct.c_int16(self.intData.value + los)
                 # Write result to self.unit_str:
                 GMHLIB.GMH_GetUnit(unit_code, ct.byref(self.unit_str))
-                units.append(self.unit_str.value)
+                units.append(self.unit_str.value.decode('latin-1'))
 
                 print('Found', self.meas_str.value, '(', self.unit_str.value, ')', 'at address', Address)
             else:
@@ -524,7 +528,7 @@ Excel Parameters sheet.'
             return demo_reply
         # Check if s contains '?' or 'X' or is an empty string
         # ... in which case a response is expected
-        if any(x in s for x in'?X'):
+        if any(x in s for x in '?X'):
             print(m, 'Query(%s) to %s' % (s, self.Descr))
             reply = self.instr.query(s)
             return reply
