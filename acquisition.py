@@ -210,9 +210,9 @@ class AqnThread(Thread):
                 self.AbortRun()
                 return
 
-            if self._want_abort:
-                self.AbortRun()
-                return
+            # if self._want_abort:
+            #     self.AbortRun()
+            #     return
             stat_ev = evts.StatusEvent(msg='AqnThread.run():', field=0)
             wx.PostEvent(self.TopLevel, stat_ev)
 
@@ -228,7 +228,14 @@ class AqnThread(Thread):
             #  V1...
             devices.ROLES_INSTR['DVM12'].SendCmd('LFREQ LINE')
             time.sleep(0.5)
-            devices.ROLES_INSTR['DVM12'].SendCmd('DCV,'+str(int(abs(self.V1_set))))
+            # If running with fixed range set range to 'str(self.V_set_max)':
+            if self.RunPage.RangeTBtn.GetValue():  # 1(True)=AUTO
+                range1 = int(abs(self.V1_set))  # V1 range
+            else:  # 0(False)=FIXED
+                range1 = int(abs(self.V_set_max))
+            cmd = 'DCV,' + str(range1)
+            devices.ROLES_INSTR['DVM12'].SendCmd(cmd)  # Set DVM to appropriate range
+
             if self._want_abort:
                 self.AbortRun()
                 return
@@ -276,16 +283,18 @@ class AqnThread(Thread):
             #  V2...
             # Set RS232 to V2 BEFORE changing DVM range
             cmd = devices.SWITCH_CONFIGS['V2']
+            print(f'About to send {cmd} to set switchbox to V2...')
             devices.ROLES_INSTR['switchbox'].SendCmd(cmd)
             self.SetupPage.Switchbox.SetValue('V2')  # update sw-box config icb
 
-            # If running with fixed range set range to 'str(self.V1_set)':
-            if self.RunPage.RangeTBtn.GetValue():
-                range2 = int(abs(self.V2_set))
-            else:
-                range2 = int(abs(self.V1_set))
+            # If running with fixed range set range to 'str(self.V_set_max)':
+            if self.RunPage.RangeTBtn.GetValue():  # 1(True)=AUTO
+                range2 = int(abs(self.V2_set))  # V2 range
+            else:  # 0(False)=FIXED
+                range2 = int(abs(self.V_set_max))
             cmd = 'DCV,' + str(range2)
-            devices.ROLES_INSTR['DVM12'].SendCmd(cmd)  # Reset DVM range
+            devices.ROLES_INSTR['DVM12'].SendCmd(cmd)  # Set DVM to appropriate range
+
             if self._want_abort:
                 self.AbortRun()
                 return
@@ -331,10 +340,11 @@ class AqnThread(Thread):
             wx.PostEvent(self.RunPage, update_ev)
 
             #  Vd...
-            # Set RS232 to Vd1
-            cmd = devices.SWITCH_CONFIGS['Vd1']
-            devices.ROLES_INSTR['switchbox'].SendCmd(cmd)
-            self.SetupPage.Switchbox.SetValue('Vd1')  # update switchbox icb
+            # # Set RS232 to Vd1
+            # cmd = devices.SWITCH_CONFIGS['Vd1']
+            # devices.ROLES_INSTR['switchbox'].SendCmd(cmd)
+            # self.SetupPage.Switchbox.SetValue('Vd1')  # update switchbox icb
+
             devices.ROLES_INSTR['DVMd'].SendCmd('RANGE AUTO')
             if self._want_abort:
                 self.AbortRun()
@@ -429,15 +439,22 @@ class AqnThread(Thread):
             # print >>self.log, 'Cleared F5520A error:', err
             time.sleep(3)  # Wait 3 s after checking error
 
+        # Prepare DVMs before setting V's.
+        devices.ROLES_INSTR['DVM12'].SendCmd('DCV AUTO')
+        devices.ROLES_INSTR['DVMd'].SendCmd('DCV AUTO')
+        time.sleep(1)
+
         # Get V1,V2 setting, n, delays from spreadsheet
         self.V1_set = self.ws.cell(row=row, column=1).value
-        self.RunPage.V1Setting.SetValue(str(self.V1_set))
+        self.RunPage.V1Setting.SetValue(str(self.V1_set))  # V set via widget
         if self._want_abort:
                 self.AbortRun()
                 return
         time.sleep(5)  # wait 5 s after setting voltage
         self.V2_set = self.ws.cell(row=row, column=2).value
-        self.RunPage.V2Setting.SetValue(str(self.V2_set))
+        self.V_set_max = max(abs(self.V1_set), abs(self.V2_set))
+        print(f'SetUpMeasThisRow(): Max abs V-setting = {self.V_set_max}')
+        self.RunPage.V2Setting.SetValue(str(self.V2_set))  # V set via widget
         self.start_del = self.ws.cell(row=row, column=4).value
         if self._want_abort:
                 self.AbortRun()
