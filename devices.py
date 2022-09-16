@@ -358,7 +358,7 @@ Excel Parameters sheet.'
             if '3458A' in self.Descr:
                 self.instr.read_termination = '\r\n'  # carriage ret, l-feed
                 self.instr.write_termination = '\r\n'  # carriage ret, l-feed
-            self.instr.timeout = 2000  # default 2 s timeout
+            self.instr.timeout = 3000  # default 3 s timeout
             INSTR_DATA[self.Descr]['demo'] = False  # A real working instr
             self.demo = False  # A real working instr ONLY on Open() success
             print(m, self.Descr, 'session handle=', self.instr.session)
