@@ -310,11 +310,11 @@ for Vrow in range(RL_start_row+5, RL_start_row+5+N_reads):
 
     col = 1
     while col <= N_revs:  # cycle through cols 1 to N_revs
-        Vp.append(ws_Rlink[utils.get_column_letter(col)+str(Vrow)].value)
+        Vp.append(float(ws_Rlink[utils.get_column_letter(col)+str(Vrow)].value))
         assert Vp[-1] is not None, 'Missing Vp value!'
         col += 1
 
-        Vn.append(ws_Rlink[utils.get_column_letter(col)+str(Vrow)].value)
+        Vn.append(float(ws_Rlink[utils.get_column_letter(col)+str(Vrow)].value))
         assert Vn[-1] is not None, 'Missing Vn value!'
         col += 1
 

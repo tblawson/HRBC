@@ -9,7 +9,7 @@ Created on Mon Jun 29 11:36:13 2015
 """
 
 """
-High_R_Bridge.py - Version 0.3
+High_R_Bridge.py - Version 1.1
 A Python version of the high resistance bridge TestPoint application.
 This app is intended to offer the same functionality as the original
 TestPoint version but avoiding the clutter. It uses a wxPython notebook,

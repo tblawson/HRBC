@@ -450,7 +450,7 @@ class AqnThread(Thread):
         if self._want_abort:
                 self.AbortRun()
                 return
-        time.sleep(5)  # wait 5 s after setting voltage
+        time.sleep(10)  # wait 10 s after setting V1
         self.V2_set = self.ws.cell(row=row, column=2).value
         self.V_set_max = max(abs(self.V1_set), abs(self.V2_set))
         print(f'SetUpMeasThisRow(): Max abs V-setting = {self.V_set_max}')
