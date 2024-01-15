@@ -391,14 +391,17 @@ def update_R_Info(sheet, param, value, row, label, version):
     # Don't update alpha (calculated estimate is usually unreliable).
     # Also, exclude non-GTC.ureal params
     # if param not in ('date', 'T_sensor', 'alpha'):
-    sheet['C' + str(row)] = value.x
-    sheet['D' + str(row)] = value.u
-    if math.isinf(value.df):
-        sheet['E' + str(row)] = str(value.df)
+    if param == 'date':
+        sheet['C' + str(row)] = value
     else:
-        sheet['E' + str(row)] = round(value.df)
-        sheet['F' + str(row)] = label
-    sheet['G' + str(row)] = create_comment_ref(version)
+        sheet['C' + str(row)] = value.x
+        sheet['D' + str(row)] = value.u
+        if math.isinf(value.df):
+            sheet['E' + str(row)] = str(value.df)
+        else:
+            sheet['E' + str(row)] = round(value.df)
+            sheet['F' + str(row)] = label
+        sheet['G' + str(row)] = create_comment_ref(version)
 
 
 def append_R_Info(name, params, data, sheet, row, Id, v):
