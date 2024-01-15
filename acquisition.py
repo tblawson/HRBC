@@ -315,7 +315,7 @@ class AqnThread(Thread):
             if self._want_abort:
                 self.AbortRun()
                 return
-            time.sleep(self.range_del)
+            time.sleep(self.range_del)  # Only needed if range=AUTO
 
             stat_ev = evts.StatusEvent(msg='Measuring V2', field=1)
             wx.PostEvent(self.TopLevel, stat_ev)

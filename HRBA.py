@@ -801,8 +801,8 @@ else:  # UPDATE this R1.
         param_row = R_info.find_param_row(ws_Params, last_R_row, R1_name, param)
 
         # Don't update alpha (calculated estimate is usually unreliable).
-        # Also, exclude non-GTC.ureal params (date, T_sensor):
-        if param not in ('date', 'T_sensor', 'alpha', 'beta', 'gamma'):
+        # Also, exclude non-GTC.ureal params (T_sensor):
+        if param not in ('T_sensor', 'alpha', 'beta', 'gamma'):
             print(f'{R1_name} - Updating {param}')
             label = R_info.create_label(R1_name, param, Run_Id)
             R_info.update_R_Info(ws_Params, param, R_dict[param], param_row, label, VERSION)
