@@ -279,6 +279,7 @@ def write_R1_T_fit(results, RH_data, sheet, row, log, Tdef, RH_def, RH_cor, R1_a
     # RH_data are plain numbers so use ta.estimate:
     RH_av = GTC.ta.estimate(RH_data) + RH_def + RH_cor  # Type-Bs added here. ONCE!
     T_rel = [t_k - T_av for t_k in T_data]  # x-vals
+    u_T = [t_k.u for t_k in T_data]  # x-uncerts
     alpha = GTC.ureal(0, 0)  # Pre-defined default - will be updated later.
 
     y = [R for R in [result['R'] for result in results]]  # All R values
@@ -291,7 +292,8 @@ def write_R1_T_fit(results, RH_data, sheet, row, log, Tdef, RH_def, RH_cor, R1_a
     else:
         # a_ta,b_ta = GTC.ta.line_fit_wls(T_rel,y,u_y).a_b
         # Assume uncert of individual measurements dominate uncert of fit
-        R1, alpha = GTC.ta.line_fit_wls(T_rel, y, u_y).a_b
+        R1, alpha = GTC.ta.line_fit_wtls(T_rel, y, u_T, u_y).a_b
+        # R1, alpha = GTC.ta.line_fit_wls(T_rel, y, u_y).a_b  # Produces ureals with INF DOF.
         print(f'Fit params:\t intercept={R1.x}+/-{R1.u},dof={R1.df}. Slope={alpha.x}+/-{alpha.u},dof={alpha.df}')
         log.write(f'Fit params:\t intercept={R1.x}+/-{R1.u},dof={R1.df}. Slope={alpha.x}+/-{alpha.u},dof={alpha.df}')
 
