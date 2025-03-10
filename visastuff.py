@@ -20,7 +20,7 @@ There is also an instrumant class that includes an instance method SendCmd() tha
 allows any command string to be sent to the instrument and any response to be recorded.
 """
 
-import visa
+import pyvisa as visa
 
 
 # Only ONE resource manager is required at any time -
@@ -93,13 +93,13 @@ class instrument():
         else:
             self.ChkErrStr = ('',)
         if INSTR_DATA[self.Descr].has_key('setV_str'):
-		self.VStr = INSTR_DATA[self.Descr]['setV_str'] # a tuple of strings
+            self.VStr = INSTR_DATA[self.Descr]['setV_str'] # a tuple of strings
         else:
             self.VStr = ''
         if INSTR_DATA[self.Descr].has_key('hw_addr'):
-		self.hw_addr = INSTR_DATA[self.Descr]['hw_addr'] 
+            self.hw_addr = INSTR_DATA[self.Descr]['hw_addr']
         else:
-		self.hw_addr = 0
+            self.hw_addr = 0
 
     def Open(self):
         try:
