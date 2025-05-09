@@ -395,6 +395,7 @@ def update_R_Info(sheet, param, value, row, label, version):
     # if param not in ('date', 'T_sensor', 'alpha'):
     if param == 'date':
         sheet['C' + str(row)] = value
+        sheet['G' + str(row)] = create_comment_ref(version)
     else:
         sheet['C' + str(row)] = value.x
         sheet['D' + str(row)] = value.u
