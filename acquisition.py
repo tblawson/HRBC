@@ -230,9 +230,9 @@ class AqnThread(Thread):
             time.sleep(0.5)
             # If running with fixed range set range to 'str(self.V_set_max)':
             if self.RunPage.RangeTBtn.GetValue():  # 1(True)=AUTO
-                range1 = int(abs(self.V1_set))  # V1 range
+                range1 = float(abs(self.V1_set))  # V1 range
             else:  # 0(False)=FIXED
-                range1 = int(abs(self.V_set_max))
+                range1 = float(abs(self.V_set_max))
             cmd = 'DCV,' + str(range1)
             devices.ROLES_INSTR['DVM12'].SendCmd(cmd)  # Set DVM to appropriate range
 
@@ -291,9 +291,9 @@ class AqnThread(Thread):
 
             # If running with fixed range set range to 'str(self.V_set_max)':
             if self.RunPage.RangeTBtn.GetValue():  # 1(True)=AUTO
-                range2 = int(abs(self.V2_set))  # V2 range
+                range2 = float(abs(self.V2_set))  # V2 range
             else:  # 0(False)=FIXED
-                range2 = int(abs(self.V_set_max))
+                range2 = float(abs(self.V_set_max))
             cmd = 'DCV,' + str(range2)
             devices.ROLES_INSTR['DVM12'].SendCmd(cmd)  # Set DVM to appropriate range
 
