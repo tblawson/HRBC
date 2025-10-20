@@ -499,12 +499,12 @@ class SetupPage(wx.Panel):
         '''
         self.instrument_choice = {'SRC1': 'SRC: T3310A,s/nU3213I18',
                                   'SRC2': 'SRC: F5520A',
-                                  'DVM12': 'DVM: HP3458A, s/n452',
-                                  'DVMd': 'DVM: HP3458A, s/n382',
+                                  'DVM12': 'DVM: HP3458A, s/n518',
+                                  'DVMd': 'DVM: HP3458A, s/n452',
                                   'DVMT1': 'none',  # 'DVM: HP34401A, s/n976'
                                   'DVMT2': 'none',  # 'DVM: HP34420A, s/n130'
-                                  'GMH1': 'GMH: s/n529',
-                                  'GMH2': 'GMH: s/n530',
+                                  'GMH1': 'GMH: s/n006',
+                                  'GMH2': 'GMH: s/n007',
                                   'GMHroom': 'GMH: s/n367',
                                   'switchbox': 'V1'}
         for r in self.instrument_choice.keys():

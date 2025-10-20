@@ -248,6 +248,7 @@ class AqnThread(Thread):
 
             # Set RS232 to V1
             cmd = devices.SWITCH_CONFIGS['V1']
+            print(f'About to send {cmd} to set switchbox to V1...')
             devices.ROLES_INSTR['switchbox'].SendCmd(cmd)
             self.SetupPage.Switchbox.SetValue('V1')  # update sw-box config icb
             devices.ROLES_INSTR['DVM12'].SendCmd('AZERO ON')
@@ -261,8 +262,9 @@ class AqnThread(Thread):
 
             stat_ev = evts.StatusEvent(msg='Measuring V1', field=1)
             wx.PostEvent(self.TopLevel, stat_ev)
-            devices.ROLES_INSTR['DVM12'].Read()  # junk = ...dvmV1V2
-            devices.ROLES_INSTR['DVM12'].Read()  # junk = ...dvmV1V2
+            test_val1 = devices.ROLES_INSTR['DVM12'].Read()  # junk = ...dvmV1V2
+            test_val2 = devices.ROLES_INSTR['DVM12'].Read()  # junk = ...dvmV1V2
+            print(f'V1 test reads: {test_val1}, {test_val2}')
             for i in range(self.n_readings):
                 self.MeasureV('V1')
             self.T1 = devices.ROLES_INSTR['GMH1'].Measure('T')
@@ -315,13 +317,15 @@ class AqnThread(Thread):
             if self._want_abort:
                 self.AbortRun()
                 return
-            time.sleep(self.range_del)  # Only needed if range=AUTO
+            if self.RunPage.RangeTBtn.GetValue():  # 1(True)=AUTO
+                time.sleep(self.range_del)  # Only needed if range=AUTO
 
             stat_ev = evts.StatusEvent(msg='Measuring V2', field=1)
             wx.PostEvent(self.TopLevel, stat_ev)
 
-            devices.ROLES_INSTR['DVM12'].Read()
-            devices.ROLES_INSTR['DVM12'].Read()
+            test_val1 = devices.ROLES_INSTR['DVM12'].Read()
+            test_val2 = devices.ROLES_INSTR['DVM12'].Read()
+            print(f'V2 test reads: {test_val1}, {test_val2}')
             for i in range(self.n_readings):
                 self.MeasureV('V2')
             self.T2 = devices.ROLES_INSTR['GMH2'].Measure('T')
