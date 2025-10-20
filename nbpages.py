@@ -725,7 +725,7 @@ class RunPage(wx.Panel):
         # Delay widgets
         SettleDelLbl = wx.StaticText(self, id=wx.ID_ANY, label='Settle delay:')
         self.SettleDel = wx.SpinCtrl(self, id=wx.ID_ANY, value='0',
-                                     min=0, max=600)
+                                     min=0, max=3600)
         StartDelLbl = wx.StaticText(self, id=wx.ID_ANY, label='Start delay:')
         self.StartDel = wx.TextCtrl(self, id=wx.ID_ANY, style=wx.TE_READONLY)
         AZERO1DelLbl = wx.StaticText(self, id=wx.ID_ANY,
