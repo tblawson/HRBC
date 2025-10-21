@@ -309,51 +309,54 @@ Excel Parameters sheet.'
         self.role = INSTR_DATA[self.Descr]['role']
 
         if 'init_str' in INSTR_DATA[self.Descr]:
-            self.InitStr = INSTR_DATA[self.Descr]['init_str']  # tuple of str
+            self.InitStr = INSTR_DATA[self.Descr]['init_str']  # list of str
         else:
-            self.InitStr = ('',)  # a tuple of empty strings
+            self.InitStr = ['']  # a list of one empty str
 
         if 'setfn_str' in INSTR_DATA[self.Descr]:
-            self.SetFnStr = INSTR_DATA[self.Descr]['setfn_str']
+            self.SetFnStr = INSTR_DATA[self.Descr]['setfn_str']  # list of str
         else:
-            self.SetFnStr = ''  # an empty string
+            self.SetFnStr = ['']  # a list of one empty str
 
         if 'oper_str' in INSTR_DATA[self.Descr]:
-            self.OperStr = INSTR_DATA[self.Descr]['oper_str']
+            self.OperStr = INSTR_DATA[self.Descr]['oper_str']  # list of str
         else:
-            self.OperStr = ''  # an empty string
+            self.OperStr = ['']  # a list of one empty str
 
         if 'stby_str' in INSTR_DATA[self.Descr]:
-            self.StbyStr = INSTR_DATA[self.Descr]['stby_str']
+            self.StbyStr = INSTR_DATA[self.Descr]['stby_str']  # list of str
         else:
-            self.StbyStr = ''
+            self.StbyStr = ['']  # a list of one empty str
 
         if 'chk_err_str' in INSTR_DATA[self.Descr]:
-            self.ChkErrStr = INSTR_DATA[self.Descr]['chk_err_str']
+            self.ChkErrStr = INSTR_DATA[self.Descr]['chk_err_str']  # list of str
         else:
-            self.ChkErrStr = ('',)
+            self.ChkErrStr = ['']  # a list of one empty str
 
         if 'setV_str' in INSTR_DATA[self.Descr]:
-            self.VStr = INSTR_DATA[self.Descr]['setV_str']  # tuple of str
+            self.VStr = INSTR_DATA[self.Descr]['setV_str']  # list of str
         else:
-            self.VStr = ''
+            self.VStr = ['']  # a list of one empty str
 
         if 'range_str' in INSTR_DATA[self.Descr]:
-            self.RangeStr = INSTR_DATA[self.Descr]['range_str']
+            self.RangeStr = INSTR_DATA[self.Descr]['range_str']  # str
         else:
-            self.RangeStr = ''
+            self.RangeStr = ''  # an empty str
 
         if 'cmd_sep' in INSTR_DATA[self.Descr]:
-            self.CmdSep = INSTR_DATA[self.Descr]['cmd_sep']
+            self.CmdSep = INSTR_DATA[self.Descr]['cmd_sep']  # str
         else:
-            self.CmdSep = ''
+            self.CmdSep = ''  # an empty str
 
         TransmilleDCVRanges = {}
 
     def Open(self):
         m = 'devices.instrument.Open():'
         try:
-            self.instr = RM.open_resource(self.str_addr)
+            self.instr = RM.open_resource(self.str_addr[0])  # a single-item list of str
+            print(f'EOI status: {self.instr.send_end}')
+            self.instr.read_termination = '\r\n'
+            # self.instr.send_end = True
             self.is_open = 1
             if '3458A' in self.Descr:
                 self.instr.read_termination = '\r\n'  # carriage ret, l-feed
