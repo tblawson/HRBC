@@ -467,24 +467,28 @@ class SetupPage(wx.Panel):
                 continue  # Skip this row
             else:  # not header
                 params.append(param)
-                if v_u_d_l[1] is None:  # single-valued (no uncert)
-                    values.append(v_u_d_l[0])  # append value as next item
-                    print(descr, ' : ', param, ' = ', v_u_d_l[0])
-                    # print >>self.log, descr, ' : ', param, ' = ', v_u_d_l[0]
-                else:  # multi-valued
-                    while v_u_d_l[-1] is None:  # remove empty cells
-                        del v_u_d_l[-1]  # v_u_d_l.pop()
-                    values.append(v_u_d_l)  # append value-list as next item
-                    print(descr, ' : ', param, ' = ', v_u_d_l)
-                    # print >>self.log, descr, ' : ', param, ' = ', v_u_d_l  # self.log.write(logline)
+                # if v_u_d_l[1] is None:  # single-valued (no uncert)
+                #     values.append(v_u_d_l[0])  # append value as next item
+                #     print(descr, ' : ', param, ' = ', v_u_d_l[0])
+                #     # print >>self.log, descr, ' : ', param, ' = ', v_u_d_l[0]
+                # else:  # multi-valued
+                #     while v_u_d_l[-1] is None:  # remove empty cells
+                #         del v_u_d_l[-1]  # v_u_d_l.pop()
+                #     values.append(v_u_d_l)  # append value-list as next item
+                #     print(descr, ' : ', param, ' = ', v_u_d_l)
+                #     # print >>self.log, descr, ' : ', param, ' = ', v_u_d_l  # self.log.write(logline)
+                while v_u_d_l[-1] is None:  # remove empty cells
+                    del v_u_d_l[-1]  # v_u_d_l.pop()
+                values.append(v_u_d_l)  # append value-list as next item
+                print(descr, ' : ', param, ' = ', v_u_d_l)
 
                 if param == u'test':  # last parameter for this description
                     devices.DESCR.append(descr)  # build description list
-                    devices.sublist.append(dict(zip(params,values)))  # adds parameter dictionary to sublist
+                    devices.sublist.append(dict(zip(params, values)))  # adds parameter dictionary to sublist
                     del params[:]
                     del values[:]
 
-        print('----END OF PARAMETER LIST----' )
+        print('----END OF PARAMETER LIST----')
         # print >>self.log, '----END OF PARAMETER LIST----'
 
         # Compile into a dictionary that lives in devices.py...  
