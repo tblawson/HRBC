@@ -561,7 +561,7 @@ class SetupPage(wx.Panel):
         
         # Set the address cb to correct value (according to devices.INSTR_DATA)
         a_cb = devices.ROLES_WIDGETS[r]['acb']
-        a_cb.SetValue((devices.INSTR_DATA[d]['str_addr']))
+        a_cb.SetValue((devices.INSTR_DATA[d]['str_addr'][0]))
         if d == 'none':
             devices.ROLES_WIDGETS[r]['tbtn'].Enable(False)
         else:
@@ -595,7 +595,7 @@ class SetupPage(wx.Panel):
                 break  # stop looking when find the right instrument descr
         print('\nnbpages.SetupPage.OnTest():', d)
         assert 'test' in devices.INSTR_DATA[d], 'No test exists for this device.'
-        test = devices.INSTR_DATA[d]['test']  # test string
+        test = devices.INSTR_DATA[d]['test'][0]  # test string
         print('\tTest string:', test)
         self.Response.SetValue(str(devices.ROLES_INSTR[r].Test(test)))
         self.status.SetStatusText('Testing %s with cmd %s' % (d, test), 0)
@@ -945,6 +945,7 @@ class RunPage(wx.Panel):
     def OnV1Set(self, e):
         # Called by change in value (manually OR by software!)
         V1 = e.GetValue()
+        print(f'RunPage.OnV1Set({V1})')
         src1 = devices.ROLES_INSTR['SRC1']
         src1.SetV(V1)  # 'M+0R0='
         time.sleep(0.5)
@@ -957,6 +958,7 @@ class RunPage(wx.Panel):
     def OnV2Set(self, e):
         # Called by change in value (manually OR by software!)
         V2 = e.GetValue()
+        print(f'RunPage.OnV2Set({V2})')
         src2 = devices.ROLES_INSTR['SRC2']
         src2.SetV(V2)
         time.sleep(0.5)
