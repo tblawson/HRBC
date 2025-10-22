@@ -84,9 +84,9 @@ class GMH_Sensor(device):
         self.demo = demo
 
         # self.addr is COM port-number assigned to USB 3100N adapter cable:
-        self.addr = int(INSTR_DATA[self.Descr]['addr'])
-        self.str_addr = INSTR_DATA[self.Descr]['str_addr']
-        self.role = INSTR_DATA[self.Descr]['role']
+        self.addr = int(INSTR_DATA[self.Descr]['addr'][0])
+        self.str_addr = INSTR_DATA[self.Descr]['str_addr'][0]
+        self.role = INSTR_DATA[self.Descr]['role'][0]
 
         self.Prio = ct.c_short()
         self.flData = ct.c_double()  # Don't change this type!!
@@ -304,9 +304,9 @@ class instrument(device):
 Excel Parameters sheet.'
         assert self.Descr in INSTR_DATA, msg
 
-        self.addr = INSTR_DATA[self.Descr]['addr']
-        self.str_addr = INSTR_DATA[self.Descr]['str_addr']
-        self.role = INSTR_DATA[self.Descr]['role']
+        self.addr = INSTR_DATA[self.Descr]['addr'][0]
+        self.str_addr = INSTR_DATA[self.Descr]['str_addr'][0]
+        self.role = INSTR_DATA[self.Descr]['role'][0]
 
         if 'init_str' in INSTR_DATA[self.Descr]:
             self.InitStr = INSTR_DATA[self.Descr]['init_str']  # list of str
@@ -319,14 +319,14 @@ Excel Parameters sheet.'
             self.SetFnStr = ['']  # a list of one empty str
 
         if 'oper_str' in INSTR_DATA[self.Descr]:
-            self.OperStr = INSTR_DATA[self.Descr]['oper_str']  # list of str
+            self.OperStr = INSTR_DATA[self.Descr]['oper_str'][0]
         else:
-            self.OperStr = ['']  # a list of one empty str
+            self.OperStr = ''  # empty str
 
         if 'stby_str' in INSTR_DATA[self.Descr]:
-            self.StbyStr = INSTR_DATA[self.Descr]['stby_str']  # list of str
+            self.StbyStr = INSTR_DATA[self.Descr]['stby_str'][0]
         else:
-            self.StbyStr = ['']  # a list of one empty str
+            self.StbyStr = ''  # empty str
 
         if 'chk_err_str' in INSTR_DATA[self.Descr]:
             self.ChkErrStr = INSTR_DATA[self.Descr]['chk_err_str']  # list of str
@@ -339,21 +339,21 @@ Excel Parameters sheet.'
             self.VStr = ['']  # a list of one empty str
 
         if 'range_str' in INSTR_DATA[self.Descr]:
-            self.RangeStr = INSTR_DATA[self.Descr]['range_str']  # str
+            self.RangeStr = INSTR_DATA[self.Descr]['range_str'][0]  # str
         else:
             self.RangeStr = ''  # an empty str
 
         if 'cmd_sep' in INSTR_DATA[self.Descr]:
-            self.CmdSep = INSTR_DATA[self.Descr]['cmd_sep']  # str
+            self.CmdSep = INSTR_DATA[self.Descr]['cmd_sep'][0]  # str
         else:
             self.CmdSep = ''  # an empty str
 
         TransmilleDCVRanges = {}
 
     def Open(self):
-        m = 'devices.instrument.Open():'
+        m = f'devices.instrument.Open(str_addr={self.str_addr}):'
         try:
-            self.instr = RM.open_resource(self.str_addr[0])  # a single-item list of str
+            self.instr = RM.open_resource(self.str_addr)  # a str
             print(f'EOI status: {self.instr.send_end}')
             self.instr.read_termination = '\r\n'
             # self.instr.send_end = True
