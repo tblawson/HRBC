@@ -49,7 +49,7 @@ import GTC
 
 import R_info  # useful functions
 
-VERSION = '1.4'
+VERSION = '1.5'
 
 # DVM, GMH Correction factors, etc.
 
@@ -351,14 +351,13 @@ Ps = []
 Ts = []
 
 ##############################
-# ___Loop over data rows ___ #
+# ___Loop over data in BLOCKS OF FOUR ROWS___ #
 print('\nLooping over data rows', Data_start_row, 'to', Data_stop_row, '...')
 log.write('\nLooping over data rows ' + str(Data_start_row) + ' to ' + str(Data_stop_row) + '\n')
 while Data_row <= Data_stop_row:
-    # R2 parameters:
-    V2set = ws_Data.cell(row=Data_row, column=2).value  # Changed from Data_start_row!
+    V2set = ws_Data.cell(row=Data_row, column=2).value
     assert V2set is not None, 'Missing V2 setting!'
-    V1set = ws_Data.cell(row=Data_row, column=1).value  # Changed from Data_start_row!
+    V1set = ws_Data.cell(row=Data_row, column=1).value
     assert V1set is not None, 'Missing V1 setting!'
 
     # Select R2 info based on applied voltage ('LV' or 'HV')
@@ -377,17 +376,6 @@ while Data_row <= Data_stop_row:
         R2TRef = R_INFO[R2_name]['TRef_LV']
         R2VRef = R_INFO[R2_name]['VRef_LV']
 
-    # # ...and same calculation for R1, but just for temperature:
-    # Vdif_LV = abs(abs(V1set) - R_INFO[R1_name]['VRef_LV'])
-    # Vdif_HV = abs(abs(V1set) - R_INFO[R1_name]['VRef_HV'])
-    # if Vdif_LV < Vdif_HV:
-    #     R1TRef = R_INFO[R1_name]['TRef_LV']
-    # elif Vdif_LV > Vdif_HV:
-    #     R1TRef = R_INFO[R1_name]['TRef_HV']
-    # else:
-    #     R1TRef = R_INFO[R1_name]['TRef_LV']
-
-    # Select appropriate value of VRC, etc.
     """
     #################################################################
     NOTE: Now replace VRCs with individual gain factors for
@@ -397,25 +385,32 @@ while Data_row <= Data_stop_row:
     voltage ratios]).
     #################################################################
     """
-#    G1_code = R_info.Vgain_codes_auto[round(V1set,1)]
-#    G1 = I_INFO[role_descr['DVM12']][G1_code]
+    """
+    ****** New bit March 2026 ******:
+    """
+    V1_abs = abs(V1set)
+    V2_abs = abs(V2set)
 
-    V2rnd = math.pow(10, round(math.log10(abs(V2set))))  # Rnd to nearest 10-pwr
-    V1rnd = math.pow(10, round(math.log10(abs(V1set))))
+    rng1 = int(math.pow(10, round(math.log10(V1_abs))))  # Rnd to nearest 10-pwr. Never < 1.
     if 'AUTO' in range_mode:
-        G2_code = R_info.Vgain_codes_auto[V2rnd]
-        G1_code = R_info.Vgain_codes_auto[V1rnd]
-    else:  # 'FIXED'
-        if round(V1set) >= round(abs(V2set)):
-            G1_code = R_info.Vgain_codes_auto[V1rnd]
-            G2_code = R_info.Vgain_codes_fixed[V2rnd]
-        else:
-            G2_code = R_info.Vgain_codes_auto[V2rnd]
-            G1_code = R_info.Vgain_codes_fixed[V1rnd]
+        rng2 = math.pow(10, round(math.log10(V2_abs)))  # No int() - could be 0.1
+        # Restrict to DVM ranges:
+        if rng2 < 0.1:
+            rng2 = 0.1
+        elif rng2 > 1000:
+            rng2 = 1000
+    else:  # 'FIXED' - default: measure V1 and V2 on same range.
+        rng2 = rng1
 
-    G1 = I_INFO[role_descr['DVM12']][G1_code]
-    G2 = I_INFO[role_descr['DVM12']][G2_code]
-
+    # limit V's to one of [0.01, 0.05, 0.1, 0.5, 1, 5, 10, 50, 100]:
+    V1_approx = R_info.restrict_V(V1_abs)
+    V2_approx = R_info.restrict_V(V2_abs)
+    # Construct Vgain labels
+    G1_ref = f'Vgain_{V1_approx}r{rng1}'
+    G2_ref = f'Vgain_{V2_approx}r{rng2}'
+    # Select DVM gain factors
+    G1 = I_INFO[role_descr['DVM12']][G1_ref]
+    G2 = I_INFO[role_descr['DVM12']][G2_ref]
     vrc = GTC.result(G2/G1, label='vrc ' + Run_Id)
 
     Vlin_pert = I_INFO[role_descr['DVMd']]['linearity_pert']  # linearity used in G calculation

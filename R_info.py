@@ -20,31 +20,29 @@ RL_SEARCH_LIMIT = 500
 INF = 1e6  # 'inf' dof
 ZERO = GTC.ureal(0, 0)
 
-# Use for G1 & G2 in AUTO mode:
-Vgain_codes_auto = {0.1: 'Vgain_0.1r0.1', 0.5: 'Vgain_0.5r1', 0.9: 'Vgain_1r1',
-                    1.0: 'Vgain_1r1', 5.0: 'Vgain_5r10', 9.0: 'Vgain_10r10',
-                    10.0: 'Vgain_10r10', 100.0: 'Vgain_100r100'}
-# Use for G2 in FIXED mode:
-Vgain_codes_fixed = {0.1: 'Vgain_0.5r1', 0.5: 'Vgain_0.5r1', 0.9: 'Vgain_1r1',
-                     1.0: 'Vgain_1r10', 5.0: 'Vgain_5r10', 9.0: 'Vgain_10r10', 
-                     10.0: 'Vgain_10r100', 100.0: 'Vgain_100r100'}
-
-
 # ______________________________Useful funtions:______________________________
+def restrict_V(v):
+    """
+    Restrict v to one of [0.01, 0.05, 0.1, 0.5, 1, 5, 10, 50, 100].
+    """
+    v_restricted = round(v*10, 1)/10
+    if v_restricted < 1:
+        return v_restricted  # 0.01, 0.05, 0.1 or 0.5
+    else:
+        return round(v_restricted)  # 1, 5, 10, 50 or 100
+
 
 def Make_Log_Name(v):
     return 'HRBAv'+str(v)+'_'+str(dt.date.today())+'.log'
 
 
-# Extract resistor names from comment
-"""
-Parse first part of comment for resistor names.
-Names must appear immediately after the strings 'R1: ' and 'R2: ' and
-immediately before the string ' monitored by GMH'.
-"""
-
-
 def ExtractNames(comment):
+    # Extract resistor names from comment
+    """
+    Parse first part of comment for resistor names.
+    Names must appear immediately after the strings 'R1: ' and 'R2: ' and
+    immediately before the string ' monitored by GMH'.
+    """
     assert comment.find('R1: ') >= 0, 'R1 name not found in comment!'
     assert comment.find('R2: ') >= 0, 'R2 name not found in comment!'
     R1_name = comment[comment.find('R1: ') + 4:comment.find(' monitored by GMH')]
